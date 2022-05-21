@@ -75,7 +75,10 @@ impl Parser {
         if state.state_level < max_nesting {
             for rule in self.ruler.get_rules("") {
                 ok = rule(state, true);
-                if ok { break; }
+                if ok {
+                    if pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
+                    break;
+                }
             }
         } else {
             // Too much nesting, just skip until the end of the paragraph.
@@ -103,7 +106,6 @@ impl Parser {
     //
     pub fn tokenize(&self, state: &mut State) {
         let end = state.pos_max;
-        let mut ok = false;
         let max_nesting = state.md.options.max_nesting.unwrap_or(100);
 
         while state.pos < end {
@@ -113,17 +115,20 @@ impl Parser {
             // - update `state.pos`
             // - update `state.tokens`
             // - return true
-
+            let mut ok = false;
             let prev_pos = state.pos;
+
             if state.state_level < max_nesting {
                 for rule in self.ruler.get_rules("") {
                     ok = rule(state, false);
-                    if ok { break; }
+                    if ok {
+                        if prev_pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
+                        break;
+                    }
                 }
             }
 
             if ok {
-                if prev_pos >= state.pos { panic!("inline rules didn't increment state.pos"); }
                 if state.pos >= end { break; }
                 continue;
             }

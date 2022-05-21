@@ -64,13 +64,19 @@ impl Parser {
             // - update `state.line`
             // - update `state.tokens`
             // - return true
-
+            let mut ok = false;
             let prev_line = state.line;
+
             for rule in self.ruler.get_rules("") {
-                let ok = rule(state, false);
-                if ok { break; }
+                ok = rule(state, false);
+                if ok {
+                    if prev_line >= state.line { panic!("block rule didn't increment state.line"); }
+                    break;
+                }
             }
-            if prev_line >= state.line { panic!("block rules didn't increment state.line"); }
+
+            // this can only happen if user disables paragraph rule
+            if !ok { panic!("none of the block rules matched"); }
 
             // set state.tight if we had an empty line before current tag
             // i.e. latest empty line should not count
