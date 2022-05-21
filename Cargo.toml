@@ -1,0 +1,33 @@
+[package]
+name = "markdown-it"
+version = "0.1.0"
+authors = ["Alex Kocharin <alex@kocharin.ru>"]
+description = "Port of markdown-it.js to rust (WIP)"
+keywords = ["markdown", "commonmark"]
+license = "MIT"
+categories = ["text-processing", "parsing", "command-line-utilities"]
+edition = "2021"
+
+[lib]
+name = "markdown_it"
+path = "src/lib.rs"
+
+[[bin]]
+name = "markdown-it"
+path = "src/bin.rs"
+
+[dependencies]
+argparse = "0.2.2"
+const_format = "0.2.23"
+derivative = "2.2.0"
+entities = "1.0.1"
+lazy_static = "1.4.0"
+regex = "1.5"
+unicode-general-category = "0.5.1"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "test-file"
+harness = false
