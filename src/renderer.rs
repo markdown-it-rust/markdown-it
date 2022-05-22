@@ -11,9 +11,10 @@ use crate::token::Token;
 use crate::token::TokenAttrs;
 use crate::MarkdownIt;
 use derivative::Derivative;
+use std::borrow::Cow;
 use std::collections::HashMap;
 
-pub type Rule = fn (tokens: &Vec<Token>, idx: usize, md: &MarkdownIt) -> String;
+pub type Rule = for<'a> fn (tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str>;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -221,29 +222,30 @@ impl Renderer {
 }
 
 mod rules {
+    use std::borrow::Cow;
     use crate::MarkdownIt;
     use crate::token::Token;
     use crate::token::TokenAttrs;
     use super::escape_html;
     use super::unescape_all;
 
-    pub fn code_inline(tokens: &Vec<Token>, idx: usize, md: &MarkdownIt) -> String {
+    pub fn code_inline<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
         let token = &tokens[idx];
         let attrs = md.renderer.render_attrs(&token.attrs);
         let content = escape_html(&token.content);
 
-        format!("<code{attrs}>{content}</code>")
+        Cow::Owned(format!("<code{attrs}>{content}</code>"))
     }
 
-    pub fn code_block(tokens: &Vec<Token>, idx: usize, md: &MarkdownIt) -> String {
+    pub fn code_block<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
         let token = &tokens[idx];
         let attrs = md.renderer.render_attrs(&token.attrs);
         let content = escape_html(&token.content);
 
-        format!("<pre><code{attrs}>{content}</code></pre>\n")
+        Cow::Owned(format!("<pre><code{attrs}>{content}</code></pre>\n"))
     }
 
-    pub fn fence(tokens: &Vec<Token>, idx: usize, md: &MarkdownIt) -> String {
+    pub fn fence<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
         let token = &tokens[idx];
         let info = unescape_all(&token.info);
         let mut split = info.split_whitespace();
@@ -251,11 +253,12 @@ mod rules {
         //let lang_attrs = split.collect::<Vec<&str>>().join(" ");
 
         // TODO: highlight
-        let mut highlighted = escape_html(&token.content);
+        let highlighted = escape_html(&token.content);
 
         if highlighted.starts_with("<pre") {
+            let mut highlighted : String = highlighted.into();
             highlighted.push('\n');
-            return highlighted;
+            return Cow::Owned(highlighted);
         }
 
         let attrs;
@@ -284,10 +287,10 @@ mod rules {
             attrs = md.renderer.render_attrs(&token.attrs);
         }
 
-        format!("<pre><code{attrs}>{highlighted}</code></pre>\n")
+        Cow::Owned(format!("<pre><code{attrs}>{highlighted}</code></pre>\n"))
     }
 
-    pub fn image(tokens: &Vec<Token>, idx: usize, md: &MarkdownIt) -> String {
+    pub fn image<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
         let token = &tokens[idx];
 
         // "alt" attr MUST be set, even if empty. Because it's mandatory and
@@ -306,36 +309,36 @@ mod rules {
         let attrs = md.renderer.render_attrs(&attrs_with_alt);
         let xhtml = if md.options.xhtml_out { " /" } else { "" };
 
-        format!("<img{attrs}{xhtml}>")
+        Cow::Owned(format!("<img{attrs}{xhtml}>"))
     }
 
-    pub fn hardbreak(_tokens: &Vec<Token>, _idx: usize, md: &MarkdownIt) -> String {
+    pub fn hardbreak<'a>(_tokens: &'a Vec<Token>, _idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
         if md.options.xhtml_out {
-            "<br />\n".to_owned()
+            Cow::Borrowed("<br />\n")
         } else {
-            "<br>\n".to_owned()
+            Cow::Borrowed("<br>\n")
         }
     }
 
-    pub fn softbreak(_tokens: &Vec<Token>, _idx: usize, md: &MarkdownIt) -> String {
+    pub fn softbreak<'a>(_tokens: &'a Vec<Token>, _idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
         if !md.options.breaks {
-            "\n".to_owned()
+            Cow::Borrowed("\n")
         } else if md.options.xhtml_out {
-            "<br />\n".to_owned()
+            Cow::Borrowed("<br />\n")
         } else {
-            "<br>\n".to_owned()
+            Cow::Borrowed("<br>\n")
         }
     }
 
-    pub fn text(tokens: &Vec<Token>, idx: usize, _md: &MarkdownIt) -> String {
+    pub fn text<'a>(tokens: &'a Vec<Token>, idx: usize, _md: &MarkdownIt) -> Cow<'a, str> {
         escape_html(&tokens[idx].content)
     }
 
-    pub fn html_block(tokens: &Vec<Token>, idx: usize, _md: &MarkdownIt) -> String {
-        tokens[idx].content.to_owned()
+    pub fn html_block<'a>(tokens: &'a Vec<Token>, idx: usize, _md: &MarkdownIt) -> Cow<'a, str> {
+        Cow::Borrowed(tokens[idx].content.as_str())
     }
 
-    pub fn html_inline(tokens: &Vec<Token>, idx: usize, _md: &MarkdownIt) -> String {
-        tokens[idx].content.to_owned()
+    pub fn html_inline<'a>(tokens: &'a Vec<Token>, idx: usize, _md: &MarkdownIt) -> Cow<'a, str> {
+        Cow::Borrowed(tokens[idx].content.as_str())
     }
 }

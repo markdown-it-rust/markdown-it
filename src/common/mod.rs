@@ -4,6 +4,7 @@ pub mod entities;
 
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::borrow::Cow;
 
 
 const UNESCAPE_MD_RE : &str = r##"\\([!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])"##;
@@ -68,9 +69,9 @@ pub fn unescape_all(str: &str) -> String {
     }).to_string()
 }
 
-pub fn escape_html(str: &str) -> String {
-    // TODO: cow
-    str.replace("&", "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+pub fn escape_html(str: &str) -> Cow<str> {
+    // this should escape following characters: " < > &
+    html_escape::encode_double_quoted_attribute(str)
 }
 
 

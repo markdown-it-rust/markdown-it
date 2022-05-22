@@ -27,7 +27,7 @@ The rest of the API is very experimental and will likely change tomorrow.
 
 On 10 kB test file:
 
- - `markdown-it`: 480 μs
+ - `markdown-it`: 420 μs
  - `comrak`: 380 μs
 
-so not good, but it's being worked on
+roughly the same, it's being worked on
