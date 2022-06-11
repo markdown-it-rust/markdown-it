@@ -2,7 +2,7 @@ pub mod html_blocks;
 pub mod html_re;
 pub mod entities;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use std::borrow::Cow;
 
@@ -10,10 +10,12 @@ use std::borrow::Cow;
 const UNESCAPE_MD_RE : &str = r##"\\([!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])"##;
 const ENTITY_RE      : &str = r##"&([A-Za-z#][A-Za-z0-9]{1,31});"##;
 
-lazy_static! {
-    static ref DIGITAL_ENTITY_TEST_RE : Regex = Regex::new(r#"(?i)^&#(x[a-f0-9]{1,8}|[0-9]{1,8})$"#).unwrap();
-    static ref UNESCAPE_ALL_RE        : Regex = Regex::new(&format!("{UNESCAPE_MD_RE}|{ENTITY_RE}")).unwrap();
-}
+static DIGITAL_ENTITY_TEST_RE : Lazy<Regex> = Lazy::new(||
+    Regex::new(r#"(?i)^&#(x[a-f0-9]{1,8}|[0-9]{1,8})$"#).unwrap()
+);
+static UNESCAPE_ALL_RE        : Lazy<Regex> = Lazy::new(||
+    Regex::new(&format!("{UNESCAPE_MD_RE}|{ENTITY_RE}")).unwrap()
+);
 
 pub fn is_valid_entity_code(code: u32) -> bool {
     // broken sequence
@@ -78,9 +80,7 @@ pub fn escape_html(str: &str) -> Cow<str> {
 // Helper to unify [reference labels].
 //
 pub fn normalize_reference(str: &str) -> String {
-    lazy_static! {
-        static ref SPACE_RE : Regex = Regex::new(r"\s+").unwrap();
-    };
+    static SPACE_RE : Lazy<Regex> = Lazy::new(|| Regex::new(r"\s+").unwrap());
 
     // Trim and collapse whitespace
     //

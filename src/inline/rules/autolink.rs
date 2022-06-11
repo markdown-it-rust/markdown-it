@@ -1,18 +1,16 @@
 // Process autolinks '<protocol:...>'
 
 use crate::inline::State;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
-lazy_static! {
-    static ref AUTOLINK_RE : Regex = {
-        Regex::new(r"^([a-zA-Z][a-zA-Z0-9+.\-]{1,31}):([^<>\x00-\x20]*)$").unwrap()
-    };
+static AUTOLINK_RE : Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^([a-zA-Z][a-zA-Z0-9+.\-]{1,31}):([^<>\x00-\x20]*)$").unwrap()
+});
 
-    static ref EMAIL_RE : Regex = {
-        Regex::new(r"^([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$").unwrap()
-    };
-}
+static EMAIL_RE : Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$").unwrap()
+});
 
 pub fn rule(state: &mut State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();

@@ -3,7 +3,7 @@
 use crate::block::State;
 use crate::common::html_re::HTML_OPEN_CLOSE_TAG_RE;
 use crate::common::html_blocks::HTML_BLOCKS;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 struct HTMLSequence {
@@ -18,61 +18,58 @@ impl HTMLSequence {
     }
 }
 
-lazy_static! {
-    // An array of opening and corresponding closing sequences for html tags,
-    // last argument defines whether it can terminate a paragraph or not
-    //
-    static ref HTML_SEQUENCES : Vec<HTMLSequence> = {
-        let mut result = Vec::new();
+// An array of opening and corresponding closing sequences for html tags,
+// last argument defines whether it can terminate a paragraph or not
+//
+static HTML_SEQUENCES : Lazy<Vec<HTMLSequence>> = Lazy::new(|| {
+    let mut result = Vec::new();
 
-        result.push(HTMLSequence::new(
-            Regex::new(r#"(?i)^<(script|pre|style|textarea)(\s|>|$)"#).unwrap(),
-            Regex::new(r#"(?i)</(script|pre|style|textarea)>"#).unwrap(),
-            true
-        ));
+    result.push(HTMLSequence::new(
+        Regex::new(r#"(?i)^<(script|pre|style|textarea)(\s|>|$)"#).unwrap(),
+        Regex::new(r#"(?i)</(script|pre|style|textarea)>"#).unwrap(),
+        true
+    ));
 
-        result.push(HTMLSequence::new(
-            Regex::new(r#"^<!--"#).unwrap(),
-            Regex::new(r#"-->"#).unwrap(),
-            true
-        ));
+    result.push(HTMLSequence::new(
+        Regex::new(r#"^<!--"#).unwrap(),
+        Regex::new(r#"-->"#).unwrap(),
+        true
+    ));
 
-        result.push(HTMLSequence::new(
-            Regex::new(r#"^<\?"#).unwrap(),
-            Regex::new(r#"\?>"#).unwrap(),
-            true
-        ));
+    result.push(HTMLSequence::new(
+        Regex::new(r#"^<\?"#).unwrap(),
+        Regex::new(r#"\?>"#).unwrap(),
+        true
+    ));
 
-        result.push(HTMLSequence::new(
-            Regex::new(r#"^<![A-Z]"#).unwrap(),
-            Regex::new(r#">"#).unwrap(),
-            true
-        ));
+    result.push(HTMLSequence::new(
+        Regex::new(r#"^<![A-Z]"#).unwrap(),
+        Regex::new(r#">"#).unwrap(),
+        true
+    ));
 
-        result.push(HTMLSequence::new(
-            Regex::new(r#"^<!\[CDATA\["#).unwrap(),
-            Regex::new(r#"\]\]>"#).unwrap(),
-            true
-        ));
+    result.push(HTMLSequence::new(
+        Regex::new(r#"^<!\[CDATA\["#).unwrap(),
+        Regex::new(r#"\]\]>"#).unwrap(),
+        true
+    ));
 
-        let block_names = HTML_BLOCKS.join("|");
-        result.push(HTMLSequence::new(
-            Regex::new(&format!("(?i)^</?({block_names})(\\s|/?>|$)")).unwrap(),
-            Regex::new(r#"^$"#).unwrap(),
-            true
-        ));
+    let block_names = HTML_BLOCKS.join("|");
+    result.push(HTMLSequence::new(
+        Regex::new(&format!("(?i)^</?({block_names})(\\s|/?>|$)")).unwrap(),
+        Regex::new(r#"^$"#).unwrap(),
+        true
+    ));
 
-        let open_close_tag_re = HTML_OPEN_CLOSE_TAG_RE.as_str();
-        result.push(HTMLSequence::new(
-            Regex::new(&format!("{open_close_tag_re}\\s*$")).unwrap(),
-            Regex::new(r#"^$"#).unwrap(),
-            false
-        ));
+    let open_close_tag_re = HTML_OPEN_CLOSE_TAG_RE.as_str();
+    result.push(HTMLSequence::new(
+        Regex::new(&format!("{open_close_tag_re}\\s*$")).unwrap(),
+        Regex::new(r#"^$"#).unwrap(),
+        false
+    ));
 
-        result
-    };
-}
-
+    result
+});
 
 pub fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block

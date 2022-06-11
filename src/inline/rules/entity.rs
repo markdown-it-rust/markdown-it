@@ -3,18 +3,16 @@
 use crate::common::entities;
 use crate::common::is_valid_entity_code;
 use crate::inline::State;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
-lazy_static! {
-    static ref DIGITAL_RE : Regex = {
-        Regex::new("(?i)^&#((?:x[a-f0-9]{1,6}|[0-9]{1,7}));").unwrap()
-    };
+static DIGITAL_RE : Lazy<Regex> = Lazy::new(|| {
+    Regex::new("(?i)^&#((?:x[a-f0-9]{1,6}|[0-9]{1,7}));").unwrap()
+});
 
-    static ref NAMED_RE : Regex = {
-        Regex::new("(?i)^&([a-z][a-z0-9]{1,31});").unwrap()
-    };
-}
+static NAMED_RE : Lazy<Regex> = Lazy::new(|| {
+    Regex::new("(?i)^&([a-z][a-z0-9]{1,31});").unwrap()
+});
 
 pub fn rule(state: &mut State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();

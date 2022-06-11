@@ -2,7 +2,7 @@
 //
 #![allow(non_upper_case_globals)]
 use const_format::formatcp;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 const attr_name     : &str = r#"[a-zA-Z_:][a-zA-Z0-9:._-]*"#;
@@ -23,24 +23,22 @@ const processing    : &str = r#"<[?][\s\S]*?[?]>"#;
 const declaration   : &str = r#"<![A-Z]+\s+[^>]*>"#;
 const cdata         : &str = r#"<!\[CDATA\[[\s\S]*?\]\]>"#;
 
-lazy_static! {
-    pub static ref HTML_TAG_RE : Regex = {
-        Regex::new(
-            formatcp!("^(?:{open_tag}|{close_tag}|{comment}|{processing}|{declaration}|{cdata})")
-        ).unwrap()
-    };
+pub static HTML_TAG_RE : Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        formatcp!("^(?:{open_tag}|{close_tag}|{comment}|{processing}|{declaration}|{cdata})")
+    ).unwrap()
+});
 
-    pub static ref HTML_OPEN_CLOSE_TAG_RE : Regex = {
-        Regex::new(
-            formatcp!("^(?:{open_tag}|{close_tag})")
-        ).unwrap()
-    };
+pub static HTML_OPEN_CLOSE_TAG_RE : Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        formatcp!("^(?:{open_tag}|{close_tag})")
+    ).unwrap()
+});
 
-    pub static ref HTML_LINK_OPEN : Regex = {
-        Regex::new(r#"^<a[>\s]"#).unwrap()
-    };
+pub static HTML_LINK_OPEN : Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r#"^<a[>\s]"#).unwrap()
+});
 
-    pub static ref HTML_LINK_CLOSE : Regex = {
-        Regex::new(r#"^</a\s*>"#).unwrap()
-    };
-}
+pub static HTML_LINK_CLOSE : Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r#"^</a\s*>"#).unwrap()
+});

@@ -9,7 +9,7 @@ pub mod mdurl;
 
 use derivative::Derivative;
 use std::collections::HashMap;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 mod token;
@@ -43,17 +43,19 @@ pub struct MarkdownIt {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-//
 // This validator can prohibit more than really needed to prevent XSS. It's a
 // tradeoff to keep code simple and to be secure by default.
 //
 // If you need different setup - override validator method as you wish. Or
 // replace it with dummy function and use external sanitizer.
 //
-lazy_static! {
-    pub static ref BAD_PROTO_RE : Regex = Regex::new(r#"(?i)^(vbscript|javascript|file|data):"#).unwrap();
-    pub static ref GOOD_DATA_RE : Regex = Regex::new(r#"(?i)^data:image\/(gif|png|jpeg|webp);"#).unwrap();
-}
+pub static BAD_PROTO_RE : Lazy<Regex> = Lazy::new(||
+    Regex::new(r#"(?i)^(vbscript|javascript|file|data):"#).unwrap()
+);
+
+pub static GOOD_DATA_RE : Lazy<Regex> = Lazy::new(||
+    Regex::new(r#"(?i)^data:image\/(gif|png|jpeg|webp);"#).unwrap()
+);
 
 fn validate_link(str: &str) -> bool {
     if BAD_PROTO_RE.is_match(&str) {
