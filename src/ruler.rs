@@ -38,10 +38,11 @@ pub struct Ruler<Rule> {
     __rules__: Vec<RuleItem<Rule>>,
 
     // Cached rule chains.
-    __cache__: OnceCell<HashMap<&'static str, Vec<usize>>>,
+    #[derivative(Debug="ignore")]
+    __cache__: OnceCell<HashMap<&'static str, Vec<Rule>>>,
 }
 
-impl<Rule> Ruler<Rule> {
+impl<Rule> Ruler<Rule> where Rule: Copy {
     pub fn new() -> Self {
         Self {
             __rules__: Vec::new(),
@@ -62,7 +63,7 @@ impl<Rule> Ruler<Rule> {
 
     // Build rules lookup cache
     //
-    fn compile(&self) -> HashMap<&'static str, Vec<usize>> {
+    fn compile(&self) -> HashMap<&'static str, Vec<Rule>> {
         let mut cache = HashMap::new();
         let mut chains = Vec::new();
         chains.push(&"");
@@ -81,12 +82,12 @@ impl<Rule> Ruler<Rule> {
         for chain in chains {
             let mut vec = Vec::new();
 
-            for (idx, rule) in self.__rules__.iter().enumerate() {
+            for rule in self.__rules__.iter() {
                 if !rule.enabled { continue; }
 
                 if !chain.is_empty() && !rule.alt.contains(chain) { continue; }
 
-                vec.push(idx);
+                vec.push(rule.func);
             }
 
             cache.insert(*chain, vec);
@@ -112,15 +113,12 @@ impl<Rule> Ruler<Rule> {
     // rules configuration, compiles caches if not exists and returns result.
     //
     pub fn get_rules(&self, chain_name: &str) -> impl Iterator<Item = &Rule> + '_ {
-        static NULLVEC : Vec<usize> = Vec::new();
         let cache = self.__cache__.get_or_init(|| self.compile());
 
-        let iter = if let Some(vec) = cache.get(chain_name) {
+        if let Some(vec) = cache.get(chain_name) {
             vec.iter()
         } else {
-            NULLVEC.iter()
-        };
-
-        iter.map(|i| &self.__rules__.get(*i).unwrap().func)
+            [].iter()
+        }
     }
 }
