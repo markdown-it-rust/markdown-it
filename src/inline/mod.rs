@@ -41,7 +41,6 @@ impl Parser {
         result.ruler.push("autolink",        rules::autolink::rule);
         result.ruler.push("html_inline",     rules::html_inline::rule);
         result.ruler.push("entity",          rules::entity::rule);
-        result.ruler.compile();
 
         // `rule2` ruleset was created specifically for emphasis/strikethrough
         // post-processing and may be changed in the future.
@@ -54,7 +53,6 @@ impl Parser {
         // rules for pairs separate '**' into its own text tokens, which may be left unused,
         // rule below merges unused segments back with the rest of the text
         result.ruler2.push("fragments_join", rules::fragments_join::postprocess);
-        result.ruler2.compile();
 
         result
     }

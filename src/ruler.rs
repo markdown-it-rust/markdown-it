@@ -13,6 +13,7 @@
 // [[MarkdownIt.use]].
 //
 use derivative::Derivative;
+use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 
 pub struct RuleItem<Rule> {
@@ -37,14 +38,14 @@ pub struct Ruler<Rule> {
     __rules__: Vec<RuleItem<Rule>>,
 
     // Cached rule chains.
-    __cache__: Option<HashMap<&'static str, Vec<usize>>>,
+    __cache__: OnceCell<HashMap<&'static str, Vec<usize>>>,
 }
 
 impl<Rule> Ruler<Rule> {
     pub fn new() -> Self {
         Self {
             __rules__: Vec::new(),
-            __cache__: None,
+            __cache__: OnceCell::new(),
         }
     }
 
@@ -61,7 +62,7 @@ impl<Rule> Ruler<Rule> {
 
     // Build rules lookup cache
     //
-    pub fn compile(&mut self) {
+    fn compile(&self) -> HashMap<&'static str, Vec<usize>> {
         let mut cache = HashMap::new();
         let mut chains = Vec::new();
         chains.push(&"");
@@ -91,7 +92,7 @@ impl<Rule> Ruler<Rule> {
             cache.insert(*chain, vec);
         }
 
-        self.__cache__ = Some(cache);
+        cache
     }
 
     pub fn push(&mut self, _rule_name: &'static str, func: Rule) -> &mut RuleItem<Rule> {
@@ -102,7 +103,7 @@ impl<Rule> Ruler<Rule> {
             alt: Vec::new(),
         });
 
-        self.__cache__ = None;
+        self.__cache__ = OnceCell::new();
 
         self.__rules__.last_mut().unwrap()
     }
@@ -112,8 +113,9 @@ impl<Rule> Ruler<Rule> {
     //
     pub fn get_rules(&self, chain_name: &str) -> impl Iterator<Item = &Rule> + '_ {
         static NULLVEC : Vec<usize> = Vec::new();
+        let cache = self.__cache__.get_or_init(|| self.compile());
 
-        let iter = if let Some(vec) = self.__cache__.as_ref().unwrap().get(chain_name) {
+        let iter = if let Some(vec) = cache.get(chain_name) {
             vec.iter()
         } else {
             NULLVEC.iter()

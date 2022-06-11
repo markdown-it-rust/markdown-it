@@ -33,7 +33,6 @@ impl Parser {
         result.ruler.push("heading",    rules::heading::rule)    .alt(vec![ "paragraph", "reference", "blockquote" ]);
         result.ruler.push("lheading",   rules::lheading::rule);
         result.ruler.push("paragraph",  rules::paragraph::rule);
-        result.ruler.compile();
         result
     }
 

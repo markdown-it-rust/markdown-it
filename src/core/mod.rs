@@ -27,7 +27,6 @@ impl Parser {
         // `text_join` finds `text_special` tokens (for escape sequences)
         // and joins them with the rest of the text
         result.ruler.push("text_join",    rules::text_join::rule);
-        result.ruler.compile();
         result
     }
 
