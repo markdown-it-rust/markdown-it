@@ -11,7 +11,7 @@ fn run(input: &str, output: &str) {
         max_nesting: None,
         xhtml_out: true,
     }));
-    markdown_it::syntax::CommonMark::add(md);
+    markdown_it::syntax::cmark::add(md);
     let result = md.render(&(input.to_owned() + "\n"));
     assert_eq!(result, output);
 }

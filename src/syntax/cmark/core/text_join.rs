@@ -1,5 +1,10 @@
+use crate::MarkdownIt;
 use crate::core::State;
 use std::mem;
+
+pub fn add(md: &mut MarkdownIt) {
+    md.core.ruler.push("text_join", rule);
+}
 
 // Join raw text tokens with the rest of the text
 //
@@ -9,7 +14,7 @@ use std::mem;
 // For example, `\:)` shouldn't be replaced with an emoji.
 //
 
-pub fn rule(state: &mut State) {
+fn rule(state: &mut State) {
     for block_token in &mut state.tokens {
         if block_token.name != "inline" { continue; }
 

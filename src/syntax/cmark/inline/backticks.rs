@@ -1,8 +1,13 @@
 // Parse backticks
 //
+use crate::MarkdownIt;
 use crate::inline::State;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("backticks", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '`' { return false; }
 

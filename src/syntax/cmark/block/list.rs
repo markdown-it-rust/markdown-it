@@ -1,6 +1,11 @@
 // Lists
 //
+use crate::MarkdownIt;
 use crate::block::State;
+
+pub fn add(md: &mut MarkdownIt) {
+    md.block.ruler.push("list", rule);
+}
 
 // Search `[-+*][\n ]`, returns next pos after marker on success
 // or -1 on fail.
@@ -61,7 +66,7 @@ fn mark_tight_paragraphs(state: &mut State, idx: usize) {
     }
 }
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut State, silent: bool) -> bool {
     if silent && state.parent_is_list { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block

@@ -1,8 +1,13 @@
 // For each opening emphasis-like marker find a matching closing one
 //
+use crate::MarkdownIt;
 use crate::inline::State;
 use crate::inline::state::Delimiter;
 use std::collections::HashMap;
+
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler2.push("balance_pairs", postprocess);
+}
 
 fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
     let max = delimiters.len();
@@ -107,6 +112,6 @@ fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
     }
 }
 
-pub fn postprocess(state: &mut State) {
+fn postprocess(state: &mut State) {
     process_delimiters(&mut state.delimiters);
 }

@@ -1,8 +1,13 @@
 // Horizontal rule
 //
+use crate::MarkdownIt;
 use crate::block::State;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.block.ruler.push("hr", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
 

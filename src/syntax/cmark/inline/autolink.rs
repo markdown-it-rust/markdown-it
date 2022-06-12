@@ -1,8 +1,13 @@
 // Process autolinks '<protocol:...>'
-
+//
+use crate::MarkdownIt;
 use crate::inline::State;
 use once_cell::sync::Lazy;
 use regex::Regex;
+
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("autolink", rule);
+}
 
 static AUTOLINK_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^([a-zA-Z][a-zA-Z0-9+.\-]{1,31}):([^<>\x00-\x20]*)$").unwrap()
@@ -12,7 +17,7 @@ static EMAIL_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$").unwrap()
 });
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '<' { return false; }
 

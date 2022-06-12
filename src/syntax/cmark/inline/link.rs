@@ -1,9 +1,14 @@
 // Process [link](<to> "stuff")
 //
+use crate::MarkdownIt;
 use crate::inline::State;
 use crate::helpers;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("link", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     if state.src[state.pos..state.pos_max].chars().next().unwrap() != '[' { return false; }
 
     if let Some(result) = helpers::parse_link(state, state.pos, false) {

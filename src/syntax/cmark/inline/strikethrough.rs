@@ -1,12 +1,18 @@
 // ~~strike through~~
 //
+use crate::MarkdownIt;
 use crate::inline::State;
 use crate::inline::state::Delimiter;
 use std::mem;
 
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("strikethrough", rule);
+    md.inline.ruler2.push("strikethrough", postprocess);
+}
+
 // Insert each marker as a separate text token, and add it to delimiter list
 //
-pub fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
 
     if state.src[state.pos..state.pos_max].chars().next().unwrap() != '~' { return false; }
@@ -101,7 +107,7 @@ fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
 
 // Walk through delimiter list and replace text tokens with tags
 //
-pub fn postprocess(state: &mut State) {
+fn postprocess(state: &mut State) {
     let delimiters = mem::replace(&mut state.delimiters, Vec::new());
     process_delimiters(state, &delimiters);
     state.delimiters = delimiters;

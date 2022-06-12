@@ -1,8 +1,13 @@
 // Paragraph
 //
+use crate::MarkdownIt;
 use crate::block::State;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.block.ruler.push("paragraph", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
 
     let start_line = state.line;

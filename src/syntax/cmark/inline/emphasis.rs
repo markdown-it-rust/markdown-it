@@ -1,12 +1,18 @@
 // Process *this* and _that_
 //
+use crate::MarkdownIt;
 use crate::inline::State;
 use crate::inline::state::Delimiter;
 use std::mem;
 
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("emphasis", rule);
+    md.inline.ruler2.push("emphasis", postprocess);
+}
+
 // Insert each marker as a separate text token, and add it to delimiter list
 //
-pub fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
 
     let mut chars = state.src[state.pos..state.pos_max].chars();
@@ -97,7 +103,7 @@ fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
 
 // Walk through delimiter list and replace text tokens with tags
 //
-pub fn postprocess(state: &mut State) {
+fn postprocess(state: &mut State) {
     let delimiters = mem::replace(&mut state.delimiters, Vec::new());
     process_delimiters(state, &delimiters);
     state.delimiters = delimiters;

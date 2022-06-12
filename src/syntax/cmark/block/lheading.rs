@@ -1,8 +1,13 @@
 // lheading (---, ===)
 //
+use crate::MarkdownIt;
 use crate::block::State;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.block.ruler.push("lheading", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block

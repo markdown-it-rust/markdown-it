@@ -10,7 +10,7 @@ pub fn benchmark(c: &mut Criterion) {
         max_nesting: None,
         xhtml_out: true,
     }));
-    markdown_it::syntax::CommonMark::add(md);
+    markdown_it::syntax::cmark::add(md);
 
     c.bench_function("markdown-it", |b| b.iter(|| {
         let result = md.render(&source);

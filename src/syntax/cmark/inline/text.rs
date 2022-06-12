@@ -1,7 +1,12 @@
 // Skip text characters for text token, place those to pending buffer
 // and increment current pos
 //
+use crate::MarkdownIt;
 use crate::inline::State;
+
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("text", rule);
+}
 
 // Rule to skip pure text
 // '{}$%@~+=:' reserved for extentions
@@ -11,7 +16,7 @@ use crate::inline::State;
 // !!!! Don't confuse with "Markdown ASCII Punctuation" chars
 // http://spec.commonmark.org/0.15/#ascii-punctuation-character
 //
-pub fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut State, silent: bool) -> bool {
     let mut pos = state.pos;
     let mut chars = state.src[pos..state.pos_max].chars();
 

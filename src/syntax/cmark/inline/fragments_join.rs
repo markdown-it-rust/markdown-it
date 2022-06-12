@@ -1,3 +1,4 @@
+use crate::MarkdownIt;
 use crate::inline::State;
 use std::mem;
 
@@ -10,7 +11,11 @@ use std::mem;
 // into opening/closing tags (which messes up levels inside).
 //
 
-pub fn postprocess(state: &mut State) {
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler2.push("fragments_join", postprocess);
+}
+
+fn postprocess(state: &mut State) {
     let tokens = &mut state.tokens;
     let mut curr = 0;
     let mut last = 0;

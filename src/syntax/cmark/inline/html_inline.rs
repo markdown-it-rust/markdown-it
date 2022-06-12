@@ -1,9 +1,14 @@
 // Process escaped chars and hardbreaks
 //
+use crate::MarkdownIt;
 use crate::common::html_re::*;
 use crate::inline::State;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("html_inline", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     if !state.md.options.html { return false; }
 
     // Check start

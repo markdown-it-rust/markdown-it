@@ -1,9 +1,14 @@
 // Process ![image](<src> "title")
 //
+use crate::MarkdownIt;
 use crate::inline::State;
 use crate::helpers;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("image", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '!' { return false; }
     if let Some('[') = chars.next() {} else { return false; }

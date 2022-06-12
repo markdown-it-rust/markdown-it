@@ -1,10 +1,15 @@
 // HTML block
 //
+use crate::MarkdownIt;
 use crate::block::State;
 use crate::common::html_re::HTML_OPEN_CLOSE_TAG_RE;
 use crate::common::html_blocks::HTML_BLOCKS;
 use once_cell::sync::Lazy;
 use regex::Regex;
+
+pub fn add(md: &mut MarkdownIt) {
+    md.block.ruler.push("html_block", rule);
+}
 
 struct HTMLSequence {
     open: Regex,
@@ -71,7 +76,7 @@ static HTML_SEQUENCES : Lazy<Vec<HTMLSequence>> = Lazy::new(|| {
     result
 });
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
 

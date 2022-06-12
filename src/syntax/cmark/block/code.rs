@@ -1,8 +1,13 @@
 // Code block (4 spaces padded)
 //
+use crate::MarkdownIt;
 use crate::block::State;
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+pub fn add(md: &mut MarkdownIt) {
+    md.block.ruler.push("code", rule);
+}
+
+fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
     if (state.s_count[state.line] - state.blk_indent as i32) < 4 { return false; }
 

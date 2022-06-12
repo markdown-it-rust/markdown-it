@@ -39,7 +39,7 @@ fn main() {
         max_nesting: None,
         xhtml_out: true,
     }));
-    markdown_it::syntax::CommonMark::add(md);
+    markdown_it::syntax::cmark::add(md);
     let result = md.render(&source);
 
     if output == "-" {

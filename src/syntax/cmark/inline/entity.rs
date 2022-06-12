@@ -1,10 +1,15 @@
 // Process html entity - &#123;, &#xAF;, &quot;, ...
 //
+use crate::MarkdownIt;
 use crate::common::entities;
 use crate::common::is_valid_entity_code;
 use crate::inline::State;
 use once_cell::sync::Lazy;
 use regex::Regex;
+
+pub fn add(md: &mut MarkdownIt) {
+    md.inline.ruler.push("entity", rule);
+}
 
 static DIGITAL_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new("(?i)^&#((?:x[a-f0-9]{1,6}|[0-9]{1,7}));").unwrap()
@@ -14,7 +19,7 @@ static NAMED_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new("(?i)^&([a-z][a-z0-9]{1,31});").unwrap()
 });
 
-pub fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '&' { return false; }
 

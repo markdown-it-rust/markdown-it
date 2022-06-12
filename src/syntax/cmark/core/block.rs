@@ -1,7 +1,12 @@
+use crate::MarkdownIt;
 use crate::core::State;
 use crate::token::Token;
 
-pub fn rule(state: &mut State) {
+pub fn add(md: &mut MarkdownIt) {
+    md.core.ruler.push("block", rule);
+}
+
+fn rule(state: &mut State) {
     if state.inline_mode {
         let mut token = Token::new("inline", "", 0);
         token.content = state.src.clone();
