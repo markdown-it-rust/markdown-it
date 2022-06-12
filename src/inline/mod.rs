@@ -1,13 +1,12 @@
 // Tokenizes paragraph content.
 //
-mod state;
+pub mod state;
 pub use state::State;
 
 use crate::Env;
 use crate::MarkdownIt;
 use crate::ruler::Ruler;
 use crate::token::Token;
-pub mod rules;
 
 pub type Rule = fn (&mut State, silent: bool) -> bool;
 pub type Rule2 = fn (&mut State);
@@ -15,46 +14,19 @@ pub type Rule2 = fn (&mut State);
 #[derive(Debug)]
 pub struct Parser {
     // [[Ruler]] instance. Keep configuration of inline rules.
-    ruler: Ruler<Rule>,
+    pub ruler: Ruler<Rule>,
 
     // [[Ruler]] instance. Second ruler used for post-processing
     // (e.g. in emphasis-like rules).
-    ruler2: Ruler<Rule2>,
+    pub ruler2: Ruler<Rule2>,
 }
 
 impl Parser {
     pub fn new() -> Self {
-        let mut result = Self {
+        Self {
             ruler: Ruler::new(),
             ruler2: Ruler::new(),
-        };
-
-        result.ruler.push("text",            rules::text::rule);
-        //result.ruler.push("linkify",         rules::linkify::rule);
-        result.ruler.push("newline",         rules::newline::rule);
-        result.ruler.push("escape",          rules::escape::rule);
-        result.ruler.push("backticks",       rules::backticks::rule);
-        result.ruler.push("strikethrough",   rules::strikethrough::rule);
-        result.ruler.push("emphasis",        rules::emphasis::rule);
-        result.ruler.push("link",            rules::link::rule);
-        result.ruler.push("image",           rules::image::rule);
-        result.ruler.push("autolink",        rules::autolink::rule);
-        result.ruler.push("html_inline",     rules::html_inline::rule);
-        result.ruler.push("entity",          rules::entity::rule);
-
-        // `rule2` ruleset was created specifically for emphasis/strikethrough
-        // post-processing and may be changed in the future.
-        //
-        // Don't use this for anything except pairs (plugins working with `balance_pairs`).
-        //
-        result.ruler2.push("balance_pairs",  rules::balance_pairs::postprocess);
-        result.ruler2.push("strikethrough",  rules::strikethrough::postprocess);
-        result.ruler2.push("emphasis",       rules::emphasis::postprocess);
-        // rules for pairs separate '**' into its own text tokens, which may be left unused,
-        // rule below merges unused segments back with the rest of the text
-        result.ruler2.push("fragments_join", rules::fragments_join::postprocess);
-
-        result
+        }
     }
 
     // Skip single token by running all rules in validation mode;
@@ -71,7 +43,7 @@ impl Parser {
         }
 
         if state.state_level < max_nesting {
-            for rule in self.ruler.get_rules("") {
+            for rule in self.ruler.get_rules() {
                 ok = rule(state, true);
                 if ok {
                     if pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
@@ -117,7 +89,7 @@ impl Parser {
             let prev_pos = state.pos;
 
             if state.state_level < max_nesting {
-                for rule in self.ruler.get_rules("") {
+                for rule in self.ruler.get_rules() {
                     ok = rule(state, false);
                     if ok {
                         if prev_pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
@@ -145,7 +117,7 @@ impl Parser {
         let mut state = State::new(src, md, env, out_tokens, level);
         self.tokenize(&mut state);
 
-        for rule in self.ruler2.get_rules("") {
+        for rule in self.ruler2.get_rules() {
             rule(&mut state);
         }
     }

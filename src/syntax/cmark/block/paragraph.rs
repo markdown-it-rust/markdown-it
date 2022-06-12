@@ -1,10 +1,10 @@
 // Paragraph
 //
 use crate::block::State;
-use std::mem;
 
-pub fn rule(state: &mut State, _silent: bool) -> bool {
-    let old_parent_type = mem::replace(&mut state.parent_type, "paragraph");
+pub fn rule(state: &mut State, silent: bool) -> bool {
+    if silent { return false; }
+
     let start_line = state.line;
     let mut next_line = start_line;
 
@@ -24,7 +24,7 @@ pub fn rule(state: &mut State, _silent: bool) -> bool {
         // Some tags can terminate paragraph without empty line.
         let old_state_line = state.line;
         state.line = next_line;
-        for rule in state.md.block.ruler.get_rules("paragraph") {
+        for rule in state.md.block.ruler.get_rules() {
             if rule(state, true) {
                 state.line = old_state_line;
                 break 'outer;
@@ -47,8 +47,6 @@ pub fn rule(state: &mut State, _silent: bool) -> bool {
     token.map = Some([ start_line, next_line ]);
 
     state.push("paragraph_close", "p", -1);
-
-    state.parent_type = old_parent_type;
 
     true
 }

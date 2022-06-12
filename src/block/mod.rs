@@ -1,44 +1,29 @@
 // Block-level tokenizer
 //
-mod state;
+pub mod state;
 pub use state::State;
 
 use crate::Env;
 use crate::MarkdownIt;
 use crate::ruler::Ruler;
 use crate::token::Token;
-pub mod rules;
 
 pub type Rule = fn (&mut State, bool) -> bool;
 
 #[derive(Debug)]
 pub struct Parser {
     // [[Ruler]] instance. Keep configuration of block rules.
-    ruler: Ruler<Rule>,
+    pub ruler: Ruler<Rule>,
 }
 
 impl Parser {
     pub fn new() -> Self {
-        // First 2 params - rule name & source. Secondary array - list of rules,
-        // which can be terminated by this one.
-        let mut result = Self { ruler: Ruler::new() };
-        //result.ruler.push("table",      rules::table::rule)      .alt(vec![ "paragraph", "reference" ]);
-        result.ruler.push("code",       rules::code::rule);
-        result.ruler.push("fence",      rules::fence::rule)      .alt(vec![ "paragraph", "reference", "blockquote", "list" ]);
-        result.ruler.push("blockquote", rules::blockquote::rule) .alt(vec![ "paragraph", "reference", "blockquote", "list" ]);
-        result.ruler.push("hr",         rules::hr::rule)         .alt(vec![ "paragraph", "reference", "blockquote", "list" ]);
-        result.ruler.push("list",       rules::list::rule)       .alt(vec![ "paragraph", "reference", "blockquote" ]);
-        result.ruler.push("reference",  rules::reference::rule);
-        result.ruler.push("html_block", rules::html_block::rule) .alt(vec![ "paragraph", "reference", "blockquote" ]);
-        result.ruler.push("heading",    rules::heading::rule)    .alt(vec![ "paragraph", "reference", "blockquote" ]);
-        result.ruler.push("lheading",   rules::lheading::rule);
-        result.ruler.push("paragraph",  rules::paragraph::rule);
-        result
+        Self { ruler: Ruler::new() }
     }
 
     // Generate tokens for input range
     //
-    fn tokenize(&self, state: &mut State) {
+    pub fn tokenize(&self, state: &mut State) {
         let max_nesting = state.md.options.max_nesting.unwrap_or(100);
         let mut has_empty_lines = false;
 
@@ -66,7 +51,7 @@ impl Parser {
             let mut ok = false;
             let prev_line = state.line;
 
-            for rule in self.ruler.get_rules("") {
+            for rule in self.ruler.get_rules() {
                 ok = rule(state, false);
                 if ok {
                     if prev_line >= state.line { panic!("block rule didn't increment state.line"); }

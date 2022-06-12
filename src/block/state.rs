@@ -43,9 +43,7 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     pub tight: bool,              // loose/tight mode for lists
     pub list_indent: Option<u32>, // indent of the current list block
 
-    // can be 'blockquote', 'list', 'root', 'paragraph' or 'reference'
-    // used in lists to determine if they interrupt a paragraph
-    pub parent_type: &'static str,
+    pub parent_is_list: bool,
 
     pub level: u32,
 }
@@ -67,7 +65,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             line_max: 0,
             tight: false,
             list_indent: None,
-            parent_type: "root",
+            parent_is_list: false,
             level: 0,
         };
 

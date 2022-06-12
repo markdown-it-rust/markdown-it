@@ -1,7 +1,6 @@
 // Lists
 //
 use crate::block::State;
-use std::mem;
 
 // Search `[-+*][\n ]`, returns next pos after marker on success
 // or -1 on fail.
@@ -63,6 +62,8 @@ fn mark_tight_paragraphs(state: &mut State, idx: usize) {
 }
 
 pub fn rule(state: &mut State, silent: bool) -> bool {
+    if silent && state.parent_is_list { return false; }
+
     // if it's indented more than 3 spaces, it should be a code block
     if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
 
@@ -83,7 +84,7 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
 
     // limit conditions when list can interrupt
     // a paragraph (validation mode only)
-    if silent && state.parent_type == "paragraph" {
+    if silent {
         // Next list item should still terminate previous list item;
         //
         // This code can fail if plugins use blkIndent as well as lists,
@@ -159,7 +160,6 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
     let mut next_line = state.line;
     let mut prev_empty_end = false;
     let mut tight = true;
-    let old_parent_type = mem::replace(&mut state.parent_type, "list");
 
     'outer: while next_line < state.line_max {
         let mut pos = pos_after_marker;
@@ -277,11 +277,15 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
         if (state.s_count[next_line] - state.blk_indent as i32) >= 4 { break; }
 
         // fail if terminating block found
-        for rule in state.md.block.ruler.get_rules("list") {
+        let old_parent_is_list = state.parent_is_list;
+        state.parent_is_list = true;
+        for rule in state.md.block.ruler.get_rules() {
             if rule(state, true) {
+                state.parent_is_list = old_parent_is_list;
                 break 'outer;
             }
         }
+        state.parent_is_list = old_parent_is_list;
 
         let pos = state.b_marks[state.line] + state.t_shift[state.line];
         let max = state.e_marks[state.line];
@@ -316,8 +320,6 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
 
     token.markup = marker_char.into();
     state.tokens[list_tok_idx].map = Some([ next_line, next_line ]);
-
-    state.parent_type = old_parent_type;
 
     // mark paragraphs tight if needed
     if tight {

@@ -1,14 +1,12 @@
 // lheading (---, ===)
 //
 use crate::block::State;
-use std::mem;
 
-pub fn rule(state: &mut State, _silent: bool) -> bool {
+pub fn rule(state: &mut State, silent: bool) -> bool {
+    if silent { return false; }
+
     // if it's indented more than 3 spaces, it should be a code block
     if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
-
-    // use paragraph to match terminator_rules
-    let old_parent_type = mem::replace(&mut state.parent_type, "paragraph");
 
     let start_line = state.line;
     let mut next_line = start_line;
@@ -47,7 +45,7 @@ pub fn rule(state: &mut State, _silent: bool) -> bool {
         // Some tags can terminate paragraph without empty line.
         let old_state_line = state.line;
         state.line = next_line;
-        for rule in state.md.block.ruler.get_rules("paragraph") {
+        for rule in state.md.block.ruler.get_rules() {
             if rule(state, true) {
                 state.line = old_state_line;
                 break 'outer;
@@ -55,6 +53,7 @@ pub fn rule(state: &mut State, _silent: bool) -> bool {
         }
         state.line = old_state_line;
     }
+
 
     if level == 0 {
         // Didn't find valid underline
@@ -79,8 +78,6 @@ pub fn rule(state: &mut State, _silent: bool) -> bool {
 
     token = state.push("heading_close", TAG[level - 1], -1);
     token.markup = if level == 2 { "-" } else { "=" }.to_owned();
-
-    state.parent_type = old_parent_type;
 
     true
 }

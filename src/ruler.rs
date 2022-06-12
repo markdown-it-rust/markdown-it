@@ -112,10 +112,10 @@ impl<Rule> Ruler<Rule> where Rule: Copy {
     // Return array of active functions (rules) for given chain name. It analyzes
     // rules configuration, compiles caches if not exists and returns result.
     //
-    pub fn get_rules(&self, chain_name: &str) -> impl Iterator<Item = &Rule> + '_ {
+    pub fn get_rules(&self) -> impl Iterator<Item = &Rule> + '_ {
         let cache = self.__cache__.get_or_init(|| self.compile());
 
-        if let Some(vec) = cache.get(chain_name) {
+        if let Some(vec) = cache.get("") {
             vec.iter()
         } else {
             [].iter()

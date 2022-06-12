@@ -2,7 +2,8 @@
 //
 use crate::block::State;
 
-pub fn rule(state: &mut State, _silent: bool) -> bool {
+pub fn rule(state: &mut State, silent: bool) -> bool {
+    if silent { return false; }
     if (state.s_count[state.line] - state.blk_indent as i32) < 4 { return false; }
 
     let mut next_line = state.line + 1;

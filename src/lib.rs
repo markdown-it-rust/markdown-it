@@ -6,6 +6,7 @@ pub mod ruler;
 pub mod helpers;
 pub mod common;
 pub mod mdurl;
+pub mod syntax;
 
 use derivative::Derivative;
 use std::collections::HashMap;

@@ -4,9 +4,10 @@ use crate::block::State;
 use crate::common::normalize_reference;
 use crate::helpers;
 use std::collections::HashMap;
-use std::mem;
 
 pub fn rule(state: &mut State, silent: bool) -> bool {
+    if silent { return false; }
+
     // if it's indented more than 3 spaces, it should be a code block
     if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
 
@@ -33,7 +34,6 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
         }
     }
 
-    let old_parent_type = mem::replace(&mut state.parent_type, "reference");
     let start_line = state.line;
     let mut next_line = start_line;
 
@@ -53,7 +53,7 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
         // Some tags can terminate paragraph without empty line.
         let old_state_line = state.line;
         state.line = next_line;
-        for rule in state.md.block.ruler.get_rules("paragraph") {
+        for rule in state.md.block.ruler.get_rules() {
             if rule(state, true) {
                 state.line = old_state_line;
                 break 'outer;
@@ -164,9 +164,6 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
         return false;
     }
 
-    // Reference can not terminate anything. This check is for safety only.
-    if silent { return true; }
-
     type ReferenceEnv = HashMap<String, (String, Option<String>)>;
     let references = state.env.entry("references").or_insert_with(|| {
         let x : ReferenceEnv = HashMap::new();
@@ -175,7 +172,6 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
 
     references.entry(label).or_insert_with(|| (href, title));
 
-    state.parent_type = old_parent_type;
     state.line = start_line + lines + 1;
     true
 }

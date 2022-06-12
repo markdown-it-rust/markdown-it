@@ -1,7 +1,6 @@
 // Block quotes
 //
 use crate::block::State;
-use std::mem;
 
 pub fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
@@ -25,7 +24,6 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
     let start_line = state.line;
     let mut next_line = state.line;
     let mut last_line_empty = false;
-    let old_parent_type = mem::replace(&mut state.parent_type, "blockquote");
 
     // Search the end of the block
     //
@@ -149,7 +147,7 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
         // Case 3: another tag found.
         let mut terminate = false;
         state.line = next_line;
-        for rule in state.md.block.ruler.get_rules("blockquote") {
+        for rule in state.md.block.ruler.get_rules() {
             if rule(state, true) {
                 terminate = true;
                 break;
@@ -202,7 +200,6 @@ pub fn rule(state: &mut State, silent: bool) -> bool {
     state.line_max = next_line;
     state.md.block.tokenize(state);
     state.line_max = old_line_max;
-    state.parent_type = old_parent_type;
 
     state.tokens[token_idx].map = Some([ start_line, state.line ]);
 
