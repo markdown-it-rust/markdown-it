@@ -24,7 +24,7 @@ fn postprocess(state: &mut State) {
     while curr < max {
         if tokens[curr].name == "text" && curr + 1 < max && tokens[curr + 1].name == "text" {
             // collapse two adjacent text nodes
-            let second_token_content = mem::replace(&mut tokens[curr + 1].content, String::new());
+            let second_token_content = mem::take(&mut tokens[curr + 1].content);
             tokens[curr].content += &second_token_content;
             tokens.swap(curr, curr + 1);
         } else {

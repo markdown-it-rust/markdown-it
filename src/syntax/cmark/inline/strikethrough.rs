@@ -3,7 +3,6 @@
 use crate::MarkdownIt;
 use crate::inline::State;
 use crate::inline::state::Delimiter;
-use std::mem;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.push("strikethrough", rule);
@@ -47,11 +46,13 @@ fn rule(state: &mut State, silent: bool) -> bool {
     true
 }
 
-fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
+// Walk through delimiter list and replace text tokens with tags
+//
+fn postprocess(state: &mut State) {
     let mut lone_markers = Vec::new();
 
-    for i in 0..delimiters.len() {
-        let start_delim = &delimiters[i];
+    for i in 0..state.delimiters.len() {
+        let start_delim = &state.delimiters[i];
 
         if start_delim.marker != '~' { continue; }
 
@@ -59,7 +60,7 @@ fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
         if start_delim.end.is_none() { continue; }
 
         let start_delim_end = start_delim.end.unwrap();
-        let end_delim = &delimiters[start_delim_end];
+        let end_delim = &state.delimiters[start_delim_end];
 
         let mut token;
 
@@ -103,12 +104,4 @@ fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
             state.tokens.swap(*i, j);
         }
     }
-}
-
-// Walk through delimiter list and replace text tokens with tags
-//
-fn postprocess(state: &mut State) {
-    let delimiters = mem::replace(&mut state.delimiters, Vec::new());
-    process_delimiters(state, &delimiters);
-    state.delimiters = delimiters;
 }

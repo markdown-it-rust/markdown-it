@@ -58,19 +58,11 @@ pub static BAD_PROTO_RE : Lazy<Regex> = Lazy::new(||
 );
 
 pub static GOOD_DATA_RE : Lazy<Regex> = Lazy::new(||
-    Regex::new(r#"(?i)^data:image\/(gif|png|jpeg|webp);"#).unwrap()
+    Regex::new(r#"(?i)^data:image/(gif|png|jpeg|webp);"#).unwrap()
 );
 
 fn validate_link(str: &str) -> bool {
-    if BAD_PROTO_RE.is_match(&str) {
-        if GOOD_DATA_RE.is_match(&str) {
-            true
-        } else {
-            false
-        }
-    } else {
-        true
-    }
+    !BAD_PROTO_RE.is_match(str) || GOOD_DATA_RE.is_match(str)
 }
 
 fn normalize_link(str: &str) -> String {

@@ -31,7 +31,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
                 let code = if entity.starts_with('x') || entity.starts_with('X') {
                     u32::from_str_radix(&entity[1..], 16).unwrap()
                 } else {
-                    u32::from_str_radix(&entity, 10).unwrap()
+                    u32::from_str_radix(entity, 10).unwrap()
                 };
 
                 let content_str = if is_valid_entity_code(code) {

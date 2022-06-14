@@ -77,7 +77,7 @@ impl Renderer {
 
         for (name, value) in attrs {
             let escaped_name = escape_html(name);
-            let escaped_value = escape_html(&value);
+            let escaped_value = escape_html(value);
             result += &format!(" {escaped_name}=\"{escaped_value}\"");
         }
 
@@ -160,9 +160,9 @@ impl Renderer {
 
         for (idx, token) in tokens.iter().enumerate() {
             if let Some(rule) = self.rules.get(token.name) {
-                result += &rule(&tokens, idx, md);
+                result += &rule(tokens, idx, md);
             } else {
-                result += &self.render_token(&tokens, idx, md);
+                result += &self.render_token(tokens, idx, md);
             }
         }
 
@@ -210,9 +210,9 @@ impl Renderer {
                 result += &self.render_inline(&token.children, md);
             } else {
                 if let Some(rule) = self.rules.get(token.name) {
-                    result += &rule(&tokens, idx, md);
+                    result += &rule(tokens, idx, md);
                 } else {
-                    result += &self.render_token(&tokens, idx, md);
+                    result += &self.render_token(tokens, idx, md);
                 }
             }
         }

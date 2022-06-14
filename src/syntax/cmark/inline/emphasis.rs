@@ -3,7 +3,6 @@
 use crate::MarkdownIt;
 use crate::inline::State;
 use crate::inline::state::Delimiter;
-use std::mem;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.push("emphasis", rule);
@@ -27,7 +26,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         token.content = marker.into();
 
         state.delimiters.push(Delimiter {
-            marker: marker,
+            marker,
             length: scanned.length,
             token:  state.tokens.len() - 1,
             end:    None,
@@ -41,16 +40,18 @@ fn rule(state: &mut State, silent: bool) -> bool {
     true
 }
 
-fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
+// Walk through delimiter list and replace text tokens with tags
+//
+fn postprocess(state: &mut State) {
     let mut skip_next = false;
 
-    for i in (0..delimiters.len()).rev() {
+    for i in (0..state.delimiters.len()).rev() {
         if skip_next {
             skip_next = false;
             continue;
         }
 
-        let start_delim = &delimiters[i];
+        let start_delim = &state.delimiters[i];
 
         if start_delim.marker != '_' && start_delim.marker != '*' { continue; }
 
@@ -58,7 +59,7 @@ fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
         if start_delim.end.is_none() { continue; }
 
         let start_delim_end = start_delim.end.unwrap();
-        let end_delim = &delimiters[start_delim_end];
+        let end_delim = &state.delimiters[start_delim_end];
 
         // If the previous delimiter has the same marker and is adjacent to this one,
         // merge those into one strong delimiter.
@@ -66,12 +67,12 @@ fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
         // `<em><em>whatever</em></em>` -> `<strong>whatever</strong>`
         //
         let is_strong = i > 0 &&
-                        delimiters[i - 1].end.unwrap_or_default() == start_delim_end + 1 &&
+                        state.delimiters[i - 1].end.unwrap_or_default() == start_delim_end + 1 &&
                         // check that first two markers match and adjacent
-                        delimiters[i - 1].marker == start_delim.marker &&
-                        delimiters[i - 1].token == start_delim.token - 1 &&
+                        state.delimiters[i - 1].marker == start_delim.marker &&
+                        state.delimiters[i - 1].token == start_delim.token - 1 &&
                         // check that last two markers are adjacent (we can safely assume they match)
-                        delimiters[start_delim_end + 1].token == end_delim.token + 1;
+                        state.delimiters[start_delim_end + 1].token == end_delim.token + 1;
 
         let mut token;
 
@@ -94,17 +95,9 @@ fn process_delimiters(state: &mut State, delimiters: &Vec<Delimiter>) {
         if is_strong { token.markup.push(start_delim.marker); }
 
         if is_strong {
-            state.tokens[delimiters[i - 1].token].content = String::new();
-            state.tokens[delimiters[start_delim_end + 1].token].content = String::new();
+            state.tokens[state.delimiters[i - 1].token].content = String::new();
+            state.tokens[state.delimiters[start_delim_end + 1].token].content = String::new();
             skip_next = true;
         }
     }
-}
-
-// Walk through delimiter list and replace text tokens with tags
-//
-fn postprocess(state: &mut State) {
-    let delimiters = mem::replace(&mut state.delimiters, Vec::new());
-    process_delimiters(state, &delimiters);
-    state.delimiters = delimiters;
 }

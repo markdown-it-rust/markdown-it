@@ -10,6 +10,6 @@ pub fn add(md: &mut MarkdownIt) {
 
 fn rule(state: &mut State) {
     state.src = state.src.replace("\r\n", "\n")
-                         .replace("\r", "\n")
-                         .replace("\0", "\u{FFFD}");
+                         .replace('\r', "\n")
+                         .replace('\0', "\u{FFFD}");
 }

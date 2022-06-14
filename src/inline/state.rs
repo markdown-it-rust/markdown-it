@@ -113,7 +113,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     //
     pub fn push_pending(&mut self) {
         let mut token = Token::new("text", "", 0);
-        token.content = mem::replace(&mut self.pending, String::new());
+        token.content = mem::take(&mut self.pending);
         self.tokens.push(token);
     }
 

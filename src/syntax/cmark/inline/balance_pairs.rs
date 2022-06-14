@@ -2,15 +2,14 @@
 //
 use crate::MarkdownIt;
 use crate::inline::State;
-use crate::inline::state::Delimiter;
 use std::collections::HashMap;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler2.push("balance_pairs", postprocess);
 }
 
-fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
-    let max = delimiters.len();
+fn postprocess(state: &mut State) {
+    let max = state.delimiters.len();
     if max == 0 { return; }
 
     // header_idx is the first delimiter of the current (where closer is) delimiter ru
@@ -20,7 +19,7 @@ fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
     let mut openers_bottom = HashMap::new();
 
     for closer_idx in 0..max {
-        let closer = &delimiters[closer_idx];
+        let closer = &state.delimiters[closer_idx];
 
         jumps.push(0);
 
@@ -28,7 +27,7 @@ fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
         //  - they have adjacent tokens
         //  - AND markers are the same
         //
-        if delimiters[header_idx].marker != closer.marker || last_token_idx != closer.token as i32 - 1 {
+        if state.delimiters[header_idx].marker != closer.marker || last_token_idx != closer.token as i32 - 1 {
             header_idx = closer_idx;
         }
 
@@ -48,7 +47,7 @@ fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
         let mut new_min_opener_idx = opener_idx;
 
         while opener_idx > min_opener_idx {
-            let opener = &delimiters[opener_idx as usize];
+            let opener = &state.delimiters[opener_idx as usize];
 
             if opener.marker != closer.marker {
                 opener_idx -= jumps[opener_idx as usize] as i32 + 1;
@@ -78,16 +77,16 @@ fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
                     // the entire sequence in future checks. This is required to make
                     // sure algorithm has linear complexity (see *_*_*_*_*_... case).
                     //
-                    let last_jump : usize = if opener_idx > 0 && !delimiters[opener_idx as usize - 1].open {
+                    let last_jump : usize = if opener_idx > 0 && !state.delimiters[opener_idx as usize - 1].open {
                         jumps[opener_idx as usize - 1] + 1
                     } else { 0 };
 
                     jumps[closer_idx] = closer_idx as usize - opener_idx as usize + last_jump;
                     jumps[opener_idx as usize] = last_jump;
 
-                    delimiters[closer_idx].open  = false;
-                    delimiters[opener_idx as usize].end   = Some(closer_idx);
-                    delimiters[opener_idx as usize].close = false;
+                    state.delimiters[closer_idx].open  = false;
+                    state.delimiters[opener_idx as usize].end   = Some(closer_idx);
+                    state.delimiters[opener_idx as usize].close = false;
                     new_min_opener_idx = -1;
                     // treat next token as start of run,
                     // it optimizes skips in **<...>**a**<...>** pathological case
@@ -110,8 +109,4 @@ fn process_delimiters(delimiters: &mut Vec<Delimiter>) {
             openers_for_marker[openers_parameter] = new_min_opener_idx;
         }
     }
-}
-
-fn postprocess(state: &mut State) {
-    process_delimiters(&mut state.delimiters);
 }

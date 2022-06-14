@@ -105,7 +105,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     // [label]:   destination   'title'
     //            ^^^^^^^^^^^ parse this
     let href;
-    if let Some(res) = helpers::parse_link_destination(&str, pos, str.len()) {
+    if let Some(res) = helpers::parse_link_destination(str, pos, str.len()) {
         if pos == res.pos { return false; }
         href = (state.md.normalize_link)(&res.str);
         if !(state.md.validate_link)(&href) { return false; }
@@ -132,7 +132,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     //                          ^^^^^^^ parse this
     let mut title = None;
     if pos != start {
-        if let Some(res) = helpers::parse_link_title(&str, pos, str.len()) {
+        if let Some(res) = helpers::parse_link_title(str, pos, str.len()) {
             title = Some(res.str);
             pos = res.pos;
             lines += res.lines;

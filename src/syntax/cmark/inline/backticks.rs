@@ -14,11 +14,8 @@ fn rule(state: &mut State, silent: bool) -> bool {
     let mut pos = state.pos + 1;
 
     // scan marker length
-    loop {
-        match chars.next() {
-            Some('`')      => { pos += 1; }
-            Some(_) | None => { break; }
-        }
+    while let Some('`') = chars.next() {
+        pos += 1;
     }
 
     let marker = &state.src[state.pos..pos];
@@ -44,11 +41,8 @@ fn rule(state: &mut State, silent: bool) -> bool {
         match_end = match_start + 1;
         chars = state.src[match_end..state.pos_max].chars();
 
-        loop {
-            match chars.next() {
-                Some('`')      => { match_end += 1; }
-                Some(_) | None => { break; }
-            }
+        while let Some('`') = chars.next() {
+            match_end += 1;
         }
 
         let closer_len = match_end - match_start;
@@ -56,7 +50,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         if closer_len == opener_len {
             // Found matching closer length.
             if !silent {
-                let mut content = state.src[pos..match_start].to_owned().replace("\n", " ");
+                let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
                 if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
                     content = content[1..content.len() - 1].to_owned();
                 }

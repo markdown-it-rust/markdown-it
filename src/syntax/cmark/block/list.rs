@@ -297,7 +297,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         let current_line = &state.src[pos..max];
 
         // fail if list has another type
-        if let Some(_) = marker_value {
+        if marker_value.is_some() {
             if let Some(p) = skip_ordered_list_marker(current_line) {
                 pos_after_marker = pos + p;
                 start = pos;
@@ -317,7 +317,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     }
 
     // Finalize list
-    if let Some(_) = marker_value {
+    if marker_value.is_some() {
         token = state.push("ordered_list_close", "ol", -1);
     } else {
         token = state.push("bullet_list_close", "ul", -1);

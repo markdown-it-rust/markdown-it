@@ -117,7 +117,7 @@ pub fn parse_link_destination(str: &str, start: usize, max: usize) -> Option<Par
         if level != 0 { return None; }
 
         return Some(ParseLinkFragmentResult {
-            pos: pos,
+            pos,
             lines: 0,
             str: unescape_all(&str[start..pos]),
         });
@@ -145,7 +145,7 @@ pub fn parse_link_title(str: &str, start: usize, max: usize) -> Option<ParseLink
             Some(ch) if ch == marker => {
                 return Some(ParseLinkFragmentResult {
                     pos: pos + 1,
-                    lines: lines,
+                    lines,
                     str: unescape_all(&str[start + 1..pos]),
                 });
             }

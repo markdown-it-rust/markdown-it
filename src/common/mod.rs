@@ -40,7 +40,7 @@ fn replace_entity_pattern(str: &str) -> Option<String> {
         let code = if str.starts_with('x') || str.starts_with('X') {
             u32::from_str_radix(&str[1..], 16).unwrap()
         } else {
-            u32::from_str_radix(&str, 10).unwrap()
+            u32::from_str_radix(str, 10).unwrap()
         };
 
         if is_valid_entity_code(code) {
