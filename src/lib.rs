@@ -8,6 +8,9 @@ pub mod common;
 pub mod mdurl;
 pub mod syntax;
 
+mod symbol;
+pub use symbol::Symbol;
+
 use derivative::Derivative;
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
