@@ -5,7 +5,7 @@ pub use state::State;
 
 use crate::Env;
 use crate::MarkdownIt;
-use crate::ruler::Ruler;
+use crate::markvec::MarkVec;
 use crate::token::Token;
 
 pub type Rule = fn (&mut State, bool) -> bool;
@@ -13,12 +13,12 @@ pub type Rule = fn (&mut State, bool) -> bool;
 #[derive(Debug)]
 pub struct Parser {
     // [[Ruler]] instance. Keep configuration of block rules.
-    pub ruler: Ruler<Rule>,
+    pub ruler: MarkVec<&'static str, Rule>,
 }
 
 impl Parser {
     pub fn new() -> Self {
-        Self { ruler: Ruler::new() }
+        Self { ruler: MarkVec::new() }
     }
 
     // Generate tokens for input range
@@ -51,7 +51,7 @@ impl Parser {
             let mut ok = false;
             let prev_line = state.line;
 
-            for rule in self.ruler.get_rules() {
+            for (_, rule) in self.ruler.iter() {
                 ok = rule(state, false);
                 if ok {
                     if prev_line >= state.line { panic!("block rule didn't increment state.line"); }

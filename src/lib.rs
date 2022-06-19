@@ -2,11 +2,11 @@ pub mod core;
 pub mod block;
 pub mod inline;
 pub mod renderer;
-pub mod ruler;
 pub mod helpers;
 pub mod common;
 pub mod mdurl;
 pub mod syntax;
+pub mod markvec;
 
 mod symbol;
 pub use symbol::Symbol;

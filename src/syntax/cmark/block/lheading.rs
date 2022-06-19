@@ -50,7 +50,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // Some tags can terminate paragraph without empty line.
         let old_state_line = state.line;
         state.line = next_line;
-        for rule in state.md.block.ruler.get_rules() {
+        for (_, rule) in state.md.block.ruler.iter() {
             if rule(state, true) {
                 state.line = old_state_line;
                 break 'outer;

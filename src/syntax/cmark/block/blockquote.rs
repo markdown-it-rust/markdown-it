@@ -152,7 +152,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // Case 3: another tag found.
         let mut terminate = false;
         state.line = next_line;
-        for rule in state.md.block.ruler.get_rules() {
+        for (_, rule) in state.md.block.ruler.iter() {
             if rule(state, true) {
                 terminate = true;
                 break;

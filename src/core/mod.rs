@@ -4,25 +4,25 @@
 mod state;
 pub use state::State;
 
-use crate::ruler::Ruler;
+use crate::markvec::MarkVec;
 
 pub type Rule = fn (&mut State);
 
 #[derive(Debug)]
 pub struct Parser {
     // [[Ruler]] instance. Keep configuration of core rules.
-    pub ruler: Ruler<Rule>,
+    pub ruler: MarkVec<&'static str, Rule>,
 }
 
 impl Parser {
     pub fn new() -> Self {
-        Self { ruler: Ruler::new() }
+        Self { ruler: MarkVec::new() }
     }
 
     // Executes core chain rules.
     //
     pub fn process(&self, state: &mut State) {
-        for rule in self.ruler.get_rules() {
+        for (_, rule) in self.ruler.iter() {
             rule(state);
         }
     }

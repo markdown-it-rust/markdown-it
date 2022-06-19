@@ -284,7 +284,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // fail if terminating block found
         let old_parent_is_list = state.parent_is_list;
         state.parent_is_list = true;
-        for rule in state.md.block.ruler.get_rules() {
+        for (_, rule) in state.md.block.ruler.iter() {
             if rule(state, true) {
                 state.parent_is_list = old_parent_is_list;
                 break 'outer;
