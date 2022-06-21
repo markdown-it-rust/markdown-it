@@ -7,6 +7,7 @@ keywords = ["markdown", "commonmark"]
 license = "MIT"
 categories = ["text-processing", "parsing", "command-line-utilities"]
 edition = "2021"
+rust-version = "1.61" # depends on #93827
 
 [lib]
 name = "markdown_it"

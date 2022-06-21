@@ -10,16 +10,14 @@ type NameFn = fn() -> &'static str;
 /// representation (for debugging).
 ///
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Symbol<T = NameFn>(T);
+pub struct Symbol(NameFn);
 
-impl<T> Symbol<T> {
+impl Symbol {
     #[doc(hidden)]
-    pub const fn __new__(namefn: T) -> Self {
+    pub const fn __new__(namefn: NameFn) -> Self {
         Self(namefn)
     }
-}
 
-impl Symbol<NameFn> {
     #[inline]
     ///
     /// Get unique id associated with this Symbol.
@@ -42,13 +40,13 @@ impl Symbol<NameFn> {
     }
 }
 
-impl std::fmt::Display for Symbol<NameFn> {
+impl std::fmt::Display for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.name())
     }
 }
 
-impl std::fmt::Debug for Symbol<NameFn> {
+impl std::fmt::Debug for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.name())
     }
