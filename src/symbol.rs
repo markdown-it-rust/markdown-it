@@ -1,4 +1,4 @@
-type NameFn = fn() -> &'static str;
+type NameFn = fn() -> (std::any::TypeId, &'static str);
 
 ///
 /// Symbol is a small value that's guaranteed to be unique within Rust program
@@ -31,7 +31,7 @@ impl Symbol {
     /// (used primarily for debugging purposes).
     ///
     pub fn name(&self) -> &'static str {
-        let res = (self.0)();
+        let res = (self.0)().1;
         if res.ends_with("::__Symbol__") {
             &res[0..res.len() - 12]
         } else {
@@ -71,7 +71,11 @@ macro_rules! symbol {
     () => {{
         struct __Symbol__;
         $crate::Symbol::__new__(
-            || ::std::any::type_name::<__Symbol__>(),
+            || {
+                // line and column are used to prevent rust from optimizing
+                // symbols with same path into one in release mode
+                (::std::any::TypeId::of::<__Symbol__>(), ::std::any::type_name::<__Symbol__>())
+            }
         )
     }}
 }
