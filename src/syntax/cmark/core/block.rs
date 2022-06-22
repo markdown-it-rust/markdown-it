@@ -3,7 +3,7 @@ use crate::core::State;
 use crate::token::Token;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.core.ruler.push("block", rule);
+    md.core.ruler.add("block", rule);
 }
 
 fn rule(state: &mut State) {

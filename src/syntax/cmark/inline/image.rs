@@ -5,7 +5,7 @@ use crate::inline::State;
 use crate::helpers;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.push("image", rule);
+    md.inline.ruler.add("image", rule);
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {

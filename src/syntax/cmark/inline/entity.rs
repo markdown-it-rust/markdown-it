@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.push("entity", rule);
+    md.inline.ruler.add("entity", rule);
 }
 
 static DIGITAL_RE : Lazy<Regex> = Lazy::new(|| {

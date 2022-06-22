@@ -4,7 +4,7 @@ use crate::MarkdownIt;
 use crate::inline::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.push("escape", rule);
+    md.inline.ruler.add("escape", rule);
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {

@@ -5,7 +5,7 @@ pub use state::State;
 
 use crate::Env;
 use crate::MarkdownIt;
-use crate::rulers::markvec::MarkVec;
+use crate::rulers::ruler::Ruler;
 use crate::token::Token;
 
 pub type Rule = fn (&mut State, silent: bool) -> bool;
@@ -14,18 +14,18 @@ pub type Rule2 = fn (&mut State);
 #[derive(Debug)]
 pub struct Parser {
     // [[Ruler]] instance. Keep configuration of inline rules.
-    pub ruler: MarkVec<&'static str, Rule>,
+    pub ruler: Ruler<&'static str, Rule>,
 
     // [[Ruler]] instance. Second ruler used for post-processing
     // (e.g. in emphasis-like rules).
-    pub ruler2: MarkVec<&'static str, Rule2>,
+    pub ruler2: Ruler<&'static str, Rule2>,
 }
 
 impl Parser {
     pub fn new() -> Self {
         Self {
-            ruler: MarkVec::new(),
-            ruler2: MarkVec::new(),
+            ruler: Ruler::new(),
+            ruler2: Ruler::new(),
         }
     }
 
@@ -43,7 +43,7 @@ impl Parser {
         }
 
         if state.state_level < max_nesting {
-            for (_, rule) in self.ruler.iter() {
+            for rule in self.ruler.iter() {
                 ok = rule(state, true);
                 if ok {
                     if pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
@@ -89,7 +89,7 @@ impl Parser {
             let prev_pos = state.pos;
 
             if state.state_level < max_nesting {
-                for (_, rule) in self.ruler.iter() {
+                for rule in self.ruler.iter() {
                     ok = rule(state, false);
                     if ok {
                         if prev_pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
@@ -117,7 +117,7 @@ impl Parser {
         let mut state = State::new(src, md, env, out_tokens, level);
         self.tokenize(&mut state);
 
-        for (_, rule) in self.ruler2.iter() {
+        for rule in self.ruler2.iter() {
             rule(&mut state);
         }
     }

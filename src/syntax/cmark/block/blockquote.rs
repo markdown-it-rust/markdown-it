@@ -4,7 +4,7 @@ use crate::MarkdownIt;
 use crate::block::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.push("blockquote", rule);
+    md.block.ruler.add("blockquote", rule);
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {
@@ -152,7 +152,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // Case 3: another tag found.
         let mut terminate = false;
         state.line = next_line;
-        for (_, rule) in state.md.block.ruler.iter() {
+        for rule in state.md.block.ruler.iter() {
             if rule(state, true) {
                 terminate = true;
                 break;

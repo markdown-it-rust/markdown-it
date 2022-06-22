@@ -5,7 +5,7 @@ use crate::MarkdownIt;
 use crate::inline::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.push("text", rule);
+    md.inline.ruler.add("text", rule);
 }
 
 // Rule to skip pure text

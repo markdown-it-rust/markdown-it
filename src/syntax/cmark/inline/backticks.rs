@@ -4,7 +4,7 @@ use crate::MarkdownIt;
 use crate::inline::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.push("backticks", rule);
+    md.inline.ruler.add("backticks", rule);
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {

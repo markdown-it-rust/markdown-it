@@ -4,7 +4,7 @@ use crate::MarkdownIt;
 use crate::inline::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.push("newline", rule);
+    md.inline.ruler.add("newline", rule);
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {

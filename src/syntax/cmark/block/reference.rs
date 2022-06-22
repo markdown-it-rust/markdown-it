@@ -7,7 +7,7 @@ use crate::helpers;
 use std::collections::HashMap;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.push("reference", rule);
+    md.block.ruler.add("reference", rule);
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {
@@ -58,7 +58,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // Some tags can terminate paragraph without empty line.
         let old_state_line = state.line;
         state.line = next_line;
-        for (_, rule) in state.md.block.ruler.iter() {
+        for rule in state.md.block.ruler.iter() {
             if rule(state, true) {
                 state.line = old_state_line;
                 break 'outer;

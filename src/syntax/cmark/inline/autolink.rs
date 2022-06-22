@@ -6,7 +6,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.push("autolink", rule);
+    md.inline.ruler.add("autolink", rule);
 }
 
 static AUTOLINK_RE : Lazy<Regex> = Lazy::new(|| {

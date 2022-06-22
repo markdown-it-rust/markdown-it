@@ -2,7 +2,7 @@ use crate::MarkdownIt;
 use crate::core::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.core.ruler.push("normalize", rule);
+    md.core.ruler.add("normalize", rule);
 }
 
 // Normalize input string (newlines and NULL character)

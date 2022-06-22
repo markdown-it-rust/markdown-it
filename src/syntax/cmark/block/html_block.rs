@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.push("html_block", rule);
+    md.block.ruler.add("html_block", rule);
 }
 
 struct HTMLSequence {

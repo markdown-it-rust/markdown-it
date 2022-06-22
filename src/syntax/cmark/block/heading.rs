@@ -4,7 +4,7 @@ use crate::MarkdownIt;
 use crate::block::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.push("heading", rule);
+    md.block.ruler.add("heading", rule);
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {
