@@ -4,7 +4,7 @@
 mod state;
 pub use state::State;
 
-use crate::markvec::MarkVec;
+use crate::rulers::markvec::MarkVec;
 
 pub type Rule = fn (&mut State);
 

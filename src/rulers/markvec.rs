@@ -10,7 +10,7 @@ use std::collections::HashSet;
 ///
 /// You can use it like this:
 /// ```
-/// use markdown_it::markvec::MarkVec;
+/// use markdown_it::rulers::markvec::MarkVec;
 ///
 /// // this example prints "[ hello, world! ]",
 /// // where each token is printed by separate closure

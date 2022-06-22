@@ -6,7 +6,7 @@ pub mod helpers;
 pub mod common;
 pub mod mdurl;
 pub mod syntax;
-pub mod markvec;
+pub mod rulers;
 
 mod symbol;
 pub use symbol::Symbol;

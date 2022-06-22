@@ -5,7 +5,7 @@ pub use state::State;
 
 use crate::Env;
 use crate::MarkdownIt;
-use crate::markvec::MarkVec;
+use crate::rulers::markvec::MarkVec;
 use crate::token::Token;
 
 pub type Rule = fn (&mut State, bool) -> bool;
