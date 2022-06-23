@@ -12,7 +12,8 @@ use std::mem;
 //
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler2.add("fragments_join", postprocess);
+    md.inline.ruler2.add("fragments_join", postprocess)
+        .after_all();
 }
 
 fn postprocess(state: &mut State) {

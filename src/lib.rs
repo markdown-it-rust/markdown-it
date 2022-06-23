@@ -77,7 +77,7 @@ fn normalize_link_text(str: &str) -> String {
 
 impl MarkdownIt {
     pub fn new(options: Option<Options>) -> Self {
-        Self {
+        let mut md = Self {
             core: core::Parser::new(),
             block: block::Parser::new(),
             inline: inline::Parser::new(),
@@ -86,7 +86,9 @@ impl MarkdownIt {
             normalize_link,
             normalize_link_text,
             options: options.unwrap_or_default(),
-        }
+        };
+        crate::syntax::base::add(&mut md);
+        md
     }
 
     pub fn parse(&self, src: &str) -> Vec<Token> {

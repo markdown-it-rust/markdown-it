@@ -5,7 +5,9 @@ use crate::inline::State;
 use std::collections::HashMap;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler2.add("balance_pairs", postprocess);
+    md.inline.ruler2.add("balance_pairs", postprocess)
+        .require("fragments_join")
+        .before("fragments_join");
 }
 
 fn postprocess(state: &mut State) {

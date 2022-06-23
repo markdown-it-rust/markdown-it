@@ -6,7 +6,10 @@ use crate::inline::state::Delimiter;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("emphasis", rule);
-    md.inline.ruler2.add("emphasis", postprocess);
+    md.inline.ruler2.add("emphasis", postprocess)
+        .require("balance_pairs")
+        .after("balance_pairs")
+        .before("fragments_join");
 }
 
 // Insert each marker as a separate text token, and add it to delimiter list
