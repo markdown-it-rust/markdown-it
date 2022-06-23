@@ -33,7 +33,7 @@ impl Parser {
 
             // Termination condition for nested calls.
             // Nested calls currently used for blockquotes & lists
-            if state.s_count[state.line] < state.blk_indent as i32 { break; }
+            if state.line_indent(state.line) < 0 { break; }
 
             // If nesting level exceeded - skip tail to the end. That's not ordinary
             // situation and we should not care about content.

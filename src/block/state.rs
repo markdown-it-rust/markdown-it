@@ -151,6 +151,19 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         line
     }
 
+    // return line indent of specific line, taking into account blockquotes and lists;
+    // it may be negative if a text has less indentation than current list item
+    pub fn line_indent(&self, line: usize) -> i32 {
+        self.s_count[line] - self.blk_indent as i32
+    }
+
+    // return a single line, trimming initial spaces
+    pub fn get_line(&self, line: usize) -> &str {
+        let pos = self.b_marks[line] + self.t_shift[line];
+        let max = self.e_marks[line];
+        &self.src[pos..max]
+    }
+
     // cut lines range from source.
     pub fn get_lines(&self, begin: usize, end: usize, indent: usize, keep_last_lf: bool) -> String {
         let mut line = begin;

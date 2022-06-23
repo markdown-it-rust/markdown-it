@@ -78,11 +78,9 @@ static HTML_SEQUENCES : Lazy<Vec<HTMLSequence>> = Lazy::new(|| {
 
 fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
-    if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
+    if state.line_indent(state.line) >= 4 { return false; }
 
-    let pos = state.b_marks[state.line] + state.t_shift[state.line];
-    let max = state.e_marks[state.line];
-    let line_text = &state.src[pos..max];
+    let line_text = state.get_line(state.line);
 
     if let Some('<') = line_text.chars().next() {} else { return false; }
 
@@ -109,11 +107,9 @@ fn rule(state: &mut State, silent: bool) -> bool {
     // Let's roll down till block end.
     if !sequence.close.is_match(line_text) {
         while next_line < state.line_max {
-            if state.s_count[next_line] < state.blk_indent as i32 { break; }
+            if state.line_indent(next_line) < 0 { break; }
 
-            let pos = state.b_marks[next_line] + state.t_shift[next_line];
-            let max = state.e_marks[next_line];
-            let line_text = &state.src[pos..max];
+            let line_text = state.get_line(next_line);
 
             if sequence.close.is_match(line_text) {
                 if !line_text.is_empty() { next_line += 1; }

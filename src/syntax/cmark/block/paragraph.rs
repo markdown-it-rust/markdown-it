@@ -22,7 +22,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
         // this would be a code block normally, but after paragraph
         // it's considered a lazy continuation regardless of what's there
-        if state.s_count[next_line] - state.blk_indent as i32 > 3 { continue; }
+        if state.line_indent(next_line) >= 4 { continue; }
 
         // quirk for blockquotes, this line should already be checked by that rule
         if state.s_count[next_line] < 0 { continue; }

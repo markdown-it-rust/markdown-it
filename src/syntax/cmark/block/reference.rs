@@ -14,11 +14,9 @@ fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block
-    if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
+    if state.line_indent(state.line) >= 4 { return false; }
 
-    let pos = state.b_marks[state.line] + state.t_shift[state.line];
-    let max = state.e_marks[state.line];
-    let mut chars = state.src[pos..max].chars();
+    let mut chars = state.get_line(state.line).chars();
 
     if let Some('[') = chars.next() {} else { return false; }
 
@@ -50,7 +48,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
         // this would be a code block normally, but after paragraph
         // it's considered a lazy continuation regardless of what's there
-        if state.s_count[next_line] - state.blk_indent as i32 > 3 { continue; }
+        if state.line_indent(next_line) >= 4 { continue; }
 
         // quirk for blockquotes, this line should already be checked by that rule
         if state.s_count[next_line] < 0 { continue; }

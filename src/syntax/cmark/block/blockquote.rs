@@ -9,13 +9,10 @@ pub fn add(md: &mut MarkdownIt) {
 
 fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
-    if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
-
-    let pos = state.b_marks[state.line] + state.t_shift[state.line];
-    let max = state.e_marks[state.line];
+    if state.line_indent(state.line) >= 4 { return false; }
 
     // check the block quote marker
-    if let Some('>') = state.src[pos..max].chars().next() {} else { return false; }
+    if let Some('>') = state.get_line(state.line).chars().next() {} else { return false; }
 
     // we know that it's going to be a valid blockquote,
     // so no point trying to find the end of it in silent mode
@@ -57,12 +54,10 @@ fn rule(state: &mut State, silent: bool) -> bool {
         //    > current blockquote
         // 2. checking this line
         // ```
-        let is_outdented = state.s_count[next_line] < state.blk_indent as i32;
-
-        let mut pos = state.b_marks[next_line] + state.t_shift[next_line];
-        let max = state.e_marks[next_line];
-
-        let mut chars = state.src[pos..max].chars();
+        let is_outdented = state.line_indent(next_line) < 0;
+        let line = state.get_line(next_line).to_owned();
+        let mut chars = line.chars();
+        let mut pos_after_marker = state.b_marks[next_line] + state.t_shift[next_line];
 
         match chars.next() {
             None => {
@@ -78,7 +73,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
                 let adjust_tab;
                 let space_after_marker;
                 let mut chars = chars.peekable();
-                pos += 1;
+                pos_after_marker += 1;
 
                 // skip one optional space after '>'
                 match chars.peek() {
@@ -96,7 +91,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
                         initial = s_count_offset + 1;
                         adjust_tab = false;
                         space_after_marker = true;
-                        pos += 1;
+                        pos_after_marker += 1;
                         chars.next();
                     }
                     _ => {
@@ -108,17 +103,17 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
                 let mut offset = initial;
                 old_bmarks.push(state.b_marks[next_line]);
-                state.b_marks[next_line] = pos;
+                state.b_marks[next_line] = pos_after_marker;
 
                 loop {
                     match chars.next() {
                         Some('\t') => {
                             offset += 4 - (offset + state.bs_count[next_line] as i32 + if adjust_tab { 1 } else { 0 }) % 4;
-                            pos += 1;
+                            pos_after_marker += 1;
                         }
                         Some(' ') => {
                             offset += 1;
-                            pos += 1;
+                            pos_after_marker += 1;
                         }
                         Some(_) => {
                             last_line_empty = false;
@@ -138,7 +133,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
                 state.s_count[next_line] = offset - initial;
 
                 old_tshift.push(state.t_shift[next_line]);
-                state.t_shift[next_line] = pos - state.b_marks[next_line];
+                state.t_shift[next_line] = pos_after_marker - state.b_marks[next_line];
 
                 next_line += 1;
                 continue;

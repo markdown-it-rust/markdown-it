@@ -9,18 +9,17 @@ pub fn add(md: &mut MarkdownIt) {
 
 fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
-    if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
+    if state.line_indent(state.line) >= 4 { return false; }
 
-    let pos = state.b_marks[state.line] + state.t_shift[state.line];
-    let max = state.e_marks[state.line];
+    let line = state.get_line(state.line);
 
-    if let Some('#') = state.src[pos..max].chars().next() {} else { return false; }
+    if let Some('#') = line.chars().next() {} else { return false; }
 
     let text_pos;
 
     // count heading level
     let mut level = 0;
-    let mut chars = state.src[pos..max].char_indices();
+    let mut chars = line.char_indices();
     loop {
         match chars.next() {
             Some((_, '#')) => {
@@ -28,11 +27,11 @@ fn rule(state: &mut State, silent: bool) -> bool {
                 if level > 6 { return false; }
             }
             Some((x, ' ' | '\t')) => {
-                text_pos = pos + x;
+                text_pos = x;
                 break;
             }
             None => {
-                text_pos = pos + level;
+                text_pos = level;
                 break;
             }
             Some(_) => return false,
@@ -49,15 +48,15 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     let text_max = match chars_back.next() {
         // ## foo ##
-        Some((last_pos, ' ' | '\t')) => pos + last_pos + 1,
+        Some((last_pos, ' ' | '\t')) => last_pos + 1,
         // ## foo##
-        Some(_) => max,
+        Some(_) => line.len(),
         // ## ## (already consumed the space)
         None => text_pos,
     };
 
     let start_line = state.line;
-    let content = state.src[text_pos..text_max].trim().to_owned();
+    let content = line[text_pos..text_max].trim().to_owned();
 
     state.line += 1;
 

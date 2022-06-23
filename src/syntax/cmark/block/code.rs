@@ -9,7 +9,7 @@ pub fn add(md: &mut MarkdownIt) {
 
 fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
-    if (state.s_count[state.line] - state.blk_indent as i32) < 4 { return false; }
+    if state.line_indent(state.line) < 4 { return false; }
 
     let mut next_line = state.line + 1;
     let mut last = next_line;
@@ -20,7 +20,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
             continue;
         }
 
-        if (state.s_count[next_line] - state.blk_indent as i32) >= 4 {
+        if state.line_indent(next_line) >= 4 {
             next_line += 1;
             last = next_line;
             continue;

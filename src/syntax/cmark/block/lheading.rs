@@ -13,7 +13,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block
-    if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
+    if state.line_indent(state.line) >= 4 { return false; }
 
     let start_line = state.line;
     let mut next_line = start_line;
@@ -26,16 +26,13 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
         // this would be a code block normally, but after paragraph
         // it's considered a lazy continuation regardless of what's there
-        if state.s_count[next_line] - state.blk_indent as i32 > 3 { continue; }
+        if state.line_indent(next_line) >= 4 { continue; }
 
         //
         // Check for underline in setext header
         //
-        if state.s_count[next_line] >= state.blk_indent as i32 {
-            let pos = state.b_marks[next_line] + state.t_shift[next_line];
-            let max = state.e_marks[next_line];
-
-            let mut chars = state.src[pos..max].chars().peekable();
+        if state.line_indent(next_line) >= 0 {
+            let mut chars = state.get_line(next_line).chars().peekable();
             if let Some(marker @ ('-' | '=')) = chars.next() {
                 while Some(&marker) == chars.peek() { chars.next(); }
                 while let Some(' ' | '\t') = chars.peek() { chars.next(); }

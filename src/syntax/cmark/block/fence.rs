@@ -9,12 +9,10 @@ pub fn add(md: &mut MarkdownIt) {
 
 fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
-    if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
+    if state.line_indent(state.line) >= 4 { return false; }
 
-    let pos = state.b_marks[state.line] + state.t_shift[state.line];
-    let max = state.e_marks[state.line];
-
-    let mut chars = state.src[pos..max].chars();
+    let line = state.get_line(state.line);
+    let mut chars = line.chars();
     let marker;
 
     if let Some(ch @ ('~' | '`')) = chars.next() {
@@ -29,8 +27,8 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     if len < 3 { return false; }
 
-    let markup = &state.src[pos..pos + len];
-    let params = &state.src[pos + len..max];
+    let markup = &line[..len];
+    let params = &line[len..];
 
     if marker == '`' && params.contains(marker) { return false; }
 
@@ -50,21 +48,20 @@ fn rule(state: &mut State, silent: bool) -> bool {
             break;
         }
 
-        let pos = state.b_marks[next_line] + state.t_shift[next_line];
-        let max = state.e_marks[next_line];
+        let line = state.get_line(next_line);
 
-        if pos < max && state.s_count[next_line] < state.blk_indent as i32 {
+        if !line.is_empty() && state.line_indent(next_line) < 0 {
             // non-empty line with negative indent should stop the list:
             // - ```
             //  test
             break;
         }
 
-        let mut chars = state.src[pos..max].chars().peekable();
+        let mut chars = line.chars().peekable();
 
         if Some(marker) != chars.next() { continue; }
 
-        if state.s_count[next_line] - state.blk_indent as i32 >= 4 {
+        if state.line_indent(next_line) >= 4 {
             // closing fence should be indented less than 4 spaces
             continue;
         }
@@ -94,9 +91,6 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     // If a fence has heading spaces, they should be removed from its inner block
     let indent = state.s_count[start_line];
-
-    state.line = next_line + if have_end_marker { 1 } else { 0 };
-
     let content = state.get_lines(start_line + 1, next_line, indent as usize, true);
 
     let markup = markup.to_owned();
@@ -107,6 +101,8 @@ fn rule(state: &mut State, silent: bool) -> bool {
     token.content = content;
     token.markup = markup;
     token.map = Some([ start_line, next_line + if have_end_marker { 1 } else { 0 } ]);
+
+    state.line = next_line + if have_end_marker { 1 } else { 0 };
 
     true
 }

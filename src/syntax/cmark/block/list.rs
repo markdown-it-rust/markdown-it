@@ -71,7 +71,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     if silent && state.parent_is_list { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block
-    if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
+    if state.line_indent(state.line) >= 4 { return false; }
 
     // Special case:
     //  - item 1
@@ -96,32 +96,28 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // This code can fail if plugins use blkIndent as well as lists,
         // but I hope the spec gets fixed long before that happens.
         //
-        if state.s_count[state.line] >= state.blk_indent as i32 {
+        if state.line_indent(state.line) >= 0 {
             is_terminating_paragraph = true;
         }
     }
 
-    let pos = state.b_marks[state.line] + state.t_shift[state.line];
-    let max = state.e_marks[state.line];
-    let current_line = &state.src[pos..max];
+    let mut current_line = state.get_line(state.line).to_owned();
 
     let marker_value;
     let mut pos_after_marker;
-    let mut start = 0;
 
     // Detect list type and position after marker
-    if let Some(p) = skip_ordered_list_marker(current_line) {
-        pos_after_marker = pos + p;
-        start = state.b_marks[state.line] + state.t_shift[state.line];
-        let int = u32::from_str_radix(&state.src[start..pos_after_marker - 1], 10).unwrap();
+    if let Some(p) = skip_ordered_list_marker(&current_line) {
+        pos_after_marker = p;
+        let int = u32::from_str_radix(&current_line[..pos_after_marker - 1], 10).unwrap();
         marker_value = Some(int);
 
         // If we're starting a new ordered list right after
         // a paragraph, it should start with 1.
         if is_terminating_paragraph && int != 1 { return false; }
 
-    } else if let Some(p) = skip_bullet_list_marker(current_line) {
-        pos_after_marker = pos + p;
+    } else if let Some(p) = skip_bullet_list_marker(&current_line) {
+        pos_after_marker = p;
         marker_value = None;
     } else {
         return false;
@@ -130,7 +126,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     // If we're starting a new unordered list right after
     // a paragraph, first line should not be empty.
     if is_terminating_paragraph {
-        let mut chars = state.src[pos_after_marker..max].chars();
+        let mut chars = current_line[pos_after_marker..].chars();
         loop {
             match chars.next() {
                 Some(' ' | '\t') => {},
@@ -143,7 +139,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     if silent { return true; }
 
     // We should terminate list on style change. Remember first one to compare.
-    let marker_char = state.src[..pos_after_marker].chars().next_back().unwrap();
+    let marker_char = current_line[..pos_after_marker].chars().next_back().unwrap();
 
     let list_tok_idx = state.tokens.len();
     let mut token;
@@ -168,33 +164,29 @@ fn rule(state: &mut State, silent: bool) -> bool {
     let mut tight = true;
 
     'outer: while next_line < state.line_max {
-        let mut pos = pos_after_marker;
-        let max = state.e_marks[next_line];
-
-        let initial = state.s_count[next_line] as usize + pos_after_marker -
-                      (state.b_marks[next_line] + state.t_shift[next_line]);
+        let mut content_start = pos_after_marker;
+        let initial = state.s_count[next_line] as usize + pos_after_marker;
         let mut offset = initial;
 
-        let mut chars = state.src[pos..max].chars();
+        let mut chars = current_line[pos_after_marker..].chars();
 
         loop {
             match chars.next() {
                 Some('\t') => {
                     offset += 4 - (offset + state.bs_count[next_line]) % 4;
-                    pos += 1;
+                    content_start += 1;
                 }
                 Some(' ') => {
                     offset += 1;
-                    pos += 1;
+                    content_start += 1;
                 }
                 _ => break,
             }
         }
 
-        let content_start = pos;
         let mut indent_after_marker = offset - initial;
 
-        if content_start == max {
+        if content_start == current_line.len() {
             // trimming space in "-    \n  3" case, indent is 1 here
             indent_after_marker = 1;
         } else if indent_after_marker > 4 {
@@ -213,7 +205,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         token.markup = marker_char.into();
 
         if marker_value.is_some() {
-            state.tokens[token_idx].info = state.src[start..pos_after_marker-1].to_owned();
+            state.tokens[token_idx].info = current_line[..pos_after_marker - 1].to_owned();
         }
 
         // change current state, then restore it after parser subcall
@@ -230,10 +222,10 @@ fn rule(state: &mut State, silent: bool) -> bool {
         state.blk_indent = indent;
 
         state.tight = true;
-        state.t_shift[next_line] = content_start - state.b_marks[next_line];
+        state.t_shift[next_line] += content_start;
         state.s_count[next_line] = offset as i32;
 
-        if content_start >= max && state.is_empty(next_line + 1) {
+        if content_start == current_line.len() && state.is_empty(next_line + 1) {
             // workaround for this case
             // (list item is empty, list terminates before "foo"):
             // ~~~~~~~~
@@ -277,10 +269,10 @@ fn rule(state: &mut State, silent: bool) -> bool {
         //
         // Try to check if list is terminated or continued.
         //
-        if state.s_count[next_line] < state.blk_indent as i32 { break; }
+        if state.line_indent(next_line) < 0 { break; }
 
         // if it's indented more than 3 spaces, it should be a code block
-        if (state.s_count[next_line] - state.blk_indent as i32) >= 4 { break; }
+        if state.line_indent(next_line) >= 4 { break; }
 
         // fail if terminating block found
         let old_parent_is_list = state.parent_is_list;
@@ -293,27 +285,24 @@ fn rule(state: &mut State, silent: bool) -> bool {
         }
         state.parent_is_list = old_parent_is_list;
 
-        let pos = state.b_marks[state.line] + state.t_shift[state.line];
-        let max = state.e_marks[state.line];
-        let current_line = &state.src[pos..max];
+        current_line = state.get_line(state.line).to_owned();
 
         // fail if list has another type
         if marker_value.is_some() {
-            if let Some(p) = skip_ordered_list_marker(current_line) {
-                pos_after_marker = pos + p;
-                start = pos;
+            if let Some(p) = skip_ordered_list_marker(&current_line) {
+                pos_after_marker = p;
             } else {
                 break;
             }
         } else {
-            if let Some(p) = skip_bullet_list_marker(current_line) {
-                pos_after_marker = pos + p;
+            if let Some(p) = skip_bullet_list_marker(&current_line) {
+                pos_after_marker = p;
             } else {
                 break;
             }
         }
 
-        let next_marker_char = state.src[..pos_after_marker].chars().next_back().unwrap();
+        let next_marker_char = current_line[..pos_after_marker].chars().next_back().unwrap();
         if next_marker_char != marker_char { break; }
     }
 
