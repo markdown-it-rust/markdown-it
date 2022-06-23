@@ -80,8 +80,6 @@ fn rule(state: &mut State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if (state.s_count[state.line] - state.blk_indent as i32) >= 4 { return false; }
 
-    if !state.md.options.html { return false; }
-
     let pos = state.b_marks[state.line] + state.t_shift[state.line];
     let max = state.e_marks[state.line];
     let line_text = &state.src[pos..max];

@@ -3,7 +3,8 @@ use crate::core::State;
 use std::mem;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.core.ruler.add("text_join", rule);
+    md.core.ruler.add("text_join", rule)
+        .after_all();
 }
 
 // Join raw text tokens with the rest of the text

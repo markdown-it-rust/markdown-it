@@ -3,7 +3,6 @@ pub mod backticks;
 pub mod emphasis;
 pub mod entity;
 pub mod escape;
-pub mod html_inline;
 pub mod image;
 pub mod link;
 pub mod newline;

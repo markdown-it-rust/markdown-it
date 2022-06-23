@@ -4,7 +4,8 @@ use crate::MarkdownIt;
 use crate::block::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.add("paragraph", rule);
+    md.block.ruler.add("paragraph", rule)
+        .after_all();
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {

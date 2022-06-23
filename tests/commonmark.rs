@@ -6,12 +6,12 @@ fn run(input: &str, output: &str) {
     output = output.replace("<blockquote>\n</blockquote>", "<blockquote></blockquote>");
     let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
         breaks: false,
-        html: true,
         lang_prefix: "language-",
         max_nesting: None,
         xhtml_out: true,
     }));
     markdown_it::syntax::cmark::add(md);
+    markdown_it::syntax::html::add(md);
     let result = md.render(&(input.to_owned() + "\n"));
     assert_eq!(result, output);
 }

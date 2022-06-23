@@ -6,6 +6,7 @@ use std::io::Write;
 fn main() {
     let mut input = "-".to_owned();
     let mut output = "-".to_owned();
+    let mut no_html = false;
 
     {
         let mut cli = argparse::ArgumentParser::new();
@@ -15,6 +16,10 @@ fn main() {
         cli
             .refer(&mut output)
             .add_option(&["-o", "--output"], argparse::Store, "File to write");
+
+        cli
+            .refer(&mut no_html)
+            .add_option(&["--no-html"], argparse::StoreTrue, "Disable embedded HTML");
 
         cli
             .refer(&mut input)
@@ -34,12 +39,15 @@ fn main() {
     let source = String::from_utf8_lossy(&vec);
     let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
         breaks: false,
-        html: true,
         lang_prefix: "language-",
         max_nesting: None,
         xhtml_out: true,
     }));
     markdown_it::syntax::cmark::add(md);
+    if !no_html {
+        markdown_it::syntax::html::add(md);
+    }
+
     let result = md.render(&source);
 
     if output == "-" {

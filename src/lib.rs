@@ -24,7 +24,6 @@ type Env = HashMap<&'static str, Box<dyn std::any::Any>>;
 #[derive(Default, Debug)]
 pub struct Options {
     pub breaks: bool,
-    pub html: bool,
     pub lang_prefix: &'static str,
     pub max_nesting: Option<u32>,
     pub xhtml_out: bool,

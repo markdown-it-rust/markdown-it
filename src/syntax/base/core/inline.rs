@@ -2,7 +2,8 @@ use crate::MarkdownIt;
 use crate::core::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.core.ruler.add("inline", rule);
+    md.core.ruler.add("inline", rule)
+        .after("block");
 }
 
 fn rule(state: &mut State) {

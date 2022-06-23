@@ -9,8 +9,6 @@ pub fn add(md: &mut MarkdownIt) {
 }
 
 fn rule(state: &mut State, silent: bool) -> bool {
-    if !state.md.options.html { return false; }
-
     // Check start
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '<' { return false; }

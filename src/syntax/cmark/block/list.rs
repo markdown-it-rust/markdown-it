@@ -4,7 +4,8 @@ use crate::MarkdownIt;
 use crate::block::State;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.add("list", rule);
+    md.block.ruler.add("list", rule)
+        .after("hr");
 }
 
 // Search `[-+*][\n ]`, returns next pos after marker on success

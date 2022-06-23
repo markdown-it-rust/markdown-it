@@ -1,5 +1,5 @@
-mod inline;
-mod block;
+pub mod inline;
+pub mod block;
 
 use crate::MarkdownIt;
 
@@ -13,7 +13,6 @@ pub fn add(md: &mut MarkdownIt) {
     inline::link::add(md);
     inline::image::add(md);
     inline::autolink::add(md);
-    inline::html_inline::add(md);
     inline::entity::add(md);
 
     //block::table::add(md);
@@ -23,7 +22,6 @@ pub fn add(md: &mut MarkdownIt) {
     block::hr::add(md);
     block::list::add(md);
     block::reference::add(md);
-    block::html_block::add(md);
     block::heading::add(md);
     block::lheading::add(md);
     block::paragraph::add(md);

@@ -1,5 +1,5 @@
-mod inline;
-mod core;
+pub mod inline;
+pub mod core;
 
 use crate::MarkdownIt;
 
