@@ -2,13 +2,20 @@
 //
 use crate::env::Env;
 use crate::MarkdownIt;
-use crate::Token;
+use crate::token::Token;
 use std::collections::HashMap;
 use std::mem;
 
 pub struct DelimRun {
+    // Starting marker
+    pub marker: char,
+
+    // Boolean flags that determine if this delimiter could open or close
+    // an emphasis.
     pub can_open: bool,
     pub can_close: bool,
+
+    // Total length of these series of delimiters
     pub length: usize,
 }
 
@@ -56,11 +63,11 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     pub link_level: i32,
 
     // Counter used to prevent recursion by image and link rules
-    pub state_level: u32,
+    pub level: u32,
 }
 
 impl<'a, 'b, 'c> State<'a, 'b, 'c> {
-    pub fn new(src: &str, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Token>, state_level: u32) -> Self {
+    pub fn new(src: &str, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Token>) -> Self {
         Self {
             src:               src.to_owned(),
             env,
@@ -71,7 +78,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             pending:           String::new(),
             cache:             HashMap::new(),
             link_level:        0,
-            state_level,
+            level:             0,
         }
     }
 
@@ -80,6 +87,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     pub fn push_pending(&mut self) {
         let mut token = Token::new("text", "", 0);
         token.content = mem::take(&mut self.pending);
+        token.level = self.level;
         self.tokens.push(token);
     }
 
@@ -89,7 +97,12 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     pub fn push(&mut self, name: &'static str, tag: &'static str, nesting: i8) -> &mut Token {
         if !self.pending.is_empty() { self.push_pending(); }
 
-        let token = Token::new(name, tag, nesting);
+        let mut token = Token::new(name, tag, nesting);
+
+        if nesting < 0 { self.level -= 1; }
+        token.level = self.level;
+        if nesting > 0 { self.level += 1; }
+
         self.tokens.push(token);
         self.tokens.last_mut().unwrap()
     }
@@ -167,6 +180,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         }
 
         DelimRun {
+            marker,
             can_open,
             can_close,
             length: count

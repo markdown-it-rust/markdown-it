@@ -271,9 +271,7 @@ pub fn parse_link(state: &mut inline::State, pos: usize, is_image: bool) -> Opti
         _ => pos = label_end + 1,
     }
 
-    let references = &state.env.get::<ReferenceEnv>().map;
-
-    if !references.is_empty() {
+    if let Some(references) = state.env.get::<ReferenceEnv>() {
         // covers label === '' and label === undefined
         // (collapsed reference link and shortcut reference link respectively)
         let label = if maybe_label.is_none() || maybe_label == Some("") {
@@ -282,7 +280,7 @@ pub fn parse_link(state: &mut inline::State, pos: usize, is_image: bool) -> Opti
             maybe_label.unwrap()
         };
 
-        let lref = references.get(&normalize_reference(label));
+        let lref = references.map.get(&normalize_reference(label));
 
         if let Some(r) = lref {
             Some(ParseLinkResult {

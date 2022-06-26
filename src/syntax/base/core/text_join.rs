@@ -1,4 +1,5 @@
 use crate::MarkdownIt;
+use crate::token::Token;
 use crate::core::State;
 use std::mem;
 
@@ -16,33 +17,34 @@ pub fn add(md: &mut MarkdownIt) {
 //
 
 fn rule(state: &mut State) {
-    for block_token in &mut state.tokens {
-        if block_token.name != "inline" { continue; }
+    flatten_lvl(&mut state.tokens);
+}
 
-        for token in &mut block_token.children {
-            if token.name == "text_special" {
-                token.name = "text";
-            }
+fn flatten_lvl(tokens: &mut Vec<Token>) {
+    for token in tokens.iter_mut() {
+        flatten_lvl(&mut token.children);
+
+        if token.name == "text_special" {
+            token.name = "text";
         }
-
-        let tokens = &mut block_token.children;
-        let mut curr = 0;
-        let mut last = 0;
-        let max = tokens.len();
-
-        while curr < max {
-            if tokens[curr].name == "text" && curr + 1 < max && tokens[curr + 1].name == "text" {
-                // collapse two adjacent text nodes
-                let second_token_content = mem::take(&mut tokens[curr + 1].content);
-                tokens[curr].content += &second_token_content;
-                tokens.swap(curr, curr + 1);
-            } else {
-                if curr != last { tokens.swap(last, curr); }
-                last += 1;
-            }
-            curr += 1;
-        }
-
-        if curr != last { tokens.truncate(last); }
     }
+
+    let mut curr = 0;
+    let mut last = 0;
+    let max = tokens.len();
+
+    while curr < max {
+        if tokens[curr].name == "text" && curr + 1 < max && tokens[curr + 1].name == "text" {
+            // collapse two adjacent text nodes
+            let second_token_content = mem::take(&mut tokens[curr + 1].content);
+            tokens[curr].content += &second_token_content;
+            tokens.swap(curr, curr + 1);
+        } else {
+            if curr != last { tokens.swap(last, curr); }
+            last += 1;
+        }
+        curr += 1;
+    }
+
+    if curr != last { tokens.truncate(last); }
 }

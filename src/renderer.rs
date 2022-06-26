@@ -58,6 +58,10 @@ impl Renderer {
         result.rules.insert("code_inline", rules::code_inline);
         result.rules.insert("code_block",  rules::code_block);
         result.rules.insert("fence",       rules::fence);
+        result.rules.insert("link",        rules::link);
+        result.rules.insert("em",          rules::em);
+        result.rules.insert("s",           rules::s);
+        result.rules.insert("strong",      rules::strong);
         result.rules.insert("image",       rules::image);
         result.rules.insert("hardbreak",   rules::hardbreak);
         result.rules.insert("softbreak",   rules::softbreak);
@@ -183,11 +187,10 @@ impl Renderer {
         let mut result = String::new();
 
         for token in tokens.iter() {
-            match token.name {
-                "text" => result += &token.content,
-                "image" => result += &self.render_inline_as_text(&token.children, md),
-                "softbreak" => result += "\n",
-                _ => {}
+            if token.children.is_empty() {
+                result += &token.content; // text
+            } else {
+                result += &self.render_inline_as_text(&token.children, md); // nested tags
             }
         }
 
@@ -288,6 +291,42 @@ mod rules {
         }
 
         Cow::Owned(format!("<pre><code{attrs}>{highlighted}</code></pre>\n"))
+    }
+
+    pub fn link<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
+        let token = &tokens[idx];
+
+        let attrs = md.renderer.render_attrs(&token.attrs);
+        let content = md.renderer.render_inline(&token.children, md);
+
+        Cow::Owned(format!("<a{attrs}>{content}</a>"))
+    }
+
+    pub fn em<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
+        let token = &tokens[idx];
+
+        let attrs = md.renderer.render_attrs(&token.attrs);
+        let content = md.renderer.render_inline(&token.children, md);
+
+        Cow::Owned(format!("<em{attrs}>{content}</em>"))
+    }
+
+    pub fn strong<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
+        let token = &tokens[idx];
+
+        let attrs = md.renderer.render_attrs(&token.attrs);
+        let content = md.renderer.render_inline(&token.children, md);
+
+        Cow::Owned(format!("<strong{attrs}>{content}</strong>"))
+    }
+
+    pub fn s<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
+        let token = &tokens[idx];
+
+        let attrs = md.renderer.render_attrs(&token.attrs);
+        let content = md.renderer.render_inline(&token.children, md);
+
+        Cow::Owned(format!("<s{attrs}>{content}</s>"))
     }
 
     pub fn image<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {

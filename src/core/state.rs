@@ -2,7 +2,7 @@
 //
 use crate::env::Env;
 use crate::MarkdownIt;
-use crate::Token;
+use crate::token::Token;
 
 #[derive(Debug)]
 pub struct State<'a> {

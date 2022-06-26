@@ -40,6 +40,7 @@ pub fn encode(string: &str, exclude: AsciiSet, keep_escaped: bool) -> String {
         i += 1
     }
 
+    // SAFETY: all characters are in ASCII range because everything >= 0x80 is percent-encoded
     unsafe { String::from_utf8_unchecked(result) }
 }
 

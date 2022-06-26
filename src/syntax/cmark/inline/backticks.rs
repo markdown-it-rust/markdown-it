@@ -31,7 +31,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     }
 
     // backtick length => last seen position
-    let backticks = state.env.get::<BacktickCache>();
+    let backticks = state.env.get_or_insert::<BacktickCache>();
 
     let marker = &state.src[state.pos..pos];
     let opener_len = pos - state.pos;

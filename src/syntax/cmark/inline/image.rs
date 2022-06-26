@@ -19,20 +19,27 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // so all that's left to do is to call tokenizer.
         //
         if !silent {
-            let content = state.src[result.label_start..result.label_end].to_owned();
+            if !state.pending.is_empty() { state.push_pending(); }
 
-            let mut tokens = Vec::new();
-            state.md.inline.parse(&content, state.md, state.env, &mut tokens, state.state_level + 1);
+            let old_tokens = std::mem::take(state.tokens);
+            let max = state.pos_max;
+
+            state.link_level += 1;
+            state.pos = result.label_start;
+            state.pos_max = result.label_end;
+            state.md.inline.tokenize(state);
+            state.pos_max = max;
+
+            let children = std::mem::replace(state.tokens, old_tokens);
 
             let token = state.push("image", "img", 0);
             token.attrs.push(("src", result.href.unwrap_or_default()));
             token.attrs.push(("alt", String::new()));
-            token.children = tokens;
-            token.content = content;
-
             if let Some(x) = result.title {
                 token.attrs.push(("title", x));
             }
+            token.children = children;
+            state.link_level -= 1;
         }
 
         state.pos = result.end;

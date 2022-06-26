@@ -178,7 +178,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         return false;
     }
 
-    let references = &mut state.env.get::<ReferenceEnv>().map;
+    let references = &mut state.env.get_or_insert::<ReferenceEnv>().map;
 
     references.entry(label).or_insert_with(|| (href, title));
 

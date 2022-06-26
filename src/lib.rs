@@ -7,6 +7,7 @@ pub mod common;
 pub mod mdurl;
 pub mod syntax;
 pub mod rulers;
+pub mod token;
 pub mod env;
 
 mod symbol;
@@ -15,9 +16,6 @@ pub use symbol::Symbol;
 use derivative::Derivative;
 use once_cell::sync::Lazy;
 use regex::Regex;
-
-mod token;
-pub use token::Token;
 
 #[derive(Default, Debug)]
 pub struct Options {
@@ -40,6 +38,7 @@ pub struct MarkdownIt {
     pub normalize_link: fn (&str) -> String,
     #[derivative(Debug="ignore")]
     pub normalize_link_text: fn (&str) -> String,
+    pub env: env::EnvState,
     pub options: Options,
 }
 
@@ -82,13 +81,14 @@ impl MarkdownIt {
             validate_link,
             normalize_link,
             normalize_link_text,
+            env: env::EnvState::new(),
             options: options.unwrap_or_default(),
         };
         crate::syntax::base::add(&mut md);
         md
     }
 
-    pub fn parse(&self, src: &str) -> Vec<Token> {
+    pub fn parse(&self, src: &str) -> Vec<token::Token> {
         let mut state = core::State::new(src, self);
         self.core.process(&mut state);
         state.tokens

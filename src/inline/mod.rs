@@ -43,7 +43,7 @@ impl Parser {
             return;
         }
 
-        if state.state_level < max_nesting {
+        if state.level < max_nesting {
             for rule in self.ruler.iter() {
                 ok = rule(state, true);
                 if ok {
@@ -76,6 +76,8 @@ impl Parser {
     // Generate tokens for input range
     //
     pub fn tokenize(&self, state: &mut State) {
+        state.env.state_push::<InlineLvl>();
+
         let end = state.pos_max;
         let max_nesting = state.md.options.max_nesting.unwrap_or(100);
 
@@ -89,7 +91,7 @@ impl Parser {
             let mut ok = false;
             let prev_pos = state.pos;
 
-            if state.state_level < max_nesting {
+            if state.level < max_nesting {
                 for rule in self.ruler.iter() {
                     ok = rule(state, false);
                     if ok {
@@ -110,20 +112,20 @@ impl Parser {
         }
 
         if !state.pending.is_empty() { state.push_pending(); }
+
+        for rule in self.ruler2.iter() {
+            rule(state);
+        }
+
+        state.env.state_pop::<InlineLvl>();
     }
 
     // Process input string and push inline tokens into `out_tokens`
     //
-    pub fn parse(&self, src: &str, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>, level: u32) {
-        let mut state = State::new(src, md, env, out_tokens, level);
+    pub fn parse(&self, src: &str, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>) {
+        let mut state = State::new(src, md, env, out_tokens);
         state.env.state_push::<Inline>();
-        state.env.state_push::<InlineLvl>();
         self.tokenize(&mut state);
-
-        for rule in self.ruler2.iter() {
-            rule(&mut state);
-        }
-        state.env.state_pop::<InlineLvl>();
         state.env.state_pop::<Inline>();
     }
 }

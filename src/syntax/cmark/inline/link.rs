@@ -17,22 +17,26 @@ fn rule(state: &mut State, silent: bool) -> bool {
         // so all that's left to do is to call tokenizer.
         //
         if !silent {
-            let token = state.push("link_open", "a", 1);
+            if !state.pending.is_empty() { state.push_pending(); }
+
+            let old_tokens = std::mem::take(state.tokens);
+            let max = state.pos_max;
+
+            state.link_level += 1;
+            state.pos = result.label_start;
+            state.pos_max = result.label_end;
+            state.md.inline.tokenize(state);
+            state.pos_max = max;
+
+            let children = std::mem::replace(state.tokens, old_tokens);
+
+            let token = state.push("link", "a", 0);
             token.attrs.push(("href", result.href.unwrap_or_default()));
             if let Some(x) = result.title {
                 token.attrs.push(("title", x));
             }
-
-            let content = state.src[result.label_start..result.label_end].to_owned();
-            let mut tokens = Vec::new();
-
-            state.link_level += 1;
-            state.md.inline.parse(&content, state.md, state.env, &mut tokens, state.state_level + 1);
+            token.children = children;
             state.link_level -= 1;
-
-            state.tokens.append(&mut tokens);
-
-            state.push("link_close", "a", -1);
         }
 
         state.pos = result.end;
