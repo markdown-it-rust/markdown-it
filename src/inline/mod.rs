@@ -3,7 +3,8 @@
 pub mod state;
 pub use state::State;
 
-use crate::Env;
+use crate::env::Env;
+use crate::env::scope::{Inline, InlineLvl};
 use crate::MarkdownIt;
 use crate::rulers::ruler::Ruler;
 use crate::token::Token;
@@ -115,10 +116,14 @@ impl Parser {
     //
     pub fn parse(&self, src: &str, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>, level: u32) {
         let mut state = State::new(src, md, env, out_tokens, level);
+        state.env.state_push::<Inline>();
+        state.env.state_push::<InlineLvl>();
         self.tokenize(&mut state);
 
         for rule in self.ruler2.iter() {
             rule(&mut state);
         }
+        state.env.state_pop::<InlineLvl>();
+        state.env.state_pop::<Inline>();
     }
 }

@@ -1,3 +1,2 @@
-pub mod balance_pairs;
-pub mod fragments_join;
+pub mod pairs;
 pub mod text;

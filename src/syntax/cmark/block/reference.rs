@@ -3,8 +3,19 @@
 use crate::MarkdownIt;
 use crate::block::State;
 use crate::common::normalize_reference;
+use crate::env::EnvMember;
+use crate::env::scope::Block;
 use crate::helpers;
 use std::collections::HashMap;
+
+#[derive(Debug, Default)]
+pub struct ReferenceEnv {
+    pub map: HashMap<String, (String, Option<String>)>,
+}
+
+impl EnvMember for ReferenceEnv {
+    type Scope = Block;
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("reference", rule);
@@ -167,11 +178,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         return false;
     }
 
-    type ReferenceEnv = HashMap<String, (String, Option<String>)>;
-    let references = state.env.entry("references").or_insert_with(|| {
-        let x : ReferenceEnv = HashMap::new();
-        Box::new(x)
-    }).downcast_mut::<ReferenceEnv>().unwrap();
+    let references = &mut state.env.get::<ReferenceEnv>().map;
 
     references.entry(label).or_insert_with(|| (href, title));
 

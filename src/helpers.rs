@@ -1,7 +1,7 @@
 use crate::common::normalize_reference;
 use crate::common::unescape_all;
 use crate::inline;
-use std::collections::HashMap;
+use crate::syntax::cmark::block::reference::ReferenceEnv;
 
 // Parse link label
 //
@@ -271,10 +271,9 @@ pub fn parse_link(state: &mut inline::State, pos: usize, is_image: bool) -> Opti
         _ => pos = label_end + 1,
     }
 
-    if let Some(references) = state.env.get("references") {
-        type ReferenceEnv = HashMap<String, (String, Option<String>)>;
-        let references = references.downcast_ref::<ReferenceEnv>().unwrap();
+    let references = &state.env.get::<ReferenceEnv>().map;
 
+    if !references.is_empty() {
         // covers label === '' and label === undefined
         // (collapsed reference link and shortcut reference link respectively)
         let label = if maybe_label.is_none() || maybe_label == Some("") {

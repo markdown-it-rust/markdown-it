@@ -5,8 +5,7 @@ use crate::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
     inline::text::add(md);
-    inline::balance_pairs::add(md);
-    inline::fragments_join::add(md);
+    inline::pairs::add(md);
 
     core::normalize::add(md);
     core::block::add(md);

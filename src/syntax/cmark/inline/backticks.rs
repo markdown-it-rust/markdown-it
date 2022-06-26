@@ -1,7 +1,19 @@
 // Parse backticks
 //
 use crate::MarkdownIt;
+use crate::env::EnvMember;
+use crate::env::scope::Inline;
 use crate::inline::State;
+
+#[derive(Debug, Default)]
+struct BacktickCache {
+    scanned: bool,
+    max: Vec<usize>,
+}
+
+impl EnvMember for BacktickCache {
+    type Scope = Inline;
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("backticks", rule);
@@ -18,10 +30,13 @@ fn rule(state: &mut State, silent: bool) -> bool {
         pos += 1;
     }
 
+    // backtick length => last seen position
+    let backticks = state.env.get::<BacktickCache>();
+
     let marker = &state.src[state.pos..pos];
     let opener_len = pos - state.pos;
 
-    if state.backticks_scanned && state.backticks[opener_len] <= state.pos {
+    if backticks.scanned && backticks.max[opener_len] <= state.pos {
         if !silent { state.pending += marker; }
         state.pos += opener_len;
         return true;
@@ -65,12 +80,12 @@ fn rule(state: &mut State, silent: bool) -> bool {
         }
 
         // Some different length found, put it in cache as upper limit of where closer can be found
-        while state.backticks.len() <= closer_len { state.backticks.push(0); }
-        state.backticks[closer_len] = match_start;
+        while backticks.max.len() <= closer_len { backticks.max.push(0); }
+        backticks.max[closer_len] = match_start;
     }
 
     // Scanned through the end, didn't find anything
-    state.backticks_scanned = true;
+    backticks.scanned = true;
 
     if !silent { state.pending += marker; }
     state.pos += opener_len;

@@ -5,6 +5,7 @@ mod state;
 pub use state::State;
 
 use crate::rulers::ruler::Ruler;
+use crate::env::scope::{BlockLvl, Block};
 
 pub type Rule = fn (&mut State);
 
@@ -22,8 +23,12 @@ impl Parser {
     // Executes core chain rules.
     //
     pub fn process(&self, state: &mut State) {
+        state.env.state_push::<Block>();
+        state.env.state_push::<BlockLvl>();
         for rule in self.ruler.iter() {
             rule(state);
         }
+        state.env.state_pop::<BlockLvl>();
+        state.env.state_pop::<Block>();
     }
 }

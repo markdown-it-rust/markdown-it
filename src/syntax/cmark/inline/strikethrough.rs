@@ -2,7 +2,7 @@
 //
 use crate::MarkdownIt;
 use crate::inline::State;
-use crate::inline::state::Delimiter;
+use crate::syntax::base::inline::pairs::{Delimiters, Delimiter};
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("strikethrough", rule);
@@ -30,11 +30,13 @@ fn rule(state: &mut State, silent: bool) -> bool {
         len -= 1;
     }
 
+    let mut delimiters = std::mem::take(state.env.get::<Delimiters>());
+
     for _ in 0..len/2 {
         let token = state.push("text", "", 0);
         token.content = "~~".to_owned();
 
-        state.delimiters.push(Delimiter {
+        delimiters.push(Delimiter {
             marker: '~',
             length: 0, // disable "rule of 3" length checks meant for emphasis
             token:  state.tokens.len() - 1,
@@ -44,6 +46,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         });
     }
 
+    *state.env.get::<Delimiters>() = delimiters;
     state.pos += scanned.length;
 
     true
@@ -53,9 +56,10 @@ fn rule(state: &mut State, silent: bool) -> bool {
 //
 fn postprocess(state: &mut State) {
     let mut lone_markers = Vec::new();
+    let delimiters = state.env.get::<Delimiters>();
 
-    for i in 0..state.delimiters.len() {
-        let start_delim = &state.delimiters[i];
+    for i in 0..delimiters.len() {
+        let start_delim = &delimiters[i];
 
         if start_delim.marker != '~' { continue; }
 
@@ -63,7 +67,7 @@ fn postprocess(state: &mut State) {
         if start_delim.end.is_none() { continue; }
 
         let start_delim_end = start_delim.end.unwrap();
-        let end_delim = &state.delimiters[start_delim_end];
+        let end_delim = &delimiters[start_delim_end];
 
         let mut token;
 

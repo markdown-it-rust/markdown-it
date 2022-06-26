@@ -1,9 +1,8 @@
 // Core state object
 //
-use crate::Env;
+use crate::env::Env;
 use crate::MarkdownIt;
 use crate::Token;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct State<'a> {
@@ -18,7 +17,7 @@ impl<'a> State<'a> {
     pub fn new(src: &str, md: &'a MarkdownIt) -> Self {
         Self {
             src: src.to_owned(),
-            env: HashMap::new(),
+            env: Env::new(),
             tokens: Vec::new(),
             inline_mode: false,
             md,

@@ -7,19 +7,17 @@ pub mod common;
 pub mod mdurl;
 pub mod syntax;
 pub mod rulers;
+pub mod env;
 
 mod symbol;
 pub use symbol::Symbol;
 
 use derivative::Derivative;
-use std::collections::HashMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
 mod token;
 pub use token::Token;
-
-type Env = HashMap<&'static str, Box<dyn std::any::Any>>;
 
 #[derive(Default, Debug)]
 pub struct Options {

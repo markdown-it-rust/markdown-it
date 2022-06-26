@@ -1,34 +1,10 @@
 // Inline parser state
 //
-use crate::Env;
+use crate::env::Env;
 use crate::MarkdownIt;
 use crate::Token;
 use std::collections::HashMap;
 use std::mem;
-
-#[derive(Debug)]
-pub struct Delimiter {
-    // Starting marker
-    pub marker: char,
-
-    // Total length of these series of delimiters.
-    //
-    // Length is only used for emphasis-specific "rule of 3",
-    // use 0 for other plugins (in strikethrough or 3rd party plugins),
-    pub length: usize,
-
-    // A position of the token this delimiter corresponds to.
-    pub token:  usize,
-
-    // If this delimiter is matched as a valid opener, `end` will be
-    // equal to its position.
-    pub end:    Option<usize>,
-
-    // Boolean flags that determine if this delimiter could open or close
-    // an emphasis.
-    pub open:   bool,
-    pub close:  bool,
-}
 
 pub struct DelimRun {
     pub can_open: bool,
@@ -75,13 +51,6 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     // optimization of pairs parse (emphasis, strikes).
     pub cache: HashMap<usize, usize>,
 
-    // List of emphasis-like delimiters for current tag
-    pub delimiters: Vec<Delimiter>,
-
-    // backtick length => last seen position
-    pub backticks: Vec<usize>,
-    pub backticks_scanned: bool,
-
     // Counter used to disable inline linkify-it execution
     // inside <a> and markdown links
     pub link_level: i32,
@@ -101,9 +70,6 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             pos_max:           src.len(),
             pending:           String::new(),
             cache:             HashMap::new(),
-            delimiters:        Vec::new(),
-            backticks:         Vec::new(),
-            backticks_scanned: false,
             link_level:        0,
             state_level,
         }

@@ -1,6 +1,6 @@
 // Parser state class
 //
-use crate::Env;
+use crate::env::Env;
 use crate::MarkdownIt;
 use crate::Token;
 
