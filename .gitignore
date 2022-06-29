@@ -1,3 +1,4 @@
 /.vscode
 /target
+/tests/fixtures/node_modules
 Cargo.lock
