@@ -9,6 +9,7 @@ pub mod syntax;
 pub mod rulers;
 pub mod token;
 pub mod env;
+pub mod erasedset;
 
 mod symbol;
 pub use symbol::Symbol;
@@ -38,7 +39,7 @@ pub struct MarkdownIt {
     pub normalize_link: fn (&str) -> String,
     #[derivative(Debug="ignore")]
     pub normalize_link_text: fn (&str) -> String,
-    pub env: env::EnvState,
+    pub env: erasedset::ErasedSet,
     pub options: Options,
 }
 
@@ -81,7 +82,7 @@ impl MarkdownIt {
             validate_link,
             normalize_link,
             normalize_link_text,
-            env: env::EnvState::new(),
+            env: erasedset::ErasedSet::new(),
             options: options.unwrap_or_default(),
         };
         crate::syntax::base::add(&mut md);

@@ -1,7 +1,8 @@
-use std::collections::HashMap;
-use std::any::TypeId;
-use std::any::Any;
 use std::fmt::Debug;
+
+use crate::erasedset::ErasedSet;
+
+type EnvState = ErasedSet;
 
 #[derive(Debug)]
 pub struct Env {
@@ -81,7 +82,7 @@ impl Env {
     pub fn get_or_insert<T: 'static + EnvMember + Default + Debug>(&mut self) -> &mut T {
         use scope::EnvScope;
         let val = T::Scope::get_scope_mut(self);
-        val.last_mut().unwrap().get_or_insert::<T>()
+        val.last_mut().unwrap().get_or_insert_default::<T>()
     }
 
     pub fn state_push<S: scope::EnvScope>(&mut self) {
@@ -95,68 +96,6 @@ impl Env {
     }
 }
 
-pub struct EnvState(HashMap<TypeId, Box<dyn EnvStateTrait>>);
-
-impl EnvState {
-    pub fn new() -> Self {
-        Self(HashMap::new())
-    }
-
-    pub fn get<T: 'static + Default + Debug>(&self) -> Option<&T> {
-        let typeid = TypeId::of::<T>();
-        let result = self.0.get(&typeid)?;
-        // SAFETY: Hash is indexed by TypeId, therefore we know that whatever we got has the same TypeId as T.
-        // With hash being private, new hash value can only be inserted as T::default() -> T from this function.
-        // New value can be assigned by user via &mut T, but it should also be T.
-        Some(unsafe { result.downcast_unsafe::<T>() })
-    }
-
-    pub fn get_or_insert<T: 'static + Default + Debug>(&mut self) -> &mut T {
-        let typeid = TypeId::of::<T>();
-        let result = self.0.entry(typeid).or_insert_with(|| Box::new(EnvStateStruct(T::default())));
-        // SAFETY: see get()
-        unsafe { result.downcast_mut_unsafe::<T>() }
-    }
-}
-
-impl Debug for EnvState {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_set().entries(
-            self.0.iter().map(|(_, v)| v)
-        ).finish()
-    }
-}
-
 pub trait EnvMember {
     type Scope : scope::EnvScope;
-}
-
-trait EnvStateTrait : Any + Debug {
-    fn my_type_id(&self) -> TypeId;
-}
-
-impl dyn EnvStateTrait {
-    unsafe fn downcast_unsafe<T: 'static>(&self) -> &T {
-        debug_assert_eq!(TypeId::of::<T>(), self.my_type_id());
-        &*(self as *const dyn EnvStateTrait as *const T)
-    }
-
-    unsafe fn downcast_mut_unsafe<T: 'static>(&mut self) -> &mut T {
-        debug_assert_eq!(TypeId::of::<T>(), self.my_type_id());
-        &mut *(self as *mut dyn EnvStateTrait as *mut T)
-    }
-}
-
-struct EnvStateStruct<T>(T);
-
-impl<T: 'static + Debug> EnvStateTrait for EnvStateStruct<T> {
-    fn my_type_id(&self) -> TypeId {
-        TypeId::of::<T>()
-    }
-}
-
-impl<T: Debug> Debug for EnvStateStruct<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
 }

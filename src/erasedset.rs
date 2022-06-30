@@ -98,16 +98,16 @@ struct ErasedMember<T>(T);
 impl<T: Any + Debug> AnyDebug for ErasedMember<T> {}
 
 impl<T: Any + Debug> Debug for ErasedMember<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-struct TypeKey(TypeId, &'static str);
+pub struct TypeKey(TypeId, &'static str);
 
 impl TypeKey {
     #[must_use]
-    fn of<T: 'static>() -> Self {
+    pub fn of<T: 'static>() -> Self {
         Self(TypeId::of::<T>(), any::type_name::<T>())
     }
 }
@@ -127,7 +127,7 @@ impl PartialEq for TypeKey {
 impl Eq for TypeKey {}
 
 impl Debug for TypeKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.1)
     }
 }
@@ -236,7 +236,10 @@ mod tests {
         let mut set = ErasedSet::new();
         set.insert(42);
         set.insert("test");
-        assert_eq!(format!("{:?}", set), "ErasedSet({i32: 42, &str: \"test\"})");
+        let str = format!("{:?}", set);
+        // there are no guarantees about field order, so check both
+        assert!(str == "ErasedSet({i32: 42, &str: \"test\"})" ||
+                str == "ErasedSet({&str: \"test\", i32: 42})");
     }
 
     #[test]
@@ -245,5 +248,13 @@ mod tests {
         struct B;
         assert_eq!(TypeKey(std::any::TypeId::of::<A>(), "foo"), TypeKey(std::any::TypeId::of::<A>(), "bar"));
         assert_ne!(TypeKey(std::any::TypeId::of::<A>(), "foo"), TypeKey(std::any::TypeId::of::<B>(), "foo"));
+    }
+
+    #[test]
+    fn typekey_of() {
+        struct A;
+        struct B;
+        assert_eq!(TypeKey::of::<A>(), TypeKey::of::<A>());
+        assert_ne!(TypeKey::of::<A>(), TypeKey::of::<B>());
     }
 }

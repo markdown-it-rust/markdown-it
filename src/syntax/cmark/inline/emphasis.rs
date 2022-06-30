@@ -8,10 +8,10 @@ use crate::syntax::base::inline::pairs::{Pairs, Delimiters};
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("emphasis", rule);
 
-    md.env.get_or_insert::<Pairs>().set('*', 1, create_em_token::<'*'>);
-    md.env.get_or_insert::<Pairs>().set('_', 1, create_em_token::<'_'>);
-    md.env.get_or_insert::<Pairs>().set('*', 2, create_strong_token::<'*'>);
-    md.env.get_or_insert::<Pairs>().set('_', 2, create_strong_token::<'_'>);
+    md.env.get_or_insert_default::<Pairs>().set('*', 1, create_em_token::<'*'>);
+    md.env.get_or_insert_default::<Pairs>().set('_', 1, create_em_token::<'_'>);
+    md.env.get_or_insert_default::<Pairs>().set('*', 2, create_strong_token::<'*'>);
+    md.env.get_or_insert_default::<Pairs>().set('_', 2, create_strong_token::<'_'>);
 }
 
 // Insert each marker as a separate text token, and add it to delimiter list

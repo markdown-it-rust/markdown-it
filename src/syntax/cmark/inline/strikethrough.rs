@@ -10,7 +10,7 @@ use crate::syntax::base::inline::pairs::{Pairs, Delimiters};
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("strikethrough", rule);
 
-    md.env.get_or_insert::<Pairs>().set('~', 2, create_token::<'~'>);
+    md.env.get_or_insert_default::<Pairs>().set('~', 2, create_token::<'~'>);
 }
 
 // Insert each marker as a separate text token, and add it to delimiter list
