@@ -1,27 +1,26 @@
 // References
 //
-use crate::MarkdownIt;
-use crate::block::State;
-use crate::common::normalize_reference;
-use crate::env::EnvMember;
-use crate::env::scope::Block;
-use crate::helpers;
 use std::collections::HashMap;
+use crate::MarkdownIt;
+use crate::block;
+use crate::common::normalize_reference;
+use crate::env;
+use crate::helpers;
 
 #[derive(Debug, Default)]
 pub struct ReferenceEnv {
     pub map: HashMap<String, (String, Option<String>)>,
 }
 
-impl EnvMember for ReferenceEnv {
-    type Scope = Block;
+impl env::EnvMember for ReferenceEnv {
+    type Scope = env::scope::Block;
 }
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("reference", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     if silent { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block

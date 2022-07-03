@@ -1,14 +1,35 @@
 // Process [link](<to> "stuff")
 //
 use crate::MarkdownIt;
-use crate::inline::State;
 use crate::helpers;
+use crate::inline;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct Link {
+    pub url: String,
+    pub title: Option<String>,
+}
+
+impl TokenData for Link {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        let mut attrs : Vec<(&str, &str)> = Vec::new();
+        attrs.push(("href", &self.url));
+
+        if let Some(title) = &self.title {
+            attrs.push(("title", &*title));
+        }
+
+        f.open_attrs("a", attrs).contents(&token.children).close("a");
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("link", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     if state.src[state.pos..state.pos_max].chars().next().unwrap() != '[' { return false; }
 
     if let Some(result) = helpers::parse_link(state, state.pos, false) {
@@ -30,11 +51,10 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
             let children = std::mem::replace(state.tokens, old_tokens);
 
-            let token = state.push("link", "a", 0);
-            token.attrs.push(("href", result.href.unwrap_or_default()));
-            if let Some(x) = result.title {
-                token.attrs.push(("title", x));
-            }
+            let token = state.push(Link {
+                url: result.href.unwrap_or_default(),
+                title: result.title,
+            });
             token.children = children;
             state.link_level -= 1;
         }

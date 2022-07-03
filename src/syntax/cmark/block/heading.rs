@@ -1,13 +1,29 @@
 // heading (#, ##, ...)
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::renderer;
+use crate::syntax::base::core::inline::InlineNodes;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct ATXHeading {
+    pub level: u8,
+}
+
+impl TokenData for ATXHeading {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        static TAG : [&str; 6] = [ "h1", "h2", "h3", "h4", "h5", "h6" ];
+        debug_assert!(self.level >= 1 && self.level <= 6);
+        f.open(TAG[self.level as usize - 1]).contents(&token.children).close(TAG[self.level as usize - 1]).lf();
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("heading", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if state.line_indent(state.line) >= 4 { return false; }
 
@@ -18,7 +34,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
     let text_pos;
 
     // count heading level
-    let mut level = 0;
+    let mut level = 0u8;
     let mut chars = line.char_indices();
     loop {
         match chars.next() {
@@ -31,7 +47,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
                 break;
             }
             None => {
-                text_pos = level;
+                text_pos = level as usize;
                 break;
             }
             Some(_) => return false,
@@ -60,20 +76,11 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     state.line += 1;
 
-    let mut token;
-
-    static TAG : [&str; 6] = [ "h1", "h2", "h3", "h4", "h5", "h6" ];
-
-    token = state.push("heading_open", TAG[level - 1], 1);
-    token.markup = "#".repeat(level);
+    let mut token = state.push(ATXHeading { level });
     token.map = Some([ start_line, start_line + 1 ]);
-
-    token = state.push("inline", "", 0);
-    token.content = content;
-    token.map = Some([ start_line, start_line + 1 ]);
-
-    token = state.push("heading_close", TAG[level - 1], -1);
-    token.markup = "#".repeat(level);
+    token.children.push(Token::new(InlineNodes {
+        content
+    }));
 
     true
 }

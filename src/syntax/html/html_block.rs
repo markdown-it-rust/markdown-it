@@ -1,11 +1,24 @@
 // HTML block
 //
-use crate::MarkdownIt;
-use crate::block::State;
-use crate::common::html_re::HTML_OPEN_CLOSE_TAG_RE;
-use crate::common::html_blocks::HTML_BLOCKS;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use crate::MarkdownIt;
+use crate::block;
+use crate::common::html_blocks::*;
+use crate::common::html_re::*;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct HtmlBlock {
+    pub content: String,
+}
+
+impl TokenData for HtmlBlock {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.text_raw(&self.content);
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("html_block", rule);
@@ -76,7 +89,7 @@ static HTML_SEQUENCES : Lazy<Vec<HTMLSequence>> = Lazy::new(|| {
     result
 });
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if state.line_indent(state.line) >= 4 { return false; }
 
@@ -123,9 +136,8 @@ fn rule(state: &mut State, silent: bool) -> bool {
     state.line = next_line;
 
     let content = state.get_lines(start_line, next_line, state.blk_indent, true);
-    let token = state.push("html_block", "", 0);
+    let token = state.push(HtmlBlock { content });
     token.map = Some([ start_line, next_line ]);
-    token.content = content;
 
     true
 }

@@ -20,10 +20,7 @@ use regex::Regex;
 
 #[derive(Default, Debug)]
 pub struct Options {
-    pub breaks: bool,
-    pub lang_prefix: &'static str,
     pub max_nesting: Option<u32>,
-    pub xhtml_out: bool,
 }
 
 #[derive(Derivative)]
@@ -85,7 +82,7 @@ impl MarkdownIt {
             env: erasedset::ErasedSet::new(),
             options: options.unwrap_or_default(),
         };
-        crate::syntax::base::add(&mut md);
+        syntax::base::add(&mut md);
         md
     }
 
@@ -96,6 +93,6 @@ impl MarkdownIt {
     }
 
     pub fn render(&self, src: &str) -> String {
-        self.renderer.render(&self.parse(src), self)
+        self.renderer.render(&self.parse(src))
     }
 }

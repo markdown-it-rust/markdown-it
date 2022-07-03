@@ -1,383 +1,115 @@
-/**
- * class Renderer
- *
- * Generates HTML from parsed token stream. Each instance has independent
- * copy of rules. Those can be rewritten with ease. Also, you can add new
- * rules if you create plugin and adds new token types.
- **/
-use crate::common::escape_html;
-use crate::common::unescape_all;
 use crate::token::Token;
-use crate::token::TokenAttrs;
-use crate::MarkdownIt;
-use derivative::Derivative;
-use std::borrow::Cow;
-use std::collections::HashMap;
+use crate::common::escape_html;
 
-pub type Rule = for<'a> fn (tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str>;
-
-#[derive(Derivative)]
-#[derivative(Debug)]
+#[derive(Debug)]
 pub struct Renderer {
-    /*
-     * Renderer#rules -> Object
-     *
-     * Contains render rules for tokens. Can be updated and extended.
-     *
-     * ##### Example
-     *
-     * ```javascript
-     * var md = require('markdown-it')();
-     *
-     * md.renderer.rules.strong_open  = function () { return '<b>'; };
-     * md.renderer.rules.strong_close = function () { return '</b>'; };
-     *
-     * var result = md.renderInline(...);
-     * ```
-     *
-     * Each rule is called as independent static function with fixed signature:
-     *
-     * ```javascript
-     * function my_token_render(tokens, idx, options, env, renderer) {
-     *   // ...
-     *   return renderedHTML;
-     * }
-     * ```
-     *
-     * See [source code](https://github.com/markdown-it/markdown-it/blob/master/lib/renderer.js)
-     * for more details and examples.
-     */
-    #[derivative(Debug="ignore")]
-    rules: HashMap<&'static str, Rule>,
+    pub lang_prefix: &'static str,
+    pub xhtml: bool,
+    pub breaks: bool,
 }
 
 impl Renderer {
-    // Creates new [[Renderer]] instance and fill [[Renderer#rules]] with defaults.
     pub fn new() -> Self {
-        let mut result = Self { rules: HashMap::new() };
-        result.rules.insert("code_inline", rules::code_inline);
-        result.rules.insert("code_block",  rules::code_block);
-        result.rules.insert("fence",       rules::fence);
-        result.rules.insert("link",        rules::link);
-        result.rules.insert("em",          rules::em);
-        result.rules.insert("s",           rules::s);
-        result.rules.insert("strong",      rules::strong);
-        result.rules.insert("image",       rules::image);
-        result.rules.insert("hardbreak",   rules::hardbreak);
-        result.rules.insert("softbreak",   rules::softbreak);
-        result.rules.insert("text",        rules::text);
-        result.rules.insert("html_block",  rules::html_block);
-        result.rules.insert("html_inline", rules::html_inline);
-        result
+        Self {
+            lang_prefix: "language-",
+            xhtml: false,
+            breaks: false
+        }
     }
 
-    /**
-     * Renderer.renderAttrs(token) -> String
-     *
-     * Render token attributes to string.
-     **/
-    pub fn render_attrs(&self, attrs: &TokenAttrs) -> String {
-        let mut result = String::new();
-
-        for (name, value) in attrs {
-            let escaped_name = escape_html(name);
-            let escaped_value = escape_html(value);
-            result += &format!(" {escaped_name}=\"{escaped_value}\"");
-        }
-
-        result
-    }
-
-    /**
-     * Renderer.renderToken(tokens, idx, options) -> String
-     * - tokens (Array): list of tokens
-     * - idx (Numbed): token index to render
-     * - options (Object): params of parser instance
-     *
-     * Default token renderer. Can be overriden by custom function
-     * in [[Renderer#rules]].
-     **/
-    pub fn render_token(&self, tokens: &Vec<Token>, idx: usize, md: &MarkdownIt) -> String {
-        let mut result = String::new();
-        let token = &tokens[idx];
-        let mut need_lf = false;
-
-        // Tight list paragraphs
-        if token.hidden { return result; }
-
-        // Insert a newline between hidden paragraph and subsequent opening
-        // block-level tag.
-        //
-        // For example, here we should insert a newline before blockquote:
-        //  - a
-        //    >
-        if token.block && token.nesting != -1 && idx != 0 && tokens[idx - 1].hidden {
-            result.push('\n');
-        }
-
-        // Add token name, e.g. `<img`
-        result.push('<');
-        if token.nesting == -1 { result.push('/'); }
-        result += token.tag;
-
-        // Encode attributes, e.g. `<img src="foo"
-        result += &self.render_attrs(&token.attrs);
-
-        // Add a slash for self-closing tags, e.g. `<img src="foo" /`
-        if token.nesting == 0 && md.options.xhtml_out {
-            result += " /";
-        }
-
-        if token.block {
-            need_lf = true;
-
-            if token.nesting == 1 {
-                if idx + 1 < tokens.len() {
-                    let next_token = &tokens[idx + 1];
-
-                    if next_token.name == "inline" || next_token.hidden {
-                        // Block-level tag containing an inline tag.
-                        need_lf = false;
-                    } else if next_token.nesting == -1 && next_token.tag == token.tag {
-                        // Opening tag + closing tag of the same type. E.g. `<li></li>`.
-                        need_lf = false;
-                    }
-                }
-            }
-        }
-
-        result.push('>');
-        if need_lf { result.push('\n'); }
-
-        result
-    }
-
-    /**
-     * Renderer.renderInline(tokens, options, env) -> String
-     * - tokens (Array): list on block tokens to render
-     * - options (Object): params of parser instance
-     *
-     * The same as [[Renderer.render]], but for single token of `inline` type.
-     **/
-    pub fn render_inline(&self, tokens: &Vec<Token>, md: &MarkdownIt) -> String {
-        let mut result = String::new();
-
-        for (idx, token) in tokens.iter().enumerate() {
-            if let Some(rule) = self.rules.get(token.name) {
-                result += &rule(tokens, idx, md);
-            } else {
-                result += &self.render_token(tokens, idx, md);
-            }
-        }
-
-        result
-    }
-
-    /** internal
-     * Renderer.renderInlineAsText(tokens, options, env) -> String
-     * - tokens (Array): list on block tokens to render
-     * - options (Object): params of parser instance
-     * - env (Object): additional data from parsed input (references, for example)
-     *
-     * Special kludge for image `alt` attributes to conform CommonMark spec.
-     * Don't try to use it! Spec requires to show `alt` content with stripped markup,
-     * instead of simple escaping.
-     **/
-    pub fn render_inline_as_text(&self, tokens: &Vec<Token>, md: &MarkdownIt) -> String {
-        let mut result = String::new();
-
-        for token in tokens.iter() {
-            if token.children.is_empty() {
-                result += &token.content; // text
-            } else {
-                result += &self.render_inline_as_text(&token.children, md); // nested tags
-            }
-        }
-
-        result
-    }
-
-    /**
-     * Renderer.render(tokens, options, env) -> String
-     * - tokens (Array): list on block tokens to render
-     * - options (Object): params of parser instance
-     *
-     * Takes token stream and generates HTML. Probably, you will never need to call
-     * this method directly.
-     **/
-    pub fn render(&self, tokens: &Vec<Token>, md: &MarkdownIt) -> String {
-        let mut result = String::new();
-
-        for (idx, token) in tokens.iter().enumerate() {
-            if token.name == "inline" {
-                result += &self.render_inline(&token.children, md);
-            } else {
-                if let Some(rule) = self.rules.get(token.name) {
-                    result += &rule(tokens, idx, md);
-                } else {
-                    result += &self.render_token(tokens, idx, md);
-                }
-            }
-        }
-
-        result
+    pub fn render(&self, tokens: &Vec<Token>) -> String {
+        let mut ctx = Formatter {
+            result: String::new(),
+            renderer: self,
+        };
+        ctx.contents(tokens);
+        return ctx.result;
     }
 }
 
-mod rules {
-    use std::borrow::Cow;
-    use crate::MarkdownIt;
-    use crate::token::Token;
-    use crate::token::TokenAttrs;
-    use super::escape_html;
-    use super::unescape_all;
+pub struct Formatter<'a> {
+    pub result: String,
+    pub renderer: &'a Renderer,
+}
 
-    pub fn code_inline<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-        let attrs = md.renderer.render_attrs(&token.attrs);
-        let content = escape_html(&token.content);
-
-        Cow::Owned(format!("<code{attrs}>{content}</code>"))
+impl<'a> Formatter<'a> {
+    pub fn open(&mut self, tag: &str) -> &mut Self {
+        self.result.push('<');
+        self.result.push_str(tag);
+        self.result.push('>');
+        self
     }
 
-    pub fn code_block<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-        let attrs = md.renderer.render_attrs(&token.attrs);
-        let content = escape_html(&token.content);
-
-        Cow::Owned(format!("<pre><code{attrs}>{content}</code></pre>\n"))
-    }
-
-    pub fn fence<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-        let info = unescape_all(&token.info);
-        let mut split = info.split_whitespace();
-        let lang_name = split.next().unwrap_or("");
-        //let lang_attrs = split.collect::<Vec<&str>>().join(" ");
-
-        // TODO: highlight
-        let highlighted = escape_html(&token.content);
-
-        if highlighted.starts_with("<pre") {
-            let mut highlighted : String = highlighted.into();
-            highlighted.push('\n');
-            return Cow::Owned(highlighted);
+    fn render_attrs(&mut self, attrs: Vec<(&str, &str)>) -> &mut Self {
+        for (name, value) in attrs {
+            self.result.push(' ');
+            self.result.push_str(&escape_html(name));
+            self.result.push('=');
+            self.result.push('"');
+            self.result.push_str(&escape_html(value));
+            self.result.push('"');
         }
+        self
+    }
 
-        let attrs;
+    pub fn open_attrs(&mut self, tag: &str, attrs: Vec<(&str, &str)>) -> &mut Self {
+        self.result.push('<');
+        self.result.push_str(tag);
+        self.render_attrs(attrs);
+        self.result.push('>');
+        self
+    }
 
-        // If language exists, inject class gently, without modifying original token.
-        // May be, one day we will add .deepClone() for token and simplify this part, but
-        // now we prefer to keep things local.
-        if !lang_name.is_empty() {
-            let lang_prefix = md.options.lang_prefix;
-            let mut has_class = false;
-            let mut attrs_with_class = token.attrs.iter().map(
-                |(k, v)| if *k == "class" {
-                    has_class = true;
-                    (*k, format!("{v} {lang_prefix}{lang_name}"))
-                } else {
-                    (*k, v.clone())
-                }
-            ).collect::<TokenAttrs>();
+    pub fn close(&mut self, tag: &str) -> &mut Self {
+        self.result.push('<');
+        self.result.push('/');
+        self.result.push_str(tag);
+        self.result.push('>');
+        self
+    }
 
-            if !has_class {
-                attrs_with_class.push(("class", format!("{lang_prefix}{lang_name}")));
-            }
-
-            attrs = md.renderer.render_attrs(&attrs_with_class);
-        } else {
-            attrs = md.renderer.render_attrs(&token.attrs);
+    pub fn self_close(&mut self, tag: &str) -> &mut Self {
+        self.result.push('<');
+        self.result.push_str(tag);
+        if self.renderer.xhtml {
+            self.result.push(' ');
+            self.result.push('/');
         }
-
-        Cow::Owned(format!("<pre><code{attrs}>{highlighted}</code></pre>\n"))
+        self.result.push('>');
+        self
     }
 
-    pub fn link<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-
-        let attrs = md.renderer.render_attrs(&token.attrs);
-        let content = md.renderer.render_inline(&token.children, md);
-
-        Cow::Owned(format!("<a{attrs}>{content}</a>"))
-    }
-
-    pub fn em<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-
-        let attrs = md.renderer.render_attrs(&token.attrs);
-        let content = md.renderer.render_inline(&token.children, md);
-
-        Cow::Owned(format!("<em{attrs}>{content}</em>"))
-    }
-
-    pub fn strong<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-
-        let attrs = md.renderer.render_attrs(&token.attrs);
-        let content = md.renderer.render_inline(&token.children, md);
-
-        Cow::Owned(format!("<strong{attrs}>{content}</strong>"))
-    }
-
-    pub fn s<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-
-        let attrs = md.renderer.render_attrs(&token.attrs);
-        let content = md.renderer.render_inline(&token.children, md);
-
-        Cow::Owned(format!("<s{attrs}>{content}</s>"))
-    }
-
-    pub fn image<'a>(tokens: &'a Vec<Token>, idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        let token = &tokens[idx];
-
-        // "alt" attr MUST be set, even if empty. Because it's mandatory and
-        // should be placed on proper position for tests.
-        //
-        // Replace content with actual value
-
-        let attrs_with_alt = token.attrs.iter().map(
-            |(k, v)| if *k == "alt" {
-                (*k, md.renderer.render_inline_as_text(&token.children, md))
-            } else {
-                (*k, v.clone())
-            }
-        ).collect();
-
-        let attrs = md.renderer.render_attrs(&attrs_with_alt);
-        let xhtml = if md.options.xhtml_out { " /" } else { "" };
-
-        Cow::Owned(format!("<img{attrs}{xhtml}>"))
-    }
-
-    pub fn hardbreak<'a>(_tokens: &'a Vec<Token>, _idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        if md.options.xhtml_out {
-            Cow::Borrowed("<br />\n")
-        } else {
-            Cow::Borrowed("<br>\n")
+    pub fn self_close_attrs(&mut self, tag: &str, attrs: Vec<(&str, &str)>) -> &mut Self {
+        self.result.push('<');
+        self.result.push_str(tag);
+        self.render_attrs(attrs);
+        if self.renderer.xhtml {
+            self.result.push(' ');
+            self.result.push('/');
         }
+        self.result.push('>');
+        self
     }
 
-    pub fn softbreak<'a>(_tokens: &'a Vec<Token>, _idx: usize, md: &MarkdownIt) -> Cow<'a, str> {
-        if !md.options.breaks {
-            Cow::Borrowed("\n")
-        } else if md.options.xhtml_out {
-            Cow::Borrowed("<br />\n")
-        } else {
-            Cow::Borrowed("<br>\n")
+    pub fn contents(&mut self, tokens: &[Token]) -> &mut Self {
+        for token in tokens {
+            token.data.render(token, self);
         }
+        self
     }
 
-    pub fn text<'a>(tokens: &'a Vec<Token>, idx: usize, _md: &MarkdownIt) -> Cow<'a, str> {
-        escape_html(&tokens[idx].content)
+    pub fn lf(&mut self) -> &mut Self {
+        self.result.push('\n');
+        self
     }
 
-    pub fn html_block<'a>(tokens: &'a Vec<Token>, idx: usize, _md: &MarkdownIt) -> Cow<'a, str> {
-        Cow::Borrowed(tokens[idx].content.as_str())
+    pub fn text(&mut self, text: &str) -> &mut Self {
+        self.result.push_str(&escape_html(text));
+        self
     }
 
-    pub fn html_inline<'a>(tokens: &'a Vec<Token>, idx: usize, _md: &MarkdownIt) -> Cow<'a, str> {
-        Cow::Borrowed(tokens[idx].content.as_str())
+    pub fn text_raw(&mut self, text: &str) -> &mut Self {
+        self.result.push_str(&text);
+        self
     }
 }

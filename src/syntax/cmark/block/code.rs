@@ -1,13 +1,28 @@
 // Code block (4 spaces padded)
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct CodeBlock {
+    pub content: String,
+}
+
+impl TokenData for CodeBlock {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.open("pre")
+            .open("code").text(&self.content).close("code")
+        .close("pre").lf();
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("code", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     if silent { return false; }
     if state.line_indent(state.line) < 4 { return false; }
 
@@ -34,8 +49,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     let content = state.get_lines(start_line, last, 4 + state.blk_indent, false) + "\n";
 
-    let mut token = state.push("code_block", "code", 0);
-    token.content = content;
+    let mut token = state.push(CodeBlock { content });
     token.map = Some([ start_line, last ]);
 
     true

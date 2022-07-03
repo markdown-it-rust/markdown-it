@@ -1,13 +1,15 @@
 // Process escaped chars and hardbreaks
 //
 use crate::MarkdownIt;
-use crate::inline::State;
+use crate::inline;
+use crate::syntax::base::inline::text::TextSpecial;
+use crate::syntax::cmark::inline::newline::Hardbreak;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("escape", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '\\' { return false; }
 
@@ -21,7 +23,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
             }
 
             if !silent {
-                state.push("hardbreak", "br", 0);
+                state.push(Hardbreak);
             }
 
             true
@@ -38,10 +40,11 @@ fn rule(state: &mut State, silent: bool) -> bool {
                     _ => orig_str.clone()
                 };
 
-                let token = state.push("text_special", "", 0);
-                token.content = content_str;
-                token.markup = orig_str;
-                token.info = "escape".to_owned();
+                state.push(TextSpecial {
+                    content: content_str,
+                    markup: orig_str,
+                    info: "escape",
+                });
             }
             state.pos += 1 + chr.len_utf8();
             true

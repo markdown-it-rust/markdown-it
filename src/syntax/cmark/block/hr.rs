@@ -1,13 +1,27 @@
 // Horizontal rule
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct ThematicBreak {
+    pub marker: char,
+    pub marker_len: usize,
+}
+
+impl TokenData for ThematicBreak {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.self_close("hr").lf();
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("hr", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if state.line_indent(state.line) >= 4 { return false; }
 
@@ -37,9 +51,8 @@ fn rule(state: &mut State, silent: bool) -> bool {
     let line = state.line;
     state.line += 1;
 
-    let mut token = state.push("hr", "hr", 0);
+    let mut token = state.push(ThematicBreak { marker, marker_len: cnt });
     token.map = Some([ line, line + 1 ]);
-    token.markup = marker.to_string().repeat(cnt);
 
     true
 }

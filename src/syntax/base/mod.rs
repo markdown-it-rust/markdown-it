@@ -10,5 +10,4 @@ pub fn add(md: &mut MarkdownIt) {
     core::normalize::add(md);
     core::block::add(md);
     core::inline::add(md);
-    core::text_join::add(md);
 }

@@ -2,7 +2,8 @@
 //
 use crate::env::Env;
 use crate::MarkdownIt;
-use crate::token::Token;
+use crate::syntax::base::inline::text::Text;
+use crate::token::{Token, TokenData};
 use std::collections::HashMap;
 use std::mem;
 
@@ -85,27 +86,22 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     // Flush pending text
     //
     pub fn push_pending(&mut self) {
-        let mut token = Token::new("text", "", 0);
-        token.content = mem::take(&mut self.pending);
-        token.level = self.level;
+        let content = mem::take(&mut self.pending);
+        let token = Token::new(Text { content });
         self.tokens.push(token);
     }
 
     // Push new token to "stream".
     // If pending text exists - flush it as text token
     //
-    pub fn push(&mut self, name: &'static str, tag: &'static str, nesting: i8) -> &mut Token {
+    pub fn push<T: TokenData>(&mut self, data: T) -> &mut Token {
         if !self.pending.is_empty() { self.push_pending(); }
 
-        let mut token = Token::new(name, tag, nesting);
-
-        if nesting < 0 { self.level -= 1; }
-        token.level = self.level;
-        if nesting > 0 { self.level += 1; }
-
+        let token = Token::new(data);
         self.tokens.push(token);
         self.tokens.last_mut().unwrap()
     }
+
 
     // Scan a sequence of emphasis-like markers, and determine whether
     // it can start an emphasis sequence or end an emphasis sequence.

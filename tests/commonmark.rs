@@ -1,16 +1,15 @@
 use markdown_it;
 
 fn run(input: &str, output: &str) {
-    let mut output = if output == "" { "".to_owned() } else { output.to_owned() + "\n" };
-    output = output.replace("<blockquote>\n</blockquote>", "<blockquote></blockquote>");
+    let output = if output == "" { "".to_owned() } else { output.to_owned() + "\n" };
     let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
-        breaks: false,
-        lang_prefix: "language-",
         max_nesting: None,
-        xhtml_out: true,
     }));
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
+    md.renderer.breaks = false;
+    md.renderer.lang_prefix = "language-";
+    md.renderer.xhtml = true;
     let result = md.render(&(input.to_owned() + "\n"));
     assert_eq!(result, output);
 }

@@ -1,12 +1,11 @@
-use crate::MarkdownIt;
-use crate::env::EnvMember;
-use crate::env::scope::InlineLvl;
-use crate::inline::State;
-use crate::inline::state::DelimRun;
-use crate::token::Token;
-use std::collections::HashMap;
-use std::cmp::min;
 use derivative::Derivative;
+use std::cmp::min;
+use std::collections::HashMap;
+use crate::MarkdownIt;
+use crate::env;
+use crate::inline;
+use crate::syntax::base::inline::text::Text;
+use crate::token::Token;
 
 #[derive(Debug, Default)]
 pub struct Pairs(HashMap<char, [Option<fn () -> Token>; 3]>);
@@ -46,7 +45,7 @@ pub struct Delimiters(Vec<Delimiter>);
 
 // List of emphasis-like delimiters for current tag
 impl Delimiters {
-    pub fn push(&mut self, run: DelimRun, token: usize) {
+    pub fn push(&mut self, run: inline::state::DelimRun, token: usize) {
         self.0.push(Delimiter {
             marker: run.marker,
             length: run.length,
@@ -57,8 +56,8 @@ impl Delimiters {
     }
 }
 
-impl EnvMember for Delimiters {
-    type Scope = InlineLvl;
+impl env::EnvMember for Delimiters {
+    type Scope = env::scope::InlineLvl;
 }
 
 
@@ -69,7 +68,7 @@ pub fn add(md: &mut MarkdownIt) {
 
 // For each opening emphasis-like marker find a matching closing one
 //
-fn make_pairs(state: &mut State) {
+fn make_pairs(state: &mut inline::State) {
     let delimiters = state.env.get::<Delimiters>();
     if delimiters.is_none() { return; }
     let delimiters = delimiters.unwrap();
@@ -149,11 +148,15 @@ fn make_pairs(state: &mut State) {
                             // cut marker_len chars from start, i.e. "12345" -> "345" (but they should be all the same)
                             auxinfo[closer_idx].remaining -= marker_len;
                             auxinfo[closer_idx].jumps = closer_idx - opener_idx;
-                            for _ in 0..marker_len { token.content.pop(); };
+                            let data = token.data
+                                .downcast_mut::<Text>().expect("delimiter points at non-text node");
+                            for _ in 0..marker_len { data.content.pop(); };
 
                             // cut marker_len chars from end, i.e. "12345" -> "123" (but they should be all the same)
                             auxinfo[opener_idx].remaining -= marker_len;
-                            for _ in 0..marker_len { out_tokens.last_mut().unwrap().content.pop(); };
+                            let data = out_tokens.last_mut().unwrap().data
+                                .downcast_mut::<Text>().expect("delimiter points at non-text node");
+                            for _ in 0..marker_len { data.content.pop(); };
 
                             new_min_opener_idx = 0;
                             out_tokens.push(new_token);
@@ -221,10 +224,12 @@ fn fragments_join(mut in_tokens: Vec<Token>) -> Vec<Token> {
     let max = tokens.len();
 
     while curr < max {
-        if tokens[curr].name == "text" && curr + 1 < max && tokens[curr + 1].name == "text" {
+        if tokens[curr].data.is::<Text>() && curr + 1 < max && tokens[curr + 1].data.is::<Text>() {
             // collapse two adjacent text nodes
-            let second_token_content = std::mem::take(&mut tokens[curr + 1].content);
-            tokens[curr].content += &second_token_content;
+            let t2_data = tokens[curr + 1].data.downcast_mut::<Text>().unwrap();
+            let t2_content = std::mem::take(&mut t2_data.content);
+            let t1_data = tokens[curr].data.downcast_mut::<Text>().unwrap();
+            t1_data.content += &t2_content;
             tokens.swap(curr, curr + 1);
         } else {
             if curr != last { tokens.swap(last, curr); }

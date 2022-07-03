@@ -1,11 +1,12 @@
 // Process html entity - &#123;, &#xAF;, &quot;, ...
 //
+use once_cell::sync::Lazy;
+use regex::Regex;
 use crate::MarkdownIt;
 use crate::common::entities;
 use crate::common::is_valid_entity_code;
-use crate::inline::State;
-use once_cell::sync::Lazy;
-use regex::Regex;
+use crate::inline;
+use crate::syntax::base::inline::text::TextSpecial;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("entity", rule);
@@ -19,7 +20,7 @@ static NAMED_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new("(?i)^&([a-z][a-z0-9]{1,31});").unwrap()
 });
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '&' { return false; }
 
@@ -42,10 +43,11 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
                 let markup_str = capture[0].to_owned();
 
-                let token = state.push("text_special", "", 0);
-                token.content = content_str;
-                token.markup = markup_str;
-                token.info = "entity".to_owned();
+                state.push(TextSpecial {
+                    content: content_str,
+                    markup: markup_str,
+                    info: "entity",
+                });
             }
             state.pos += entity_len;
             true
@@ -60,10 +62,11 @@ fn rule(state: &mut State, silent: bool) -> bool {
                     let markup_str = capture[0].to_owned();
                     let content_str = (*str).to_owned();
 
-                    let token = state.push("text_special", "", 0);
-                    token.content = content_str;
-                    token.markup = markup_str;
-                    token.info = "entity".to_owned();
+                    state.push(TextSpecial {
+                        content: content_str,
+                        markup: markup_str,
+                        info: "entity",
+                    });
                 }
                 state.pos += entity_len;
                 true

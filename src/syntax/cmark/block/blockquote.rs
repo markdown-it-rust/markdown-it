@@ -1,13 +1,24 @@
 // Block quotes
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct Blockquote;
+
+impl TokenData for Blockquote {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        f.open("blockquote").lf().contents(&token.children).close("blockquote").lf();
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("blockquote", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if state.line_indent(state.line) >= 4 { return false; }
 
@@ -189,22 +200,17 @@ fn rule(state: &mut State, silent: bool) -> bool {
     let old_indent = state.blk_indent;
     state.blk_indent = 0;
 
-    let mut token;
-    let token_idx = state.tokens.len();
-
-    token = state.push("blockquote_open", "blockquote", 1);
-    token.markup = ">".to_owned();
-
+    let old_tokens = std::mem::take(state.tokens);
     let old_line_max = state.line_max;
     state.line = start_line;
     state.line_max = next_line;
     state.md.block.tokenize(state);
     state.line_max = old_line_max;
 
-    state.tokens[token_idx].map = Some([ start_line, state.line ]);
-
-    token = state.push("blockquote_close", "blockquote", -1);
-    token.markup = ">".to_owned();
+    let children = std::mem::replace(state.tokens, old_tokens);
+    let mut token = state.push(Blockquote);
+    token.children = children;
+    token.map = Some([ start_line, next_line ]);
 
     // Restore original tShift; this might not be necessary since the parser
     // has already been here, but just to make sure we can do that.

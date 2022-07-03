@@ -1,9 +1,23 @@
 // Parse backticks
 //
 use crate::MarkdownIt;
-use crate::env::EnvMember;
-use crate::env::scope::Inline;
-use crate::inline::State;
+use crate::env;
+use crate::inline;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct CodeInline {
+    pub marker: char,
+    pub marker_len: usize,
+    pub content: String,
+}
+
+impl TokenData for CodeInline {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.open("code").text(&self.content).close("code");
+    }
+}
 
 #[derive(Debug, Default)]
 struct BacktickCache {
@@ -11,15 +25,15 @@ struct BacktickCache {
     max: Vec<usize>,
 }
 
-impl EnvMember for BacktickCache {
-    type Scope = Inline;
+impl env::EnvMember for BacktickCache {
+    type Scope = env::scope::Inline;
 }
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("backticks", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '`' { return false; }
 
@@ -69,11 +83,12 @@ fn rule(state: &mut State, silent: bool) -> bool {
                 if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
                     content = content[1..content.len() - 1].to_owned();
                 }
-                let markup = marker.to_owned();
 
-                let mut token = state.push("code_inline", "code", 0);
-                token.markup = markup;
-                token.content = content;
+                state.push(CodeInline {
+                    marker: '`',
+                    marker_len: opener_len,
+                    content,
+                });
             }
             state.pos = match_end;
             return true;

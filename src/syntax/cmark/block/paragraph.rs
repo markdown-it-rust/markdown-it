@@ -1,14 +1,26 @@
 // Paragraph
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::renderer;
+use crate::syntax::base::core::inline::InlineNodes;
+use crate::token::{Token, TokenData};
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("paragraph", rule)
         .after_all();
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+#[derive(Debug)]
+pub struct Paragraph;
+
+impl TokenData for Paragraph {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        f.open("p").contents(&token.children).close("p").lf();
+    }
+}
+
+fn rule(state: &mut block::State, silent: bool) -> bool {
     if silent { return false; }
 
     let start_line = state.line;
@@ -43,16 +55,11 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     state.line = next_line;
 
-    let mut token;
-
-    token = state.push("paragraph_open", "p", 1);
+    let mut token = state.push(Paragraph);
     token.map = Some([ start_line, next_line ]);
-
-    token = state.push("inline", "", 0);
-    token.content = content;
-    token.map = Some([ start_line, next_line ]);
-
-    state.push("paragraph_close", "p", -1);
+    token.children.push(Token::new(InlineNodes {
+        content
+    }));
 
     true
 }

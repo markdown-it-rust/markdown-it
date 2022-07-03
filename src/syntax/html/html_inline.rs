@@ -1,14 +1,27 @@
 // Process escaped chars and hardbreaks
 //
-use crate::MarkdownIt;
 use crate::common::html_re::*;
-use crate::inline::State;
+use crate::inline;
+use crate::MarkdownIt;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct HtmlInline {
+    pub content: String,
+}
+
+impl TokenData for HtmlInline {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.text_raw(&self.content);
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("html_inline", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     // Check start
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '<' { return false; }
@@ -26,16 +39,15 @@ fn rule(state: &mut State, silent: bool) -> bool {
     state.pos += capture.len();
 
     if !silent {
-        let capture_str = capture.to_owned();
+        let content = capture.to_owned();
 
-        if HTML_LINK_OPEN.is_match(&capture_str) {
+        if HTML_LINK_OPEN.is_match(&content) {
             state.link_level += 1;
-        } else if HTML_LINK_CLOSE.is_match(&capture_str) {
+        } else if HTML_LINK_CLOSE.is_match(&content) {
             state.link_level -= 1;
         }
 
-        let mut token = state.push("html_inline", "", 0);
-        token.content = capture_str;
+        state.push(HtmlInline { content });
     }
 
     true

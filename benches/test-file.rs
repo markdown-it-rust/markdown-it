@@ -4,10 +4,7 @@ pub fn benchmark(c: &mut Criterion) {
 
     let source = std::fs::read_to_string("benches/test-file.md").unwrap();
     let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
-        breaks: false,
-        lang_prefix: "language-",
         max_nesting: None,
-        xhtml_out: true,
     }));
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);

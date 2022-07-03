@@ -1,13 +1,37 @@
 // Process '\n'
 //
 use crate::MarkdownIt;
-use crate::inline::State;
+use crate::inline;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct Hardbreak;
+
+impl TokenData for Hardbreak {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.self_close("br").lf();
+    }
+}
+
+#[derive(Debug)]
+pub struct Softbreak;
+
+impl TokenData for Softbreak {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        if f.renderer.breaks {
+            f.self_close("br").lf();
+        } else {
+            f.lf();
+        }
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("newline", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
 
     if chars.next().unwrap() != '\n' { return false; }
@@ -35,9 +59,9 @@ fn rule(state: &mut State, silent: bool) -> bool {
         }
 
         if tail_size >= 2 {
-            state.push("hardbreak", "br", 0);
+            state.push(Hardbreak);
         } else {
-            state.push("softbreak", "br", 0);
+            state.push(Softbreak);
         }
     }
 

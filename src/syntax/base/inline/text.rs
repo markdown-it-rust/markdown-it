@@ -2,7 +2,33 @@
 // and increment current pos
 //
 use crate::MarkdownIt;
-use crate::inline::State;
+use crate::inline;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct Text {
+    pub content: String
+}
+
+impl TokenData for Text {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.text(&self.content);
+    }
+}
+
+#[derive(Debug)]
+pub struct TextSpecial {
+    pub content: String,
+    pub markup: String,
+    pub info: &'static str,
+}
+
+impl TokenData for TextSpecial {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        f.text(&self.content);
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("text", rule).before_all();
@@ -16,7 +42,7 @@ pub fn add(md: &mut MarkdownIt) {
 // !!!! Don't confuse with "Markdown ASCII Punctuation" chars
 // http://spec.commonmark.org/0.15/#ascii-punctuation-character
 //
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     let mut pos = state.pos;
     let mut chars = state.src[pos..state.pos_max].chars();
 

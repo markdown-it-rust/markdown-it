@@ -1,9 +1,23 @@
 // Process autolinks '<protocol:...>'
 //
-use crate::MarkdownIt;
-use crate::inline::State;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use crate::MarkdownIt;
+use crate::inline;
+use crate::renderer;
+use crate::syntax::base::inline::text::Text;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct AutoLink {
+    pub url: String,
+}
+
+impl TokenData for AutoLink {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        f.open_attrs("a", vec![("href", &self.url)]).contents(&token.children).close("a");
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("autolink", rule);
@@ -17,7 +31,7 @@ static EMAIL_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$").unwrap()
 });
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut inline::State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != '<' { return false; }
 
@@ -46,20 +60,13 @@ fn rule(state: &mut State, silent: bool) -> bool {
     if !(state.md.validate_link)(&full_url) { return false; }
 
     if !silent {
-        let mut token;
         let content = (state.md.normalize_link_text)(url);
 
-        token = state.push("link_open", "a", 1);
-        token.attrs.push(("href", full_url));
-        token.markup = "autolink".to_owned();
-        token.info = "auto".to_owned();
+        let token = state.push(AutoLink {
+            url: full_url,
+        });
 
-        token = state.push("text", "", 0);
-        token.content = content;
-
-        token = state.push("link_close", "a", -1);
-        token.markup = "autolink".to_owned();
-        token.info = "auto".to_owned();
+        token.children.push(Token::new(Text { content }));
     }
 
     state.pos += pos - state.pos;

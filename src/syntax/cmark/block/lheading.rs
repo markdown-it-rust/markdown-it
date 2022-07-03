@@ -1,7 +1,24 @@
 // lheading (---, ===)
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::renderer;
+use crate::syntax::base::core::inline::InlineNodes;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct SetextHeader {
+    pub level: u8,
+    pub marker: char,
+}
+
+impl TokenData for SetextHeader {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        static TAG : [&str; 2] = [ "h1", "h2" ];
+        debug_assert!(self.level >= 1 && self.level <= 2);
+        f.open(TAG[self.level as usize - 1]).contents(&token.children).close(TAG[self.level as usize - 1]).lf();
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("lheading", rule)
@@ -9,7 +26,7 @@ pub fn add(md: &mut MarkdownIt) {
         .after_all();
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     if silent { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block
@@ -68,20 +85,14 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     state.line = next_line + 1;
 
-    let mut token;
-
-    static TAG : [&str; 2] = [ "h1", "h2" ];
-
-    token = state.push("heading_open", TAG[level - 1], 1);
-    token.markup = if level == 2 { "-" } else { "=" }.to_owned();
+    let mut token = state.push(SetextHeader {
+        level,
+        marker: if level == 2 { '-' } else { '=' }
+    });
     token.map = Some([ start_line, next_line ]);
-
-    token = state.push("inline", "", 0);
-    token.content = content;
-    token.map = Some([ start_line, next_line - 1 ]);
-
-    token = state.push("heading_close", TAG[level - 1], -1);
-    token.markup = if level == 2 { "-" } else { "=" }.to_owned();
+    token.children.push(Token::new(InlineNodes {
+        content
+    }));
 
     true
 }

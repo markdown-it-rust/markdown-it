@@ -1,13 +1,43 @@
 // fences (``` lang, ~~~ lang)
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::common::unescape_all;
+use crate::renderer;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct CodeFence {
+    pub info: String,
+    pub marker: char,
+    pub marker_len: usize,
+    pub content: String,
+}
+
+impl TokenData for CodeFence {
+    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+        let info = unescape_all(&self.info);
+        let mut split = info.split_whitespace();
+        let lang_name = split.next().unwrap_or("");
+        let mut attrs = Vec::new();
+        let class;
+
+        if !lang_name.is_empty() {
+            class = format!("{}{}", f.renderer.lang_prefix, lang_name);
+            attrs.push(("class", class.as_str()));
+        }
+
+        f.open("pre")
+            .open_attrs("code", attrs).text(&self.content).close("code")
+        .close("pre").lf();
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("fence", rule);
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     // if it's indented more than 3 spaces, it should be a code block
     if state.line_indent(state.line) >= 4 { return false; }
 
@@ -27,7 +57,6 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     if len < 3 { return false; }
 
-    let markup = &line[..len];
     let params = &line[len..];
 
     if marker == '`' && params.contains(marker) { return false; }
@@ -92,14 +121,14 @@ fn rule(state: &mut State, silent: bool) -> bool {
     // If a fence has heading spaces, they should be removed from its inner block
     let indent = state.s_count[start_line];
     let content = state.get_lines(start_line + 1, next_line, indent as usize, true);
-
-    let markup = markup.to_owned();
     let params = params.to_owned();
 
-    let mut token = state.push("fence", "code", 0);
-    token.info = params;
-    token.content = content;
-    token.markup = markup;
+    let mut token = state.push(CodeFence {
+        info: params,
+        marker,
+        marker_len: len,
+        content,
+    });
     token.map = Some([ start_line, next_line + if have_end_marker { 1 } else { 0 } ]);
 
     state.line = next_line + if have_end_marker { 1 } else { 0 };

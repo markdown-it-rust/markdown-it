@@ -1,7 +1,59 @@
 // Lists
 //
 use crate::MarkdownIt;
-use crate::block::State;
+use crate::block;
+use crate::renderer;
+use crate::syntax::cmark::block::paragraph::Paragraph;
+use crate::token::{Token, TokenData};
+
+#[derive(Debug)]
+pub struct OrderedList {
+    pub start: u32,
+    pub marker: char,
+}
+
+impl TokenData for OrderedList {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        let mut attrs = Vec::new();
+        let start;
+        if self.start != 1 {
+            start = self.start.to_string();
+            attrs.push(("start", start.as_str()));
+        }
+        f.open_attrs("ol", attrs).lf().contents(&token.children).close("ol").lf();
+    }
+}
+
+#[derive(Debug)]
+pub struct BulletList {
+    pub marker: char,
+}
+
+impl TokenData for BulletList {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        f.open("ul").lf().contents(&token.children).close("ul").lf();
+    }
+}
+
+#[derive(Debug)]
+pub struct ListItem;
+
+impl TokenData for ListItem {
+    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+        let mut last_is_inline = true;
+        f.open("li");
+        for idx in 0..token.children.len() {
+            if token.children[idx].block {
+                if last_is_inline { f.lf(); }
+                last_is_inline = false;
+            } else {
+                last_is_inline = true;
+            }
+            f.contents(&token.children[idx..=idx]);
+        }
+        f.close("li").lf();
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("list", rule)
@@ -51,23 +103,21 @@ fn skip_ordered_list_marker(src: &str) -> Option<usize> {
     }
 }
 
-fn mark_tight_paragraphs(state: &mut State, idx: usize) {
-    let mut i = idx + 2;
-    let level = state.level + 2;
-    let len = state.tokens.len();
-
-    while i < len {
-        if state.tokens[i].level == level && state.tokens[i].name == "paragraph_open" {
-            state.tokens[i + 2].hidden = true;
-            state.tokens[i].hidden = true;
-            i += 3;
+fn mark_tight_paragraphs(tokens: &mut Vec<Token>) {
+    let mut idx = 0;
+    while idx < tokens.len() {
+        if tokens[idx].data.is::<Paragraph>() {
+            let children = std::mem::take(&mut tokens[idx].children);
+            let len = children.len();
+            tokens.splice(idx..idx+1, children);
+            idx += len;
         } else {
-            i += 1;
+            idx += 1;
         }
     }
 }
 
-fn rule(state: &mut State, silent: bool) -> bool {
+fn rule(state: &mut block::State, silent: bool) -> bool {
     if silent && state.parent_is_list { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block
@@ -140,20 +190,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
 
     // We should terminate list on style change. Remember first one to compare.
     let marker_char = current_line[..pos_after_marker].chars().next_back().unwrap();
-
-    let list_tok_idx = state.tokens.len();
-    let mut token;
-
-    if let Some(int) = marker_value {
-        token = state.push("ordered_list_open", "ol", 1);
-        if int != 1 {
-            token.attrs.push(("start", int.to_string()));
-        }
-    } else {
-        token = state.push("bullet_list_open", "ul", 1);
-    }
-
-    token.markup = marker_char.into();
+    let old_tokens_list = std::mem::take(state.tokens);
 
     //
     // Iterate list items
@@ -200,13 +237,7 @@ fn rule(state: &mut State, silent: bool) -> bool {
         let indent = initial + indent_after_marker;
 
         // Run subparser & write tokens
-        let token_idx = state.tokens.len();
-        let mut token = state.push("list_item_open", "li", 1);
-        token.markup = marker_char.into();
-
-        if marker_value.is_some() {
-            state.tokens[token_idx].info = current_line[..pos_after_marker - 1].to_owned();
-        }
+        let old_tokens = std::mem::take(state.tokens);
 
         // change current state, then restore it after parser subcall
         let old_tight = state.tight;
@@ -258,10 +289,11 @@ fn rule(state: &mut State, silent: bool) -> bool {
         state.s_count[next_line] = old_scount;
         state.tight = old_tight;
 
-        token = state.push("list_item_close", "li", -1);
-        token.markup = marker_char.into();
-
-        state.tokens[token_idx].map = Some([ next_line, state.line ]);
+        let end_line = state.line;
+        let children = std::mem::replace(state.tokens, old_tokens);
+        let mut token = state.push(ListItem);
+        token.map = Some([ next_line, end_line ]);
+        token.children = children;
         next_line = state.line;
 
         if next_line >= state.line_max { break; }
@@ -307,18 +339,29 @@ fn rule(state: &mut State, silent: bool) -> bool {
     }
 
     // Finalize list
-    if marker_value.is_some() {
-        token = state.push("ordered_list_close", "ol", -1);
+    let children = std::mem::replace(state.tokens, old_tokens_list);
+    let mut token;
+
+    if let Some(int) = marker_value {
+        token = state.push(OrderedList {
+            start: int,
+            marker: marker_char
+        });
     } else {
-        token = state.push("bullet_list_close", "ul", -1);
+        token = state.push(BulletList {
+            marker: marker_char
+        });
     }
 
-    token.markup = marker_char.into();
-    state.tokens[list_tok_idx].map = Some([ next_line, next_line ]);
+    token.map = Some([ next_line, next_line ]);
+    token.children = children;
 
     // mark paragraphs tight if needed
     if tight {
-        mark_tight_paragraphs(state, list_tok_idx);
+        for child in token.children.iter_mut() {
+            debug_assert!(child.data.is::<ListItem>());
+            mark_tight_paragraphs(&mut child.children);
+        }
     }
 
     true
