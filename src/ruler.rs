@@ -11,7 +11,7 @@ use derivative::Derivative;
 ///
 /// You can use it like this:
 /// ```
-/// use markdown_it::rulers::ruler::Ruler;
+/// use markdown_it::ruler::Ruler;
 ///
 /// // this example prints "[ hello, world! ]",
 /// // where each token is printed by separate closure
@@ -246,7 +246,7 @@ impl<M, T> RuleItem<M, T> {
 impl<M: Copy, T> RuleItem<M, T> {
     /// Make sure this rule will be inserted before any rule defined by `mark` (if such rule exists).
     /// ```
-    /// use markdown_it::rulers::ruler::Ruler;
+    /// use markdown_it::ruler::Ruler;
     /// let mut chain = Ruler::<&str, fn (&mut String)>::new();
     ///
     /// chain.add("a", |s| s.push_str("bar"));
@@ -271,7 +271,7 @@ impl<M: Copy, T> RuleItem<M, T> {
     /// This rule will be inserted as early as possible, while still taking into account dependencies,
     /// i.e. `.after(X).before_all()` causes this to be first rule after X.
     /// ```
-    /// use markdown_it::rulers::ruler::Ruler;
+    /// use markdown_it::ruler::Ruler;
     /// let mut chain = Ruler::<&str, fn (&mut String)>::new();
     ///
     /// chain.add("a", |s| s.push_str("A"));
@@ -299,7 +299,7 @@ impl<M: Copy, T> RuleItem<M, T> {
     /// Add another auxiliary identifier to this rule. It can be used to group together multiple
     /// rules with similar functionality.
     /// ```
-    /// use markdown_it::rulers::ruler::Ruler;
+    /// use markdown_it::ruler::Ruler;
     /// let mut chain = Ruler::<&str, fn (&mut String)>::new();
     ///
     /// chain.add("b", |s| s.push_str("B")).alias("BorC");

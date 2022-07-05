@@ -6,7 +6,7 @@ pub use state::State;
 use crate::env::Env;
 use crate::env::scope::{Inline, InlineLvl};
 use crate::MarkdownIt;
-use crate::rulers::ruler::Ruler;
+use crate::ruler::Ruler;
 use crate::token::Token;
 
 pub type Rule = fn (&mut State, silent: bool) -> bool;

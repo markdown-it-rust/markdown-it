@@ -4,7 +4,7 @@
 mod state;
 pub use state::State;
 
-use crate::rulers::ruler::Ruler;
+use crate::ruler::Ruler;
 use crate::env::scope::{BlockLvl, Block};
 
 pub type Rule = fn (&mut State);

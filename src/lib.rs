@@ -7,12 +7,9 @@ pub mod helpers;
 pub mod inline;
 pub mod mdurl;
 pub mod renderer;
-pub mod rulers;
+pub mod ruler;
 pub mod syntax;
 pub mod token;
-
-mod symbol;
-pub use symbol::Symbol;
 
 use derivative::Derivative;
 use once_cell::sync::Lazy;
