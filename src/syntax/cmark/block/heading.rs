@@ -3,7 +3,7 @@
 use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::syntax::base::core::inline::InlineNodes;
+use crate::syntax::base::block::inline::InlineNodes;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]

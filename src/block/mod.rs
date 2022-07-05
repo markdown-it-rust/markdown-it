@@ -4,21 +4,27 @@ pub mod state;
 pub use state::State;
 
 use crate::env::Env;
+use crate::env::scope::{BlockLvl, Block};
 use crate::MarkdownIt;
 use crate::ruler::Ruler;
 use crate::token::Token;
 
 pub type Rule = fn (&mut State, bool) -> bool;
+pub type Rule2 = fn (&mut State);
 
 #[derive(Debug)]
 pub struct Parser {
     // [[Ruler]] instance. Keep configuration of block rules.
     pub ruler: Ruler<&'static str, Rule>,
+    pub ruler2: Ruler<&'static str, Rule2>,
 }
 
 impl Parser {
     pub fn new() -> Self {
-        Self { ruler: Ruler::new() }
+        Self {
+            ruler: Ruler::new(),
+            ruler2: Ruler::new(),
+        }
     }
 
     // Generate tokens for input range
@@ -82,6 +88,16 @@ impl Parser {
     //
     pub fn parse(&self, src: &str, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>) {
         let mut state = State::new(src, md, env, out_tokens);
-        self.tokenize(&mut state)
+        state.env.state_push::<Block>();
+        state.env.state_push::<BlockLvl>();
+
+        self.tokenize(&mut state);
+
+        for rule in self.ruler2.iter() {
+            rule(&mut state);
+        }
+
+        state.env.state_pop::<BlockLvl>();
+        state.env.state_pop::<Block>();
     }
 }

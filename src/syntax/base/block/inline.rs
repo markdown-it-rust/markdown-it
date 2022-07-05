@@ -1,6 +1,6 @@
 use crate::Formatter;
 use crate::MarkdownIt;
-use crate::core;
+use crate::block;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -16,17 +16,17 @@ impl TokenData for InlineNodes {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.core.ruler.add("inline", rule)
-        .after("block");
+    md.block.ruler2.add("inline", rule)
+        .before_all();
 }
 
-pub fn rule(state: &mut core::State) {
-    let mut tokens = std::mem::take(&mut state.tokens);
+pub fn rule(state: &mut block::State) {
+    let mut tokens = std::mem::take(state.tokens);
     walk(state, &mut tokens);
-    state.tokens = tokens;
+    *state.tokens = tokens;
 }
 
-pub fn walk(state: &mut core::State, tokens: &mut Vec<Token>) {
+pub fn walk(state: &mut block::State, tokens: &mut Vec<Token>) {
     let mut idx = 0;
     while idx < tokens.len() {
         if let Some(data) = tokens[idx].data.downcast_ref::<InlineNodes>() {

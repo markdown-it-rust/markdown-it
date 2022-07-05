@@ -1,13 +1,10 @@
 pub mod inline;
-pub mod core;
+pub mod block;
 
 use crate::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
     inline::text::add(md);
     inline::pairs::add(md);
-
-    core::normalize::add(md);
-    core::block::add(md);
-    core::inline::add(md);
+    block::inline::add(md);
 }

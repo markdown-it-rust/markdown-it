@@ -1,6 +1,5 @@
 pub mod block;
 pub mod common;
-pub mod core;
 pub mod env;
 pub mod erasedset;
 pub mod helpers;
@@ -10,6 +9,8 @@ pub mod renderer;
 pub mod ruler;
 pub mod syntax;
 pub mod token;
+
+use std::borrow::Cow;
 
 use derivative::Derivative;
 use once_cell::sync::Lazy;
@@ -24,7 +25,6 @@ pub struct Options {
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct MarkdownIt {
-    pub core: core::Parser,
     pub block: block::Parser,
     pub inline: inline::Parser,
     #[derivative(Debug="ignore")]
@@ -66,10 +66,20 @@ fn normalize_link_text(str: &str) -> String {
     str.to_owned()
 }
 
+fn normalize_text(src: &str) -> Cow<str> {
+    if src.contains([ '\r', '\0' ]) {
+        Cow::Owned(src.to_owned()
+                      .replace("\r\n", "\n")
+                      .replace('\r', "\n")
+                      .replace('\0', "\u{FFFD}"))
+    } else {
+        Cow::Borrowed(src)
+    }
+}
+
 impl MarkdownIt {
     pub fn new(options: Option<Options>) -> Self {
         let mut md = Self {
-            core: core::Parser::new(),
             block: block::Parser::new(),
             inline: inline::Parser::new(),
             validate_link,
@@ -83,9 +93,10 @@ impl MarkdownIt {
     }
 
     pub fn parse(&self, src: &str) -> Vec<token::Token> {
-        let mut state = core::State::new(src, self);
-        self.core.process(&mut state);
-        state.tokens
+        let src = &normalize_text(src);
+        let mut tokens = Vec::new();
+        self.block.parse(src, self, &mut env::Env::new(), &mut tokens);
+        tokens
     }
 
     pub fn render(&self, src: &str) -> String {
