@@ -6,4 +6,3 @@ pub mod escape;
 pub mod image;
 pub mod link;
 pub mod newline;
-pub mod strikethrough;

@@ -53,8 +53,9 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     let content = state.get_lines(start_line, last, 4 + state.blk_indent, false) + "\n";
 
-    let mut token = state.push(CodeBlock { content });
+    let mut token = Token::new(CodeBlock { content });
     token.map = Some([ start_line, last ]);
+    state.push(token);
 
     true
 }

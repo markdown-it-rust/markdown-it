@@ -16,7 +16,7 @@ impl TokenData for InlineNodes {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler2.add("inline", rule)
+    md.block.ruler2.add("builtin::inline", rule)
         .before_all();
 }
 

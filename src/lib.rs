@@ -8,6 +8,7 @@ pub mod mdurl;
 pub mod renderer;
 pub mod ruler;
 pub mod syntax;
+pub mod syntax_base;
 pub mod token;
 
 use std::borrow::Cow;
@@ -88,7 +89,7 @@ impl MarkdownIt {
             env: erasedset::ErasedSet::new(),
             options: options.unwrap_or_default(),
         };
-        syntax::base::add(&mut md);
+        syntax_base::builtin::add(&mut md);
         md
     }
 

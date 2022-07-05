@@ -2,8 +2,9 @@
 //
 use crate::MarkdownIt;
 use crate::inline;
-use crate::syntax::base::inline::text::TextSpecial;
+use crate::syntax_base::builtin::TextSpecial;
 use crate::syntax::cmark::inline::newline::Hardbreak;
+use crate::token::Token;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("escape", rule);
@@ -23,7 +24,7 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             }
 
             if !silent {
-                state.push(Hardbreak);
+                state.push(Token::new(Hardbreak));
             }
 
             true
@@ -40,11 +41,11 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
                     _ => orig_str.clone()
                 };
 
-                state.push(TextSpecial {
+                state.push(Token::new(TextSpecial {
                     content: content_str,
                     markup: orig_str,
                     info: "escape",
-                });
+                }));
             }
             state.pos += 1 + chr.len_utf8();
             true

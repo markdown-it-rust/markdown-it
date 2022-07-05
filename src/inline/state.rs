@@ -2,8 +2,8 @@
 //
 use crate::env::Env;
 use crate::MarkdownIt;
-use crate::syntax::base::inline::text::Text;
-use crate::token::{Token, TokenData};
+use crate::syntax_base::builtin::Text;
+use crate::token::Token;
 use std::collections::HashMap;
 use std::mem;
 
@@ -94,12 +94,9 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     // Push new token to "stream".
     // If pending text exists - flush it as text token
     //
-    pub fn push<T: TokenData>(&mut self, data: T) -> &mut Token {
+    pub fn push(&mut self, token: Token) {
         if !self.pending.is_empty() { self.push_pending(); }
-
-        let token = Token::new(data);
         self.tokens.push(token);
-        self.tokens.last_mut().unwrap()
     }
 
 

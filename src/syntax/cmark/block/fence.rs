@@ -137,7 +137,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let params = params.to_owned();
 
     let lang_prefix = state.md.env.get::<FenceSettings>().unwrap().0.get();
-    let mut token = state.push(CodeFence {
+    let mut token = Token::new(CodeFence {
         info: params,
         marker,
         marker_len: len,
@@ -145,6 +145,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         lang_prefix,
     });
     token.map = Some([ start_line, next_line + if have_end_marker { 1 } else { 0 } ]);
+    state.push(token);
 
     state.line = next_line + if have_end_marker { 1 } else { 0 };
 

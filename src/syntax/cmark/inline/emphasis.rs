@@ -2,9 +2,7 @@
 //
 use crate::Formatter;
 use crate::MarkdownIt;
-use crate::inline;
-use crate::syntax::base::inline::pairs::{Pairs, Delimiters};
-use crate::syntax::base::inline::text::Text;
+use crate::syntax_base::generics::inline::emph_pair;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -34,29 +32,8 @@ impl TokenData for Strong {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.add("emphasis", rule);
-
-    md.env.get_or_insert_default::<Pairs>().set('*', 1, || Token::new(Em { marker: '*' }));
-    md.env.get_or_insert_default::<Pairs>().set('_', 1, || Token::new(Em { marker: '_' }));
-    md.env.get_or_insert_default::<Pairs>().set('*', 2, || Token::new(Strong { marker: '*' }));
-    md.env.get_or_insert_default::<Pairs>().set('_', 2, || Token::new(Strong { marker: '_' }));
-}
-
-// Insert each marker as a separate text token, and add it to delimiter list
-//
-fn rule(state: &mut inline::State, silent: bool) -> bool {
-    if silent { return false; }
-
-    let mut chars = state.src[state.pos..state.pos_max].chars();
-    let marker = chars.next().unwrap();
-
-    if marker != '_' && marker != '*' { return false; }
-
-    let scanned = state.scan_delims(state.pos, marker == '*');
-    let content = state.src[state.pos..state.pos+scanned.length].to_string();
-    state.push(Text { content });
-    state.pos += scanned.length;
-
-    state.env.get_or_insert::<Delimiters>().push(scanned, state.tokens.len() - 1);
-    true
+    emph_pair::add_with::<'*', 1, true>  (md, || Token::new(Em     { marker: '*' }));
+    emph_pair::add_with::<'_', 1, false> (md, || Token::new(Em     { marker: '_' }));
+    emph_pair::add_with::<'*', 2, true>  (md, || Token::new(Strong { marker: '*' }));
+    emph_pair::add_with::<'_', 2, false> (md, || Token::new(Strong { marker: '_' }));
 }

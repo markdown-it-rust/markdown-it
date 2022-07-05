@@ -214,9 +214,10 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     state.line_max = old_line_max;
 
     let children = std::mem::replace(state.tokens, old_tokens);
-    let mut token = state.push(Blockquote);
+    let mut token = Token::new(Blockquote);
     token.children = children;
     token.map = Some([ start_line, next_line ]);
+    state.push(token);
 
     // Restore original tShift; this might not be necessary since the parser
     // has already been here, but just to make sure we can do that.

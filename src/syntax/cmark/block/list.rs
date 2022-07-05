@@ -295,9 +295,10 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
         let end_line = state.line;
         let children = std::mem::replace(state.tokens, old_tokens);
-        let mut token = state.push(ListItem);
+        let mut token = Token::new(ListItem);
         token.map = Some([ next_line, end_line ]);
         token.children = children;
+        state.push(token);
         next_line = state.line;
 
         if next_line >= state.line_max { break; }
@@ -343,30 +344,32 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     }
 
     // Finalize list
-    let children = std::mem::replace(state.tokens, old_tokens_list);
+    let mut children = std::mem::replace(state.tokens, old_tokens_list);
+
+    // mark paragraphs tight if needed
+    if tight {
+        for child in children.iter_mut() {
+            debug_assert!(child.data.is::<ListItem>());
+            mark_tight_paragraphs(&mut child.children);
+        }
+    }
+
     let mut token;
 
     if let Some(int) = marker_value {
-        token = state.push(OrderedList {
+        token = Token::new(OrderedList {
             start: int,
             marker: marker_char
         });
     } else {
-        token = state.push(BulletList {
+        token = Token::new(BulletList {
             marker: marker_char
         });
     }
 
     token.map = Some([ next_line, next_line ]);
     token.children = children;
-
-    // mark paragraphs tight if needed
-    if tight {
-        for child in token.children.iter_mut() {
-            debug_assert!(child.data.is::<ListItem>());
-            mark_tight_paragraphs(&mut child.children);
-        }
-    }
+    state.push(token);
 
     true
 }

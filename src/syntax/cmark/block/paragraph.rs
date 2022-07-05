@@ -3,7 +3,7 @@
 use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::syntax::base::block::inline::InlineNodes;
+use crate::syntax_base::builtin::InlineNodes;
 use crate::token::{Token, TokenData};
 
 pub fn add(md: &mut MarkdownIt) {
@@ -59,11 +59,12 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     state.line = next_line;
 
-    let mut token = state.push(Paragraph);
+    let mut token = Token::new(Paragraph);
     token.map = Some([ start_line, next_line ]);
     token.children.push(Token::new(InlineNodes {
         content
     }));
+    state.push(token);
 
     true
 }

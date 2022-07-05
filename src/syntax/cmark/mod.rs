@@ -7,7 +7,6 @@ pub fn add(md: &mut MarkdownIt) {
     inline::newline::add(md);
     inline::escape::add(md);
     inline::backticks::add(md);
-    inline::strikethrough::add(md);
     inline::emphasis::add(md);
     inline::link::add(md);
     inline::image::add(md);

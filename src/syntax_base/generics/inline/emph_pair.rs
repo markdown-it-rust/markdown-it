@@ -4,22 +4,25 @@ use std::collections::HashMap;
 use crate::MarkdownIt;
 use crate::env;
 use crate::inline;
-use crate::syntax::base::inline::text::Text;
+use crate::syntax_base::builtin::Text;
 use crate::token::Token;
 
 #[derive(Debug, Default)]
-pub struct Pairs(HashMap<char, [Option<fn () -> Token>; 3]>);
+struct Pairs {
+    rule_inserted: bool,
+    map: HashMap<char, [Option<fn () -> Token>; 3]>
+}
 
 impl Pairs {
-    pub fn set(&mut self, ch: char, len: usize, f: fn() -> Token) {
+    pub fn set(&mut self, ch: char, len: u8, f: fn() -> Token) {
         assert!((1..=3).contains(&len), "only pairs with len=1..3 are supported");
-        self.0.entry(ch).or_default()[len - 1] = Some(f);
+        self.map.entry(ch).or_default()[len as usize - 1] = Some(f);
     }
 
-    pub fn get(&self, ch: char, len: usize) -> Option<fn() -> Token> {
+    /*pub fn get(&self, ch: char, len: u8) -> Option<fn() -> Token> {
         assert!((1..=3).contains(&len), "only pairs with len=1..3 are supported");
-        self.0.get(&ch)?[len - 1]
-    }
+        self.map.get(&ch)?[len as usize - 1]
+    }*/
 }
 
 #[derive(Derivative)]
@@ -41,7 +44,7 @@ struct Delimiter {
 }
 
 #[derive(Default, Debug)]
-pub struct Delimiters(Vec<Delimiter>);
+struct Delimiters(Vec<Delimiter>);
 
 // List of emphasis-like delimiters for current tag
 impl Delimiters {
@@ -60,15 +63,37 @@ impl env::EnvMember for Delimiters {
     type Scope = env::scope::InlineLvl;
 }
 
+pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool>(md: &mut MarkdownIt, f: fn () -> Token) {
+    let pairs = md.env.get_or_insert_default::<Pairs>();
 
-pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler2.add("make_pairs", make_pairs);
+    if !pairs.map.contains_key(&MARKER) {
+        md.inline.ruler.add("builtin::emph_pair_find", |state: &mut inline::State, silent: bool| -> bool {
+            if silent { return false; }
+
+            let mut chars = state.src[state.pos..state.pos_max].chars();
+            if chars.next().unwrap() != MARKER { return false; }
+
+            let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
+            let content = state.src[state.pos..state.pos+scanned.length].to_string();
+            state.push(Token::new(Text { content }));
+            state.pos += scanned.length;
+
+            state.env.get_or_insert::<Delimiters>().push(scanned, state.tokens.len() - 1);
+            true
+        });
+    }
+
+    if !pairs.rule_inserted {
+        md.inline.ruler2.add("builtin::emph_pair_balance", rule);
+        pairs.rule_inserted = true;
+    }
+
+    pairs.set(MARKER, LENGTH, f);
 }
-
 
 // For each opening emphasis-like marker find a matching closing one
 //
-fn make_pairs(state: &mut inline::State) {
+fn rule(state: &mut inline::State) {
     let delimiters = state.env.get::<Delimiters>();
     if delimiters.is_none() { return; }
     let delimiters = delimiters.unwrap();
@@ -137,7 +162,7 @@ fn make_pairs(state: &mut inline::State) {
                        && auxinfo[opener_idx].remaining > 0 {
 
                         let max_marker_len = min(3, min(auxinfo[opener_idx].remaining, auxinfo[closer_idx].remaining));
-                        let fns = all_pairs.0.get(&opener.marker).map(|x| *x).unwrap_or_default();
+                        let fns = all_pairs.map.get(&opener.marker).map(|x| *x).unwrap_or_default();
 
                         for marker_len in (1..=max_marker_len).rev() {
                             if fns[marker_len-1].is_none() { continue; }

@@ -53,8 +53,9 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let line = state.line;
     state.line += 1;
 
-    let mut token = state.push(ThematicBreak { marker, marker_len: cnt });
+    let mut token = Token::new(ThematicBreak { marker, marker_len: cnt });
     token.map = Some([ line, line + 1 ]);
+    state.push(token);
 
     true
 }

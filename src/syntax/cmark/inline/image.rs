@@ -4,7 +4,7 @@ use crate::Formatter;
 use crate::MarkdownIt;
 use crate::helpers;
 use crate::inline;
-use crate::syntax::base::inline::text::Text;
+use crate::syntax_base::builtin::Text;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -71,11 +71,12 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
             let children = std::mem::replace(state.tokens, old_tokens);
 
-            let token = state.push(Image {
+            let mut token = Token::new(Image {
                 url: result.href.unwrap_or_default(),
                 title: result.title,
             });
             token.children = children;
+            state.push(token);
             state.link_level -= 1;
         }
 

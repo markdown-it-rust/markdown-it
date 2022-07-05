@@ -53,11 +53,12 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
             let children = std::mem::replace(state.tokens, old_tokens);
 
-            let token = state.push(Link {
+            let mut token = Token::new(Link {
                 url: result.href.unwrap_or_default(),
                 title: result.title,
             });
             token.children = children;
+            state.push(token);
             state.link_level -= 1;
         }
 

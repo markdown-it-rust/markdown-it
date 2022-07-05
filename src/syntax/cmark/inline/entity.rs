@@ -6,7 +6,8 @@ use crate::MarkdownIt;
 use crate::common::entities;
 use crate::common::is_valid_entity_code;
 use crate::inline;
-use crate::syntax::base::inline::text::TextSpecial;
+use crate::syntax_base::builtin::TextSpecial;
+use crate::token::Token;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("entity", rule);
@@ -43,11 +44,11 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
                 let markup_str = capture[0].to_owned();
 
-                state.push(TextSpecial {
+                state.push(Token::new(TextSpecial {
                     content: content_str,
                     markup: markup_str,
                     info: "entity",
-                });
+                }));
             }
             state.pos += entity_len;
             true
@@ -62,11 +63,11 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
                     let markup_str = capture[0].to_owned();
                     let content_str = (*str).to_owned();
 
-                    state.push(TextSpecial {
+                    state.push(Token::new(TextSpecial {
                         content: content_str,
                         markup: markup_str,
                         info: "entity",
-                    });
+                    }));
                 }
                 state.pos += entity_len;
                 true

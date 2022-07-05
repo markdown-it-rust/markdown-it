@@ -2,7 +2,7 @@
 //
 use crate::env::Env;
 use crate::MarkdownIt;
-use crate::token::{Token, TokenData};
+use crate::token::Token;
 
 #[derive(Debug)]
 pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
@@ -127,11 +127,9 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
     // Push new token to "stream".
     //
-    pub fn push<T: TokenData>(&mut self, data: T) -> &mut Token {
-        let mut token = Token::new(data);
+    pub fn push(&mut self, mut token: Token) {
         token.block = true;
         self.tokens.push(token);
-        self.tokens.last_mut().unwrap()
     }
 
     pub fn is_empty(&self, line: usize) -> bool {

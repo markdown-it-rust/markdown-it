@@ -56,9 +56,9 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
         }
 
         if tail_size >= 2 {
-            state.push(Hardbreak);
+            state.push(Token::new(Hardbreak));
         } else {
-            state.push(Softbreak);
+            state.push(Token::new(Softbreak));
         }
     }
 

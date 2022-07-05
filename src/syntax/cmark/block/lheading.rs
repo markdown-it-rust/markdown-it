@@ -3,7 +3,7 @@
 use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::syntax::base::block::inline::InlineNodes;
+use crate::syntax_base::builtin::InlineNodes;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -90,7 +90,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     state.line = next_line + 1;
 
-    let mut token = state.push(SetextHeader {
+    let mut token = Token::new(SetextHeader {
         level,
         marker: if level == 2 { '-' } else { '=' }
     });
@@ -98,6 +98,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     token.children.push(Token::new(InlineNodes {
         content
     }));
+    state.push(token);
 
     true
 }

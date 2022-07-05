@@ -31,7 +31,7 @@ impl TokenData for TextSpecial {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.add("text", rule).before_all();
+    md.inline.ruler.add("builtin::text", rule).before_all();
 }
 
 // Rule to skip pure text

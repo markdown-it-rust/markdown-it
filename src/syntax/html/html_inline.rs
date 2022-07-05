@@ -47,7 +47,7 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             state.link_level -= 1;
         }
 
-        state.push(HtmlInline { content });
+        state.push(Token::new(HtmlInline { content }));
     }
 
     true

@@ -5,7 +5,7 @@ use regex::Regex;
 use crate::Formatter;
 use crate::MarkdownIt;
 use crate::inline;
-use crate::syntax::base::inline::text::Text;
+use crate::syntax_base::builtin::Text;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -64,11 +64,12 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
     if !silent {
         let content = (state.md.normalize_link_text)(url);
 
-        let token = state.push(AutoLink {
+        let mut token = Token::new(AutoLink {
             url: full_url,
         });
 
         token.children.push(Token::new(Text { content }));
+        state.push(token);
     }
 
     state.pos += pos - state.pos;
