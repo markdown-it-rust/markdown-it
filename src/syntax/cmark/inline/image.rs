@@ -2,9 +2,8 @@
 //
 use crate::Formatter;
 use crate::MarkdownIt;
-use crate::helpers;
-use crate::inline;
 use crate::syntax_base::builtin::Text;
+use crate::syntax_base::generics::inline::full_link;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -44,45 +43,8 @@ impl TokenData for Image {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.add("image", rule);
-}
-
-fn rule(state: &mut inline::State, silent: bool) -> bool {
-    let mut chars = state.src[state.pos..state.pos_max].chars();
-    if chars.next().unwrap() != '!' { return false; }
-    if let Some('[') = chars.next() {} else { return false; }
-
-    if let Some(result) = helpers::parse_link(state, state.pos + 1, true) {
-        //
-        // We found the end of the link, and know for a fact it's a valid link;
-        // so all that's left to do is to call tokenizer.
-        //
-        if !silent {
-            if !state.pending.is_empty() { state.push_pending(); }
-
-            let old_tokens = std::mem::take(state.tokens);
-            let max = state.pos_max;
-
-            state.link_level += 1;
-            state.pos = result.label_start;
-            state.pos_max = result.label_end;
-            state.md.inline.tokenize(state);
-            state.pos_max = max;
-
-            let children = std::mem::replace(state.tokens, old_tokens);
-
-            let mut token = Token::new(Image {
-                url: result.href.unwrap_or_default(),
-                title: result.title,
-            });
-            token.children = children;
-            state.push(token);
-            state.link_level -= 1;
-        }
-
-        state.pos = result.end;
-        true
-    } else {
-        false
-    }
+    full_link::add_prefix::<'!', true>(md, |href, title| Token::new(Image {
+        url: href.unwrap_or_default(),
+        title,
+    }));
 }

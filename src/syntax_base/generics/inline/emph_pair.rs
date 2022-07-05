@@ -67,7 +67,7 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
     let pairs = md.env.get_or_insert_default::<Pairs>();
 
     if !pairs.map.contains_key(&MARKER) {
-        md.inline.ruler.add("builtin::emph_pair_find", |state: &mut inline::State, silent: bool| -> bool {
+        md.inline.ruler.add("generic::emph_pair_find", |state: &mut inline::State, silent: bool| -> bool {
             if silent { return false; }
 
             let mut chars = state.src[state.pos..state.pos_max].chars();
@@ -84,7 +84,7 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
     }
 
     if !pairs.rule_inserted {
-        md.inline.ruler2.add("builtin::emph_pair_balance", rule);
+        md.inline.ruler2.add("generic::emph_pair_balance", rule);
         pairs.rule_inserted = true;
     }
 

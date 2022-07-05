@@ -5,7 +5,7 @@ use crate::MarkdownIt;
 use crate::block;
 use crate::common::normalize_reference;
 use crate::env;
-use crate::helpers;
+use crate::syntax_base::generics::inline::full_link;
 
 #[derive(Debug, Default)]
 pub struct ReferenceEnv {
@@ -113,7 +113,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     // [label]:   destination   'title'
     //            ^^^^^^^^^^^ parse this
     let href;
-    if let Some(res) = helpers::parse_link_destination(str, pos, str.len()) {
+    if let Some(res) = full_link::parse_link_destination(str, pos, str.len()) {
         if pos == res.pos { return false; }
         href = (state.md.normalize_link)(&res.str);
         if !(state.md.validate_link)(&href) { return false; }
@@ -140,7 +140,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     //                          ^^^^^^^ parse this
     let mut title = None;
     if pos != start {
-        if let Some(res) = helpers::parse_link_title(str, pos, str.len()) {
+        if let Some(res) = full_link::parse_link_title(str, pos, str.len()) {
             title = Some(res.str);
             pos = res.pos;
             lines += res.lines;

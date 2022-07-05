@@ -1,14 +1,89 @@
+// Process [link](<to> "stuff")
+//
+use crate::MarkdownIt;
 use crate::common::normalize_reference;
 use crate::common::unescape_all;
 use crate::inline;
 use crate::syntax::cmark::block::reference::ReferenceEnv;
+use crate::token::Token;
+
+#[derive(Debug)]
+struct LinkCfg<const PREFIX: char>(fn (Option<String>, Option<String>) -> Token);
+
+pub fn add<const ENABLE_NESTED: bool>(
+    md: &mut MarkdownIt,
+    f: fn (Option<String>, Option<String>) -> Token
+) {
+    md.env.insert(LinkCfg::<'\0'>(f));
+
+    md.inline.ruler.add("generic::full_link", |state: &mut inline::State, silent: bool| -> bool {
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != '[' { return false; }
+        let f = state.md.env.get::<LinkCfg<'\0'>>().unwrap().0;
+        rule(state, silent, ENABLE_NESTED, 0, f)
+    });
+}
+
+pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
+    md: &mut MarkdownIt,
+    f: fn (Option<String>, Option<String>
+) -> Token) {
+    md.env.insert(LinkCfg::<PREFIX>(f));
+
+    md.inline.ruler.add("generic::full_link", |state: &mut inline::State, silent: bool| -> bool {
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != PREFIX { return false; }
+        if chars.next().unwrap() != '[' { return false; }
+        let f = state.md.env.get::<LinkCfg<PREFIX>>().unwrap().0;
+        rule(state, silent, ENABLE_NESTED, 1, f)
+    });
+}
+
+fn rule(
+    state: &mut inline::State,
+    silent: bool,
+    enable_nested: bool,
+    offset: usize,
+    f: fn (Option<String>, Option<String>) -> Token
+) -> bool {
+    if let Some(result) = parse_link(state, state.pos + offset, enable_nested) {
+        //
+        // We found the end of the link, and know for a fact it's a valid link;
+        // so all that's left to do is to call tokenizer.
+        //
+        if !silent {
+            if !state.pending.is_empty() { state.push_pending(); }
+
+            let old_tokens = std::mem::take(state.tokens);
+            let max = state.pos_max;
+
+            state.link_level += 1;
+            state.pos = result.label_start;
+            state.pos_max = result.label_end;
+            state.md.inline.tokenize(state);
+            state.pos_max = max;
+
+            let children = std::mem::replace(state.tokens, old_tokens);
+
+            let mut token = f(result.href, result.title);
+            token.children = children;
+            state.push(token);
+            state.link_level -= 1;
+        }
+
+        state.pos = result.end;
+        true
+    } else {
+        false
+    }
+}
 
 // Parse link label
 //
 // this function assumes that first character ("[") already matches;
 // returns the end of the label
 //
-pub fn parse_link_label(state: &mut inline::State, start: usize, disable_nested: bool) -> Option<usize> {
+pub fn parse_link_label(state: &mut inline::State, start: usize, enable_nested: bool) -> Option<usize> {
     let old_pos = state.pos;
     let mut found = false;
     let mut label_end = None;
@@ -31,7 +106,7 @@ pub fn parse_link_label(state: &mut inline::State, start: usize, disable_nested:
             if prev_pos == state.pos - 1 {
                 // increase level if we find text `[`, which is not a part of any token
                 level += 1;
-            } else if disable_nested {
+            } else if !enable_nested {
                 state.pos = old_pos;
                 return None;
             }
@@ -172,7 +247,7 @@ pub fn parse_link_title(str: &str, start: usize, max: usize) -> Option<ParseLink
     }
 }
 
-pub struct ParseLinkResult {
+struct ParseLinkResult {
     pub label_start: usize,
     pub label_end: usize,
     pub href: Option<String>,
@@ -184,10 +259,10 @@ pub struct ParseLinkResult {
 //
 // this function assumes that first character ("[") already matches
 //
-pub fn parse_link(state: &mut inline::State, pos: usize, is_image: bool) -> Option<ParseLinkResult> {
+fn parse_link(state: &mut inline::State, pos: usize, enable_nested: bool) -> Option<ParseLinkResult> {
     let label_end;
 
-    if let Some(x) = parse_link_label(state, pos, !is_image) {
+    if let Some(x) = parse_link_label(state, pos, enable_nested) {
         label_end = x;
     } else {
         // parser failed to find ']', so it's not a valid link

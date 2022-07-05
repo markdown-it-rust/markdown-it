@@ -22,7 +22,7 @@ struct BacktickCfg<const MARKER: char>(fn (usize) -> Token);
 pub fn add_with<const MARKER: char>(md: &mut MarkdownIt, f: fn (usize) -> Token) {
     md.env.insert(BacktickCfg::<MARKER>(f));
 
-    md.inline.ruler.add("builtin::code_pair", rule::<MARKER>);
+    md.inline.ruler.add("generic::code_pair", rule::<MARKER>);
 }
 
 fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
