@@ -1,9 +1,9 @@
 // Process ![image](<src> "title")
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::helpers;
 use crate::inline;
-use crate::renderer;
 use crate::syntax::base::inline::text::Text;
 use crate::token::{Token, TokenData};
 
@@ -14,7 +14,7 @@ pub struct Image {
 }
 
 impl TokenData for Image {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
         let mut attrs : Vec<(&str, &str)> = Vec::new();
         attrs.push(("src", &self.url));
 
@@ -39,7 +39,7 @@ impl TokenData for Image {
             attrs.push(("title", &*title));
         }
 
-        f.self_close_attrs("img", attrs);
+        f.self_close("img", &attrs);
     }
 }
 

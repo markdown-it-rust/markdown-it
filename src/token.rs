@@ -1,4 +1,4 @@
-use crate::renderer::Formatter;
+use crate::Formatter;
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
 
@@ -33,7 +33,7 @@ impl Token {
 }
 
 pub trait TokenData : Any + Debug {
-    fn render(&self, token: &Token, f: &mut Formatter);
+    fn render(&self, token: &Token, f: &mut dyn Formatter);
 }
 
 impl dyn TokenData {

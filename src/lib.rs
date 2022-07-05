@@ -1,15 +1,15 @@
-pub mod core;
 pub mod block;
-pub mod inline;
-pub mod renderer;
-pub mod helpers;
 pub mod common;
-pub mod mdurl;
-pub mod syntax;
-pub mod rulers;
-pub mod token;
+pub mod core;
 pub mod env;
 pub mod erasedset;
+pub mod helpers;
+pub mod inline;
+pub mod mdurl;
+pub mod renderer;
+pub mod rulers;
+pub mod syntax;
+pub mod token;
 
 mod symbol;
 pub use symbol::Symbol;
@@ -17,6 +17,7 @@ pub use symbol::Symbol;
 use derivative::Derivative;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use token::Token;
 
 #[derive(Default, Debug)]
 pub struct Options {
@@ -29,7 +30,6 @@ pub struct MarkdownIt {
     pub core: core::Parser,
     pub block: block::Parser,
     pub inline: inline::Parser,
-    pub renderer: renderer::Renderer,
     #[derivative(Debug="ignore")]
     pub validate_link: fn (&str) -> bool,
     #[derivative(Debug="ignore")]
@@ -75,7 +75,6 @@ impl MarkdownIt {
             core: core::Parser::new(),
             block: block::Parser::new(),
             inline: inline::Parser::new(),
-            renderer: renderer::Renderer::new(),
             validate_link,
             normalize_link,
             normalize_link_text,
@@ -93,6 +92,16 @@ impl MarkdownIt {
     }
 
     pub fn render(&self, src: &str) -> String {
-        self.renderer.render(&self.parse(src))
+        renderer::html(&self.parse(src))
     }
+}
+
+pub trait Formatter {
+    fn open(&mut self, tag: &str, attrs: &[(&str, &str)]);
+    fn close(&mut self, tag: &str);
+    fn self_close(&mut self, tag: &str, attrs: &[(&str, &str)]);
+    fn contents(&mut self, tokens: &[Token]);
+    fn cr(&mut self);
+    fn text(&mut self, text: &str);
+    fn text_raw(&mut self, text: &str);
 }

@@ -1,9 +1,9 @@
 // fences (``` lang, ~~~ lang)
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
 use crate::common::unescape_all;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -12,10 +12,11 @@ pub struct CodeFence {
     pub marker: char,
     pub marker_len: usize,
     pub content: String,
+    pub lang_prefix: &'static str,
 }
 
 impl TokenData for CodeFence {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
         let info = unescape_all(&self.info);
         let mut split = info.split_whitespace();
         let lang_name = split.next().unwrap_or("");
@@ -23,18 +24,30 @@ impl TokenData for CodeFence {
         let class;
 
         if !lang_name.is_empty() {
-            class = format!("{}{}", f.renderer.lang_prefix, lang_name);
+            class = format!("{}{}", self.lang_prefix, lang_name);
             attrs.push(("class", class.as_str()));
         }
 
-        f.open("pre")
-            .open_attrs("code", attrs).text(&self.content).close("code")
-        .close("pre").lf();
+        f.cr();
+        f.open("pre", &[]);
+            f.open("code", &attrs);
+            f.text(&self.content);
+            f.close("code");
+        f.close("pre");
+        f.cr();
     }
 }
 
+#[derive(Debug, Default)]
+struct FenceSettings(std::cell::Cell<&'static str>);
+
 pub fn add(md: &mut MarkdownIt) {
+    add_with_lang_prefix(md, "language-");
+}
+
+pub fn add_with_lang_prefix(md: &mut MarkdownIt, lang_prefix: &'static str) {
     md.block.ruler.add("fence", rule);
+    md.env.get_or_insert_default::<FenceSettings>().0.set(lang_prefix);
 }
 
 fn rule(state: &mut block::State, silent: bool) -> bool {
@@ -123,11 +136,13 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let content = state.get_lines(start_line + 1, next_line, indent as usize, true);
     let params = params.to_owned();
 
+    let lang_prefix = state.md.env.get::<FenceSettings>().unwrap().0.get();
     let mut token = state.push(CodeFence {
         info: params,
         marker,
         marker_len: len,
         content,
+        lang_prefix,
     });
     token.map = Some([ start_line, next_line + if have_end_marker { 1 } else { 0 } ]);
 

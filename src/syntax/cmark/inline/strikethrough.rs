@@ -2,9 +2,9 @@
 //
 // Process *this* and _that_
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::inline;
-use crate::renderer;
 use crate::syntax::base::inline::pairs::{Pairs, Delimiters};
 use crate::syntax::base::inline::text::Text;
 use crate::token::{Token, TokenData};
@@ -15,8 +15,10 @@ pub struct Strikethrough {
 }
 
 impl TokenData for Strikethrough {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        f.open("s").contents(&token.children).close("s");
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.open("s", &[]);
+        f.contents(&token.children);
+        f.close("s");
     }
 }
 

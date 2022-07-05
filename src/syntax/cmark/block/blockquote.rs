@@ -1,16 +1,22 @@
 // Block quotes
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
 pub struct Blockquote;
 
 impl TokenData for Blockquote {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        f.open("blockquote").lf().contents(&token.children).close("blockquote").lf();
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.cr();
+        f.open("blockquote", &[]);
+        f.cr();
+        f.contents(&token.children);
+        f.cr();
+        f.close("blockquote");
+        f.cr();
     }
 }
 

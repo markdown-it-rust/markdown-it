@@ -1,8 +1,8 @@
 // Lists
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::renderer;
 use crate::syntax::cmark::block::paragraph::Paragraph;
 use crate::token::{Token, TokenData};
 
@@ -13,14 +13,20 @@ pub struct OrderedList {
 }
 
 impl TokenData for OrderedList {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
         let mut attrs = Vec::new();
         let start;
         if self.start != 1 {
             start = self.start.to_string();
             attrs.push(("start", start.as_str()));
         }
-        f.open_attrs("ol", attrs).lf().contents(&token.children).close("ol").lf();
+        f.cr();
+        f.open("ol", &attrs);
+        f.cr();
+        f.contents(&token.children);
+        f.cr();
+        f.close("ol");
+        f.cr();
     }
 }
 
@@ -30,8 +36,14 @@ pub struct BulletList {
 }
 
 impl TokenData for BulletList {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        f.open("ul").lf().contents(&token.children).close("ul").lf();
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.cr();
+        f.open("ul", &[]);
+        f.cr();
+        f.contents(&token.children);
+        f.cr();
+        f.close("ul");
+        f.cr();
     }
 }
 
@@ -39,19 +51,11 @@ impl TokenData for BulletList {
 pub struct ListItem;
 
 impl TokenData for ListItem {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        let mut last_is_inline = true;
-        f.open("li");
-        for idx in 0..token.children.len() {
-            if token.children[idx].block {
-                if last_is_inline { f.lf(); }
-                last_is_inline = false;
-            } else {
-                last_is_inline = true;
-            }
-            f.contents(&token.children[idx..=idx]);
-        }
-        f.close("li").lf();
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.open("li", &[]);
+        f.contents(&token.children);
+        f.close("li");
+        f.cr();
     }
 }
 

@@ -1,9 +1,9 @@
 // Parse backticks
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::env;
 use crate::inline;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -14,8 +14,10 @@ pub struct CodeInline {
 }
 
 impl TokenData for CodeInline {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
-        f.open("code").text(&self.content).close("code");
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+        f.open("code", &[]);
+        f.text(&self.content);
+        f.close("code");
     }
 }
 

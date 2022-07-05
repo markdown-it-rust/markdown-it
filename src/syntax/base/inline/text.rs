@@ -1,9 +1,9 @@
 // Skip text characters for text token, place those to pending buffer
 // and increment current pos
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::inline;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -12,7 +12,7 @@ pub struct Text {
 }
 
 impl TokenData for Text {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
         f.text(&self.content);
     }
 }
@@ -25,7 +25,7 @@ pub struct TextSpecial {
 }
 
 impl TokenData for TextSpecial {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
         f.text(&self.content);
     }
 }

@@ -7,10 +7,8 @@ fn run(input: &str, output: &str) {
     }));
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
-    md.renderer.breaks = false;
-    md.renderer.lang_prefix = "language-";
-    md.renderer.xhtml = true;
-    let result = md.render(&(input.to_owned() + "\n"));
+    let tokens = md.parse(&(input.to_owned() + "\n"));
+    let result = markdown_it::renderer::xhtml(&tokens);
     assert_eq!(result, output);
 }
 

@@ -1,16 +1,17 @@
 // Process '\n'
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::inline;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
 pub struct Hardbreak;
 
 impl TokenData for Hardbreak {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
-        f.self_close("br").lf();
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+        f.self_close("br", &[]);
+        f.cr();
     }
 }
 
@@ -18,12 +19,8 @@ impl TokenData for Hardbreak {
 pub struct Softbreak;
 
 impl TokenData for Softbreak {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
-        if f.renderer.breaks {
-            f.self_close("br").lf();
-        } else {
-            f.lf();
-        }
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+        f.cr();
     }
 }
 

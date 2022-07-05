@@ -4,7 +4,6 @@ pub mod block;
 use crate::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
-    //inline::linkify::add(md);
     inline::newline::add(md);
     inline::escape::add(md);
     inline::backticks::add(md);
@@ -15,7 +14,6 @@ pub fn add(md: &mut MarkdownIt) {
     inline::autolink::add(md);
     inline::entity::add(md);
 
-    //block::table::add(md);
     block::code::add(md);
     block::fence::add(md);
     block::blockquote::add(md);

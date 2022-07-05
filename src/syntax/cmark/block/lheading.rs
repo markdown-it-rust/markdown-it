@@ -1,8 +1,8 @@
 // lheading (---, ===)
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::renderer;
 use crate::syntax::base::core::inline::InlineNodes;
 use crate::token::{Token, TokenData};
 
@@ -13,10 +13,15 @@ pub struct SetextHeader {
 }
 
 impl TokenData for SetextHeader {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
         static TAG : [&str; 2] = [ "h1", "h2" ];
         debug_assert!(self.level >= 1 && self.level <= 2);
-        f.open(TAG[self.level as usize - 1]).contents(&token.children).close(TAG[self.level as usize - 1]).lf();
+
+        f.cr();
+        f.open(TAG[self.level as usize - 1], &[]);
+        f.contents(&token.children);
+        f.close(TAG[self.level as usize - 1]);
+        f.cr();
     }
 }
 

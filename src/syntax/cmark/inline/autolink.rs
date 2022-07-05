@@ -2,9 +2,9 @@
 //
 use once_cell::sync::Lazy;
 use regex::Regex;
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::inline;
-use crate::renderer;
 use crate::syntax::base::inline::text::Text;
 use crate::token::{Token, TokenData};
 
@@ -14,8 +14,10 @@ pub struct AutoLink {
 }
 
 impl TokenData for AutoLink {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        f.open_attrs("a", vec![("href", &self.url)]).contents(&token.children).close("a");
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.open("a", &[("href", &self.url)]);
+        f.contents(&token.children);
+        f.close("a");
     }
 }
 

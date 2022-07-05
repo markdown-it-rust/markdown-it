@@ -1,9 +1,9 @@
 // Process [link](<to> "stuff")
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::helpers;
 use crate::inline;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub struct Link {
 }
 
 impl TokenData for Link {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
         let mut attrs : Vec<(&str, &str)> = Vec::new();
         attrs.push(("href", &self.url));
 
@@ -21,7 +21,9 @@ impl TokenData for Link {
             attrs.push(("title", &*title));
         }
 
-        f.open_attrs("a", attrs).contents(&token.children).close("a");
+        f.open("a", &attrs);
+        f.contents(&token.children);
+        f.close("a");
     }
 }
 

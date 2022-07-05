@@ -1,8 +1,8 @@
 // Process *this* and _that_
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::inline;
-use crate::renderer;
 use crate::syntax::base::inline::pairs::{Pairs, Delimiters};
 use crate::syntax::base::inline::text::Text;
 use crate::token::{Token, TokenData};
@@ -13,8 +13,10 @@ pub struct Em {
 }
 
 impl TokenData for Em {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        f.open("em").contents(&token.children).close("em");
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.open("em", &[]);
+        f.contents(&token.children);
+        f.close("em");
     }
 }
 
@@ -24,8 +26,10 @@ pub struct Strong {
 }
 
 impl TokenData for Strong {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        f.open("strong").contents(&token.children).close("strong");
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.open("strong", &[]);
+        f.contents(&token.children);
+        f.close("strong");
     }
 }
 

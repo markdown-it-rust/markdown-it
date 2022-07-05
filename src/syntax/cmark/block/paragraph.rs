@@ -1,8 +1,8 @@
 // Paragraph
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::renderer;
 use crate::syntax::base::core::inline::InlineNodes;
 use crate::token::{Token, TokenData};
 
@@ -15,8 +15,12 @@ pub fn add(md: &mut MarkdownIt) {
 pub struct Paragraph;
 
 impl TokenData for Paragraph {
-    fn render(&self, token: &Token, f: &mut renderer::Formatter) {
-        f.open("p").contents(&token.children).close("p").lf();
+    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+        f.cr();
+        f.open("p", &[]);
+        f.contents(&token.children);
+        f.close("p");
+        f.cr();
     }
 }
 

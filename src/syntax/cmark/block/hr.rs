@@ -1,8 +1,8 @@
 // Horizontal rule
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -12,8 +12,10 @@ pub struct ThematicBreak {
 }
 
 impl TokenData for ThematicBreak {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
-        f.self_close("hr").lf();
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+        f.cr();
+        f.self_close("hr", &[]);
+        f.cr();
     }
 }
 

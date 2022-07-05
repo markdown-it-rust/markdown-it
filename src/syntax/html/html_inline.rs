@@ -1,9 +1,9 @@
 // Process escaped chars and hardbreaks
 //
+use crate::Formatter;
+use crate::MarkdownIt;
 use crate::common::html_re::*;
 use crate::inline;
-use crate::MarkdownIt;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -12,7 +12,7 @@ pub struct HtmlInline {
 }
 
 impl TokenData for HtmlInline {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
         f.text_raw(&self.content);
     }
 }

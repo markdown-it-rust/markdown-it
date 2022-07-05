@@ -2,11 +2,11 @@
 //
 use once_cell::sync::Lazy;
 use regex::Regex;
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
 use crate::common::html_blocks::*;
 use crate::common::html_re::*;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -15,8 +15,10 @@ pub struct HtmlBlock {
 }
 
 impl TokenData for HtmlBlock {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+        f.cr();
         f.text_raw(&self.content);
+        f.cr();
     }
 }
 

@@ -1,8 +1,8 @@
 // Code block (4 spaces padded)
 //
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -11,10 +11,14 @@ pub struct CodeBlock {
 }
 
 impl TokenData for CodeBlock {
-    fn render(&self, _: &Token, f: &mut renderer::Formatter) {
-        f.open("pre")
-            .open("code").text(&self.content).close("code")
-        .close("pre").lf();
+    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+        f.cr();
+        f.open("pre", &[]);
+            f.open("code", &[]);
+            f.text(&self.content);
+            f.close("code");
+        f.close("pre");
+        f.cr();
     }
 }
 

@@ -1,6 +1,6 @@
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::core;
-use crate::renderer;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -10,7 +10,7 @@ pub struct InlineNodes {
 
 // this token is supposed to be replaced by one or many actual tokens by inline rule
 impl TokenData for InlineNodes {
-    fn render(&self, _: &Token, _: &mut renderer::Formatter) {
+    fn render(&self, _: &Token, _: &mut dyn Formatter) {
         unimplemented!()
     }
 }
