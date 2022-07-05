@@ -2,9 +2,9 @@
 //
 use crate::Formatter;
 use crate::MarkdownIt;
-use crate::common::html_re::*;
 use crate::inline;
 use crate::token::{Token, TokenData};
+use super::utils::regexps::*;
 
 #[derive(Debug)]
 pub struct HtmlInline {

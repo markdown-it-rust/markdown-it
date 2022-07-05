@@ -1,5 +1,6 @@
 pub mod html_inline;
 pub mod html_block;
+mod utils;
 
 use crate::MarkdownIt;
 

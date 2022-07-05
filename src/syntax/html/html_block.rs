@@ -5,9 +5,9 @@ use regex::Regex;
 use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
-use crate::common::html_blocks::*;
-use crate::common::html_re::*;
 use crate::token::{Token, TokenData};
+use super::utils::blocks::*;
+use super::utils::regexps::*;
 
 #[derive(Debug)]
 pub struct HtmlBlock {

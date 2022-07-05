@@ -1,5 +1,3 @@
-pub mod html_blocks;
-pub mod html_re;
 pub mod entities;
 
 use once_cell::sync::Lazy;
