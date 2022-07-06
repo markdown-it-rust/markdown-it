@@ -61,7 +61,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         if state.line_indent(next_line) >= 4 { continue; }
 
         // quirk for blockquotes, this line should already be checked by that rule
-        if state.s_count[next_line] < 0 { continue; }
+        if state.line_offsets[next_line].indent_nonspace < 0 { continue; }
 
         // Some tags can terminate paragraph without empty line.
         let old_state_line = state.line;

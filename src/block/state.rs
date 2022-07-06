@@ -19,10 +19,7 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     //
     pub tokens: &'c mut Vec<Token>,
 
-    pub b_marks: Vec<usize>,  // line begin offsets for fast jumps
-    pub e_marks: Vec<usize>,  // line end offsets for fast jumps
-    pub t_shift: Vec<usize>,  // offsets of the first non-space characters (tabs not expanded)
-    pub s_count: Vec<i32>,    // indents for each line (tabs expanded)
+    pub line_offsets: Vec<LineOffset>,
 
     // An amount of virtual spaces (tabs expanded) between beginning
     // of each line (bMarks) and real beginning of that line.
@@ -49,6 +46,55 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     pub level: u32,
 }
 
+#[derive(Debug, Clone)]
+pub struct LineOffset {
+    // "start" is where current rule should assume the start of the line is
+    // (before spaces), it initially equals to line_start, but can be
+    // adjusted by preceding block rules.
+    // "   >  blockquote\r\n"
+    //      ^-- it will point here when paragraph is parsed
+    //  ^------ it is initially pointed here
+    pub start: usize,
+
+    // "start_nonspace" is the byte offset of the first non-space character in
+    // the current line.
+    // "   >  blockquote\r\n"
+    //        ^-- it will point here when paragraph is parsed
+    //     ^----- it is initially pointed here
+    pub start_nonspace: usize,
+
+    // "indent_nonspace" is the indent (amount of virtual spaces from start)
+    // of first non-space character in the current line, taking into account
+    // tab expansion.
+    //
+    // For example, in case of " \t foo", indent is 5 (tab ends at multiple of 4,
+    // then one space after it). Only tabs and spaces are counted for it,
+    // so no funny unicode business (if cmark supported unicode spaces, they'd
+    // be counted as 1 each regardless of utf8 width).
+    //
+    // You should compare "indent_nonspace" with "state.blkindent" when determining
+    // real indent after taking into account lists.
+    //
+    // Most block rules in commonmark are indented 0..=3, and >=4 is code block.
+    // Special value of ident_nonspace=-1 is used by this library as a sign
+    // that this rule can only be a paragraph continuation (used in blockquotes),
+    // so you must take into account that any math can end up negative.
+    pub indent_nonspace: i32,
+
+    // "line_start" is the actual start of the line.
+    // "  >  blockquote\r\n"
+    //  ^-- it will always point here (must not be modified by rules)
+    // it is used exclusively to construct source maps
+    // NOTE: not needed
+    //pub line_start: usize,
+
+    // "end" is first newline character after the line,
+    // or position after string length if there aren't any newlines left.
+    // "  >  blockquote\r\n"
+    //                 ^-- it will point here
+    pub end: usize,
+}
+
 impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     pub fn new(src: &str, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Token>) -> Self {
         let mut result = Self {
@@ -56,10 +102,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             md,
             env,
             tokens: out_tokens,
-            b_marks: Vec::new(),
-            e_marks: Vec::new(),
-            t_shift: Vec::new(),
-            s_count: Vec::new(),
+            line_offsets: Vec::new(),
             bs_count: Vec::new(),
             blk_indent: 0,
             line: 0,
@@ -93,10 +136,12 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
                     pos += 1;
                 }
                 ch @ (Some('\n') | None) => {
-                    self.b_marks.push(start);
-                    self.e_marks.push(pos);
-                    self.t_shift.push(indent);
-                    self.s_count.push(offset);
+                    self.line_offsets.push(LineOffset {
+                        start,
+                        start_nonspace: start + indent,
+                        indent_nonspace: offset,
+                        end: pos,
+                    });
                     self.bs_count.push(0);
 
                     indent_found = false;
@@ -116,13 +161,15 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             }
         }
 
-        self.line_max = self.b_marks.len();
+        self.line_max = self.line_offsets.len();
 
         // Push fake entry to simplify cache bounds checks
-        self.b_marks.push(len);
-        self.e_marks.push(len);
-        self.t_shift.push(0);
-        self.s_count.push(0);
+        self.line_offsets.push(LineOffset {
+            start: len,
+            start_nonspace: len,
+            indent_nonspace: 0,
+            end: len,
+        });
         self.bs_count.push(0);
     }
 
@@ -134,7 +181,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     }
 
     pub fn is_empty(&self, line: usize) -> bool {
-        self.b_marks[line] + self.t_shift[line] >= self.e_marks[line]
+        self.line_offsets[line].start_nonspace >= self.line_offsets[line].end
     }
 
     pub fn skip_empty_lines(&self, from: usize) -> usize {
@@ -148,13 +195,13 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     // return line indent of specific line, taking into account blockquotes and lists;
     // it may be negative if a text has less indentation than current list item
     pub fn line_indent(&self, line: usize) -> i32 {
-        self.s_count[line] - self.blk_indent as i32
+        self.line_offsets[line].indent_nonspace - self.blk_indent as i32
     }
 
     // return a single line, trimming initial spaces
     pub fn get_line(&self, line: usize) -> &str {
-        let pos = self.b_marks[line] + self.t_shift[line];
-        let max = self.e_marks[line];
+        let pos = self.line_offsets[line].start_nonspace;
+        let max = self.line_offsets[line].end;
         &self.src[pos..max]
     }
 
@@ -165,19 +212,20 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
         while line < end {
             let mut line_indent = 0;
-            let line_start = self.b_marks[line];
+            let line_start = self.line_offsets[line].start;
 
             let mut last = if line + 1 < end || keep_last_lf {
                 // No need for bounds check because we have fake entry on tail.
-                self.e_marks[line] + 1
+                self.line_offsets[line].end + 1
             } else {
-                self.e_marks[line]
+                self.line_offsets[line].end
             };
 
             if last > self.src.len() { last = self.src.len(); }
 
             let mut first = line_start;
             let mut chars = self.src[first..last].chars();
+            let tshift = self.line_offsets[line].start_nonspace - self.line_offsets[line].start;
 
             while line_indent < indent {
                 match chars.next() {
@@ -189,7 +237,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
                         line_indent += 4 - (line_indent + self.bs_count[line]) % 4;
                         first += 1;
                     }
-                    Some(_) if first - line_start < self.t_shift[line] => {
+                    Some(_) if first - line_start < tshift => {
                         // patched tShift masked characters to look like spaces (blockquotes, list markers)
                         line_indent += 1;
                         first += 1;
@@ -216,8 +264,8 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         return None;
         #[cfg(feature="sourcemap")]
         return Some(SourcePos::new(
-            self.b_marks[_start_line] + self.t_shift[_start_line],
-            self.e_marks[_end_line]
+            self.line_offsets[_start_line].start_nonspace,
+            self.line_offsets[_end_line].end
         ));
     }
 }

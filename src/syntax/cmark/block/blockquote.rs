@@ -35,10 +35,9 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     // so no point trying to find the end of it in silent mode
     if silent { return true; }
 
-    let mut old_bmarks  = Vec::new();
+    let mut old_line_offsets = Vec::new();
     let mut old_bscount = Vec::new();
     let mut old_scount  = Vec::new();
-    let mut old_tshift  = Vec::new();
 
     let start_line = state.line;
     let mut next_line = state.line;
@@ -74,7 +73,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         let is_outdented = state.line_indent(next_line) < 0;
         let line = state.get_line(next_line).to_owned();
         let mut chars = line.chars();
-        let mut pos_after_marker = state.b_marks[next_line] + state.t_shift[next_line];
+        let mut pos_after_marker = state.line_offsets[next_line].start_nonspace;
 
         match chars.next() {
             None => {
@@ -85,7 +84,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
                 // This line is inside the blockquote.
 
                 // set offset past spaces and ">"
-                let s_count_offset = state.s_count[next_line] + 1;
+                let s_count_offset = state.line_offsets[next_line].indent_nonspace + 1;
                 let initial;
                 let adjust_tab;
                 let space_after_marker;
@@ -119,8 +118,8 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
                 }
 
                 let mut offset = initial;
-                old_bmarks.push(state.b_marks[next_line]);
-                state.b_marks[next_line] = pos_after_marker;
+                old_line_offsets.push(state.line_offsets[next_line].clone());
+                state.line_offsets[next_line].start = pos_after_marker;
 
                 loop {
                     match chars.next() {
@@ -144,14 +143,11 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
                 }
 
                 old_bscount.push(state.bs_count[next_line]);
-                state.bs_count[next_line] = state.s_count[next_line] as usize + 1 + if space_after_marker { 1 } else { 0 };
+                state.bs_count[next_line] = state.line_offsets[next_line].indent_nonspace as usize +
+                                                1 + if space_after_marker { 1 } else { 0 };
 
-                old_scount.push(state.s_count[next_line]);
-                state.s_count[next_line] = offset - initial;
-
-                old_tshift.push(state.t_shift[next_line]);
-                state.t_shift[next_line] = pos_after_marker - state.b_marks[next_line];
-
+                state.line_offsets[next_line].indent_nonspace = offset - initial;
+                state.line_offsets[next_line].start_nonspace = pos_after_marker;
                 next_line += 1;
                 continue;
             }
@@ -182,24 +178,22 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
                 // state.blkIndent was non-zero, we now set it to zero,
                 // so we need to re-calculate all offsets to appear as
                 // if indent wasn't changed
-                old_bmarks.push(state.b_marks[next_line]);
+                old_line_offsets.push(state.line_offsets[next_line].clone());
                 old_bscount.push(state.bs_count[next_line]);
-                old_tshift.push(state.t_shift[next_line]);
-                old_scount.push(state.s_count[next_line]);
-                state.s_count[next_line] -= state.blk_indent as i32;
+                old_scount.push(state.line_offsets[next_line].indent_nonspace);
+                state.line_offsets[next_line].indent_nonspace -= state.blk_indent as i32;
             }
 
             break;
         }
 
-        old_bmarks.push(state.b_marks[next_line]);
+        old_line_offsets.push(state.line_offsets[next_line].clone());
         old_bscount.push(state.bs_count[next_line]);
-        old_tshift.push(state.t_shift[next_line]);
-        old_scount.push(state.s_count[next_line]);
+        old_scount.push(state.line_offsets[next_line].indent_nonspace);
 
         // A negative indentation means that this is a paragraph continuation
         //
-        state.s_count[next_line] = -1;
+        state.line_offsets[next_line].indent_nonspace = -1;
         next_line += 1;
     }
 
@@ -221,10 +215,8 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     // Restore original tShift; this might not be necessary since the parser
     // has already been here, but just to make sure we can do that.
-    for i in 0..old_tshift.len() {
-        state.b_marks[i + start_line] = old_bmarks[i];
-        state.t_shift[i + start_line] = old_tshift[i];
-        state.s_count[i + start_line] = old_scount[i];
+    for i in 0..old_line_offsets.len() {
+        std::mem::swap(&mut state.line_offsets[i + start_line], &mut old_line_offsets[i]);
         state.bs_count[i + start_line] = old_bscount[i];
     }
     state.blk_indent = old_indent;

@@ -134,8 +134,9 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     //     - item 4
     //      - this one is a paragraph continuation
     if let Some(list_indent) = state.list_indent {
-        if state.s_count[state.line] - list_indent as i32 >= 4 &&
-           state.s_count[state.line] < state.blk_indent as i32 {
+        let indent_nonspace = state.line_offsets[state.line].indent_nonspace;
+        if indent_nonspace - list_indent as i32 >= 4 &&
+           indent_nonspace < state.blk_indent as i32 {
             return false;
         }
     }
@@ -206,7 +207,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     'outer: while next_line < state.line_max {
         let mut content_start = pos_after_marker;
-        let initial = state.s_count[next_line] as usize + pos_after_marker;
+        let initial = state.line_offsets[next_line].indent_nonspace as usize + pos_after_marker;
         let mut offset = initial;
 
         let mut chars = current_line[pos_after_marker..].chars();
@@ -245,8 +246,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
         // change current state, then restore it after parser subcall
         let old_tight = state.tight;
-        let old_tshift = state.t_shift[next_line];
-        let old_scount = state.s_count[next_line];
+        let old_lineoffset = state.line_offsets[next_line].clone();
 
         //  - example list
         // ^ listIndent position will be here
@@ -257,8 +257,8 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         state.blk_indent = indent;
 
         state.tight = true;
-        state.t_shift[next_line] += content_start;
-        state.s_count[next_line] = offset as i32;
+        state.line_offsets[next_line].start_nonspace += content_start;
+        state.line_offsets[next_line].indent_nonspace = offset as i32;
 
         if content_start == current_line.len() && state.is_empty(next_line + 1) {
             // workaround for this case
@@ -289,8 +289,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
         state.blk_indent = state.list_indent.unwrap() as usize;
         state.list_indent = old_list_indent;
-        state.t_shift[next_line] = old_tshift;
-        state.s_count[next_line] = old_scount;
+        state.line_offsets[next_line] = old_lineoffset;
         state.tight = old_tight;
 
         let end_line = state.line;
