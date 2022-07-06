@@ -139,7 +139,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     let content = state.get_lines(start_line, next_line, state.blk_indent, true);
     let mut token = Token::new(HtmlBlock { content });
-    token.map = Some([ start_line, next_line ]);
+    token.map = state.get_map(start_line, next_line - 1);
     state.push(token);
 
     true

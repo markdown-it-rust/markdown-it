@@ -7,6 +7,7 @@ fn main() {
     let mut input = "-".to_owned();
     let mut output = "-".to_owned();
     let mut no_html = false;
+    let mut sourcepos = false;
 
     {
         let mut cli = argparse::ArgumentParser::new();
@@ -16,6 +17,10 @@ fn main() {
         cli
             .refer(&mut output)
             .add_option(&["-o", "--output"], argparse::Store, "File to write");
+
+        cli
+            .refer(&mut sourcepos)
+            .add_option(&["--sourcepos"], argparse::StoreTrue, "Include source mappings in HTML attributes");
 
         cli
             .refer(&mut no_html)
@@ -45,7 +50,17 @@ fn main() {
         markdown_it::syntax::html::add(md);
     }
 
-    let result = md.render(&source);
+    let result;
+    if sourcepos {
+        #[cfg(feature="sourcemap")] {
+            result = markdown_it::renderer::html_with_srcmap(&source, &md.parse(&source));
+        }
+        #[cfg(not(feature="sourcemap"))] {
+            panic!(r#"--sourcepos requires markdown-it to be built with --features=sourcemap"#);
+        }
+    } else {
+        result = md.render(&source);
+    }
 
     if output == "-" {
         std::io::stdout().write(result.as_bytes()).unwrap();

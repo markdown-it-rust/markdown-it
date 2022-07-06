@@ -296,7 +296,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         let end_line = state.line;
         let children = std::mem::replace(state.tokens, old_tokens);
         let mut token = Token::new(ListItem);
-        token.map = Some([ next_line, end_line ]);
+        token.map = state.get_map(next_line, end_line);
         token.children = children;
         state.push(token);
         next_line = state.line;
@@ -367,7 +367,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         });
     }
 
-    token.map = Some([ next_line, next_line ]);
+    token.map = state.get_map(next_line, next_line);
     token.children = children;
     state.push(token);
 

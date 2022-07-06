@@ -50,12 +50,10 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     if cnt < 3 { return false; }
     if silent { return true; }
 
-    let line = state.line;
-    state.line += 1;
-
     let mut token = Token::new(ThematicBreak { marker, marker_len: cnt });
-    token.map = Some([ line, line + 1 ]);
+    token.map = state.get_map(state.line, state.line);
     state.push(token);
+    state.line += 1;
 
     true
 }

@@ -6,6 +6,7 @@ pub mod inline;
 pub mod mdurl;
 pub mod renderer;
 pub mod ruler;
+pub mod sourcemap;
 pub mod syntax;
 pub mod syntax_base;
 pub mod token;

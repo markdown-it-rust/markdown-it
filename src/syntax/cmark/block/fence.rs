@@ -144,7 +144,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         content,
         lang_prefix,
     });
-    token.map = Some([ start_line, next_line + if have_end_marker { 1 } else { 0 } ]);
+    token.map = state.get_map(start_line, next_line - if have_end_marker { 0 } else { 1 });
     state.push(token);
 
     state.line = next_line + if have_end_marker { 1 } else { 0 };

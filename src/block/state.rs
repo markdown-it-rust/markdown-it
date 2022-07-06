@@ -2,6 +2,7 @@
 //
 use crate::env::Env;
 use crate::MarkdownIt;
+use crate::sourcemap::SourcePos;
 use crate::token::Token;
 
 #[derive(Debug)]
@@ -208,5 +209,15 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         }
 
         result
+    }
+
+    pub fn get_map(&self, _start_line: usize, _end_line: usize) -> Option<SourcePos> {
+        #[cfg(not(feature="sourcemap"))]
+        return None;
+        #[cfg(feature="sourcemap")]
+        return Some(SourcePos::new(
+            self.b_marks[_start_line] + self.t_shift[_start_line],
+            self.e_marks[_end_line]
+        ));
     }
 }

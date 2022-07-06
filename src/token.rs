@@ -1,4 +1,5 @@
 use crate::Formatter;
+use crate::sourcemap::SourcePos;
 use std::any::{Any, TypeId};
 use std::fmt::Debug;
 
@@ -8,7 +9,7 @@ pub type TokenAttrs = Vec<(&'static str, String)>;
 #[derive(Debug)]
 pub struct Token {
     // Source map info. Format: `[ line_begin, line_end ]`
-    pub map: Option<[usize; 2]>,
+    pub map: Option<SourcePos>,
 
     // An array of child nodes (inline and img tokens)
     pub children: Vec<Token>,

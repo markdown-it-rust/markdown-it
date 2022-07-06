@@ -216,7 +216,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let children = std::mem::replace(state.tokens, old_tokens);
     let mut token = Token::new(Blockquote);
     token.children = children;
-    token.map = Some([ start_line, next_line ]);
+    token.map = state.get_map(start_line, next_line);
     state.push(token);
 
     // Restore original tShift; this might not be necessary since the parser

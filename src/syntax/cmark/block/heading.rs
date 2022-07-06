@@ -82,7 +82,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     state.line += 1;
 
     let mut token = Token::new(ATXHeading { level });
-    token.map = Some([ start_line, start_line + 1 ]);
+    token.map = state.get_map(start_line, start_line);
     token.children.push(Token::new(InlineNodes {
         content
     }));
