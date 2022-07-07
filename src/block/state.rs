@@ -1,5 +1,6 @@
 // Parser state class
 //
+use crate::common::cut_right_whitespace_with_tabstops;
 use crate::env::Env;
 use crate::MarkdownIt;
 use crate::sourcemap::SourcePos;
@@ -21,18 +22,6 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
 
     pub line_offsets: Vec<LineOffset>,
 
-    // An amount of virtual spaces (tabs expanded) between beginning
-    // of each line (bMarks) and real beginning of that line.
-    //
-    // It exists only as a hack because blockquotes override bMarks
-    // losing information in the process.
-    //
-    // It's used only when expanding tabs, you can think about it as
-    // an initial tab length, e.g. bsCount=21 applied to string `\t123`
-    // means first tab should be expanded to 4-21%4 === 3 spaces.
-    //
-    pub bs_count: Vec<usize>,
-
     // block parser variables
     pub blk_indent: usize,        // required block content indent (for example, if we are
                                   // inside a list, it would be positioned after list marker)
@@ -48,20 +37,25 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
 
 #[derive(Debug, Clone)]
 pub struct LineOffset {
-    // "start" is where current rule should assume the start of the line is
-    // (before spaces), it initially equals to line_start, but can be
-    // adjusted by preceding block rules.
-    // "   >  blockquote\r\n"
-    //      ^-- it will point here when paragraph is parsed
-    //  ^------ it is initially pointed here
-    pub start: usize,
+    // "line_start" is the actual start of the line.
+    // "  >  blockquote\r\n"
+    //  ^-- it will always point here (must not be modified by rules)
+    pub line_start: usize,
 
-    // "start_nonspace" is the byte offset of the first non-space character in
+    // "line_end" is first newline character after the line,
+    // or position after string length if there aren't any newlines left.
+    // "  >  blockquote\r\n"
+    //                 ^-- it will point here
+    pub line_end: usize,
+
+    // "first_nonspace" is the byte offset of the first non-space character in
     // the current line.
     // "   >  blockquote\r\n"
     //        ^-- it will point here when paragraph is parsed
     //     ^----- it is initially pointed here
-    pub start_nonspace: usize,
+    // It will be modified by rules (list and blockquote), chars before it
+    // must be treated as whitespaces.
+    pub first_nonspace: usize,
 
     // "indent_nonspace" is the indent (amount of virtual spaces from start)
     // of first non-space character in the current line, taking into account
@@ -80,19 +74,6 @@ pub struct LineOffset {
     // that this rule can only be a paragraph continuation (used in blockquotes),
     // so you must take into account that any math can end up negative.
     pub indent_nonspace: i32,
-
-    // "line_start" is the actual start of the line.
-    // "  >  blockquote\r\n"
-    //  ^-- it will always point here (must not be modified by rules)
-    // it is used exclusively to construct source maps
-    // NOTE: not needed
-    //pub line_start: usize,
-
-    // "end" is first newline character after the line,
-    // or position after string length if there aren't any newlines left.
-    // "  >  blockquote\r\n"
-    //                 ^-- it will point here
-    pub end: usize,
 }
 
 impl<'a, 'b, 'c> State<'a, 'b, 'c> {
@@ -103,7 +84,6 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             env,
             tokens: out_tokens,
             line_offsets: Vec::new(),
-            bs_count: Vec::new(),
             blk_indent: 0,
             line: 0,
             line_max: 0,
@@ -137,12 +117,11 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
                 }
                 ch @ (Some('\n') | None) => {
                     self.line_offsets.push(LineOffset {
-                        start,
-                        start_nonspace: start + indent,
+                        line_start: start,
+                        line_end: pos,
+                        first_nonspace: start + indent,
                         indent_nonspace: offset,
-                        end: pos,
                     });
-                    self.bs_count.push(0);
 
                     indent_found = false;
                     indent = 0;
@@ -165,12 +144,11 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
         // Push fake entry to simplify cache bounds checks
         self.line_offsets.push(LineOffset {
-            start: len,
-            start_nonspace: len,
+            line_start: len,
+            line_end: len,
+            first_nonspace: len,
             indent_nonspace: 0,
-            end: len,
         });
-        self.bs_count.push(0);
     }
 
     // Push new token to "stream".
@@ -181,7 +159,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     }
 
     pub fn is_empty(&self, line: usize) -> bool {
-        self.line_offsets[line].start_nonspace >= self.line_offsets[line].end
+        self.line_offsets[line].first_nonspace >= self.line_offsets[line].line_end
     }
 
     pub fn skip_empty_lines(&self, from: usize) -> usize {
@@ -200,8 +178,8 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
     // return a single line, trimming initial spaces
     pub fn get_line(&self, line: usize) -> &str {
-        let pos = self.line_offsets[line].start_nonspace;
-        let max = self.line_offsets[line].end;
+        let pos = self.line_offsets[line].first_nonspace;
+        let max = self.line_offsets[line].line_end;
         &self.src[pos..max]
     }
 
@@ -211,48 +189,23 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         let mut result = String::new();
 
         while line < end {
-            let mut line_indent = 0;
-            let line_start = self.line_offsets[line].start;
+            let offsets = &self.line_offsets[line];
 
             let mut last = if line + 1 < end || keep_last_lf {
                 // No need for bounds check because we have fake entry on tail.
-                self.line_offsets[line].end + 1
+                offsets.line_end + 1
             } else {
-                self.line_offsets[line].end
+                offsets.line_end
             };
 
             if last > self.src.len() { last = self.src.len(); }
 
-            let mut first = line_start;
-            let mut chars = self.src[first..last].chars();
-            let tshift = self.line_offsets[line].start_nonspace - self.line_offsets[line].start;
+            result += &cut_right_whitespace_with_tabstops(
+                &self.src[offsets.line_start..offsets.first_nonspace],
+                offsets.indent_nonspace - indent as i32
+            );
+            result += &self.src[offsets.first_nonspace..last];
 
-            while line_indent < indent {
-                match chars.next() {
-                    Some(' ') => {
-                        line_indent += 1;
-                        first += 1;
-                    }
-                    Some('\t') => {
-                        line_indent += 4 - (line_indent + self.bs_count[line]) % 4;
-                        first += 1;
-                    }
-                    Some(_) if first - line_start < tshift => {
-                        // patched tShift masked characters to look like spaces (blockquotes, list markers)
-                        line_indent += 1;
-                        first += 1;
-                    }
-                    _ => break,
-                }
-            }
-
-            if line_indent > indent {
-                // partially expanding tabs in code blocks, e.g '\t\tfoobar'
-                // with indent=2 becomes '  \tfoobar'
-                result += &" ".repeat(line_indent - indent);
-            }
-
-            result += &self.src[first..last];
             line += 1;
         }
 
@@ -264,8 +217,8 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         return None;
         #[cfg(feature="sourcemap")]
         return Some(SourcePos::new(
-            self.line_offsets[_start_line].start_nonspace,
-            self.line_offsets[_end_line].end
+            self.line_offsets[_start_line].first_nonspace,
+            self.line_offsets[_end_line].line_end
         ));
     }
 }

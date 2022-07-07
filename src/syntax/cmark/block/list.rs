@@ -3,6 +3,7 @@
 use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
+use crate::common::find_indent_of;
 use crate::syntax::cmark::block::paragraph::Paragraph;
 use crate::token::{Token, TokenData};
 
@@ -206,29 +207,17 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let mut tight = true;
 
     'outer: while next_line < state.line_max {
-        let mut content_start = pos_after_marker;
-        let initial = state.line_offsets[next_line].indent_nonspace as usize + pos_after_marker;
-        let mut offset = initial;
+        let offsets = &state.line_offsets[next_line];
+        let initial = offsets.indent_nonspace as usize + pos_after_marker;
 
-        let mut chars = current_line[pos_after_marker..].chars();
+        let ( mut indent_after_marker, first_nonspace ) = find_indent_of(
+            &state.src[offsets.line_start..offsets.line_end],
+            pos_after_marker + offsets.first_nonspace - offsets.line_start);
 
-        loop {
-            match chars.next() {
-                Some('\t') => {
-                    offset += 4 - (offset + state.bs_count[next_line]) % 4;
-                    content_start += 1;
-                }
-                Some(' ') => {
-                    offset += 1;
-                    content_start += 1;
-                }
-                _ => break,
-            }
-        }
+        let reached_end_of_line = first_nonspace == offsets.line_end - offsets.line_start;
+        let indent_nonspace = initial + indent_after_marker;
 
-        let mut indent_after_marker = offset - initial;
-
-        if content_start == current_line.len() {
+        if reached_end_of_line {
             // trimming space in "-    \n  3" case, indent is 1 here
             indent_after_marker = 1;
         } else if indent_after_marker > 4 {
@@ -246,7 +235,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
         // change current state, then restore it after parser subcall
         let old_tight = state.tight;
-        let old_lineoffset = state.line_offsets[next_line].clone();
+        let old_lineoffset = offsets.clone();
 
         //  - example list
         // ^ listIndent position will be here
@@ -257,10 +246,10 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         state.blk_indent = indent;
 
         state.tight = true;
-        state.line_offsets[next_line].start_nonspace += content_start;
-        state.line_offsets[next_line].indent_nonspace = offset as i32;
+        state.line_offsets[next_line].first_nonspace = first_nonspace + state.line_offsets[next_line].line_start;
+        state.line_offsets[next_line].indent_nonspace = indent_nonspace as i32;
 
-        if content_start == current_line.len() && state.is_empty(next_line + 1) {
+        if reached_end_of_line && state.is_empty(next_line + 1) {
             // workaround for this case
             // (list item is empty, list terminates before "foo"):
             // ~~~~~~~~

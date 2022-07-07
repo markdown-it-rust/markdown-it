@@ -3,6 +3,7 @@
 use crate::Formatter;
 use crate::MarkdownIt;
 use crate::block;
+use crate::common::find_indent_of;
 use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
@@ -36,9 +37,6 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     if silent { return true; }
 
     let mut old_line_offsets = Vec::new();
-    let mut old_bscount = Vec::new();
-    let mut old_scount  = Vec::new();
-
     let start_line = state.line;
     let mut next_line = state.line;
     let mut last_line_empty = false;
@@ -73,7 +71,6 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         let is_outdented = state.line_indent(next_line) < 0;
         let line = state.get_line(next_line).to_owned();
         let mut chars = line.chars();
-        let mut pos_after_marker = state.line_offsets[next_line].start_nonspace;
 
         match chars.next() {
             None => {
@@ -84,70 +81,24 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
                 // This line is inside the blockquote.
 
                 // set offset past spaces and ">"
-                let s_count_offset = state.line_offsets[next_line].indent_nonspace + 1;
-                let initial;
-                let adjust_tab;
-                let space_after_marker;
-                let mut chars = chars.peekable();
-                pos_after_marker += 1;
+                let offsets = &state.line_offsets[next_line];
+                let pos_after_marker = offsets.first_nonspace + 1;
+
+                old_line_offsets.push(state.line_offsets[next_line].clone());
+
+                let ( mut indent_after_marker, first_nonspace ) = find_indent_of(
+                    &state.src[offsets.line_start..offsets.line_end],
+                    pos_after_marker - offsets.line_start);
+
+                last_line_empty = first_nonspace == offsets.line_end - offsets.line_start;
 
                 // skip one optional space after '>'
-                match chars.peek() {
-                    Some('\t') if (state.bs_count[start_line] + s_count_offset as usize) % 4 != 3 => {
-                        // ' >\t  test '
-                        //    ^ -- position start of line here + shift bsCount slightly
-                        //         to make extra space appear
-                        initial = s_count_offset;
-                        adjust_tab = true;
-                        space_after_marker = true;
-                    }
-                    Some(' ' | '\t') => {
-                        // ' >   test '
-                        //     ^ -- position start of line here (or has width===1):
-                        initial = s_count_offset + 1;
-                        adjust_tab = false;
-                        space_after_marker = true;
-                        pos_after_marker += 1;
-                        chars.next();
-                    }
-                    _ => {
-                        initial = s_count_offset;
-                        adjust_tab = false;
-                        space_after_marker = false;
-                    }
+                if matches!(chars.next(), Some(' ' | '\t')) {
+                    indent_after_marker -= 1;
                 }
 
-                let mut offset = initial;
-                old_line_offsets.push(state.line_offsets[next_line].clone());
-                state.line_offsets[next_line].start = pos_after_marker;
-
-                loop {
-                    match chars.next() {
-                        Some('\t') => {
-                            offset += 4 - (offset + state.bs_count[next_line] as i32 + if adjust_tab { 1 } else { 0 }) % 4;
-                            pos_after_marker += 1;
-                        }
-                        Some(' ') => {
-                            offset += 1;
-                            pos_after_marker += 1;
-                        }
-                        Some(_) => {
-                            last_line_empty = false;
-                            break;
-                        }
-                        None => {
-                            last_line_empty = true;
-                            break;
-                        }
-                    }
-                }
-
-                old_bscount.push(state.bs_count[next_line]);
-                state.bs_count[next_line] = state.line_offsets[next_line].indent_nonspace as usize +
-                                                1 + if space_after_marker { 1 } else { 0 };
-
-                state.line_offsets[next_line].indent_nonspace = offset - initial;
-                state.line_offsets[next_line].start_nonspace = pos_after_marker;
+                state.line_offsets[next_line].indent_nonspace = indent_after_marker as i32;
+                state.line_offsets[next_line].first_nonspace = first_nonspace + state.line_offsets[next_line].line_start;
                 next_line += 1;
                 continue;
             }
@@ -179,8 +130,6 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
                 // so we need to re-calculate all offsets to appear as
                 // if indent wasn't changed
                 old_line_offsets.push(state.line_offsets[next_line].clone());
-                old_bscount.push(state.bs_count[next_line]);
-                old_scount.push(state.line_offsets[next_line].indent_nonspace);
                 state.line_offsets[next_line].indent_nonspace -= state.blk_indent as i32;
             }
 
@@ -188,8 +137,6 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         }
 
         old_line_offsets.push(state.line_offsets[next_line].clone());
-        old_bscount.push(state.bs_count[next_line]);
-        old_scount.push(state.line_offsets[next_line].indent_nonspace);
 
         // A negative indentation means that this is a paragraph continuation
         //
@@ -217,7 +164,6 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     // has already been here, but just to make sure we can do that.
     for i in 0..old_line_offsets.len() {
         std::mem::swap(&mut state.line_offsets[i + start_line], &mut old_line_offsets[i]);
-        state.bs_count[i + start_line] = old_bscount[i];
     }
     state.blk_indent = old_indent;
 
