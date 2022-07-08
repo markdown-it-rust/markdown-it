@@ -8,6 +8,9 @@ pub type TokenAttrs = Vec<(&'static str, String)>;
 // Token class
 #[derive(Debug)]
 pub struct Token {
+    // Type name used for debugging
+    pub name: &'static str,
+
     // Source map info. Format: `[ line_begin, line_end ]`
     pub map: Option<SourcePos>,
 
@@ -25,6 +28,7 @@ pub struct Token {
 impl Token {
     pub fn new<T: TokenData>(data: T) -> Self {
         Self {
+            name:      std::any::type_name::<T>(),
             map:       None,
             children:  Vec::new(),
             block:     false,
