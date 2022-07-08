@@ -122,8 +122,8 @@ impl Parser {
 
     // Process input string and push inline tokens into `out_tokens`
     //
-    pub fn parse(&self, src: &str, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>) {
-        let mut state = State::new(src, md, env, out_tokens);
+    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>) {
+        let mut state = State::new(src, srcmap, md, env, out_tokens);
         state.env.state_push::<Inline>();
         self.tokenize(&mut state);
         state.env.state_pop::<Inline>();

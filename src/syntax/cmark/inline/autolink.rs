@@ -64,14 +64,16 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
     if !silent {
         let content = (state.md.normalize_link_text)(url);
 
-        let mut token = Token::new(AutoLink {
-            url: full_url,
-        });
+        let mut token = Token::new(AutoLink { url: full_url });
+        token.map = state.get_map(state.pos, pos);
 
-        token.children.push(Token::new(Text { content }));
+        let mut inner_token = Token::new(Text { content });
+        inner_token.map = state.get_map(state.pos + 1, pos - 1);
+
+        token.children.push(inner_token);
         state.push(token);
     }
 
-    state.pos += pos - state.pos;
+    state.pos = pos;
     true
 }

@@ -77,9 +77,9 @@ pub struct LineOffset {
 }
 
 impl<'a, 'b, 'c> State<'a, 'b, 'c> {
-    pub fn new(src: &str, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Token>) -> Self {
+    pub fn new(src: String, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Token>) -> Self {
         let mut result = Self {
-            src: src.to_owned(),
+            src,
             md,
             env,
             tokens: out_tokens,
@@ -207,7 +207,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
                 offsets.indent_nonspace - indent as i32
             );
 
-            mapping.push(( result.len(), first ));
+            mapping.push(( result.len(), offsets.line_start+first ));
             result += &" ".repeat(num_spaces as usize);
             result += &self.src[offsets.line_start+first..last];
             line += 1;

@@ -137,7 +137,6 @@ mod test_sourcemaps {
             );
         });
 
-        // same as commonmark.js
         run("   a\n    b\n     c\n", |tokens, map| {
             assert_eq!(
                 getmap(&tokens[0], &map),
@@ -151,6 +150,99 @@ mod test_sourcemaps {
             assert_eq!(
                 getmap(&tokens[0], &map),
                 ((1, 5), (1, 12)),
+            );
+        });
+    }
+
+    #[test]
+    fn blockquotes() {
+        // same as commonmark.js
+        run("  > foo  \n", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0], &map),
+                ((1, 3), (1, 9)),
+            );
+        });
+
+        run("> foo\nbar\n\n", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0], &map),
+                ((1, 1), (2, 3)),
+            );
+        });
+    }
+
+    #[test]
+    fn lists() {
+        // same as commonmark.js
+        run(" 1. foo\n 2. bar\n", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0], &map),
+                ((1, 2), (2, 7)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[0], &map),
+                ((1, 2), (1, 7)),
+            );
+        });
+
+        run(" - foo\n\n - bar\n", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0], &map),
+                ((1, 2), (3, 6)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[0], &map),
+                ((1, 2), (2, 0)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((3, 2), (3, 6)),
+            );
+        });
+    }
+
+    #[test]
+    fn autolinks() {
+        run("foo <http://google.com> bar", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 5), (1, 23)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[1].children[0], &map),
+                ((1, 6), (1, 22)),
+            );
+        });
+    }
+
+    #[test]
+    fn emphasis() {
+        run("***foo***", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[0], &map),
+                ((1, 1), (1, 9)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[0].children[0], &map),
+                ((1, 2), (1, 8)),
+            );
+        });
+
+        run("aaa **bb _cc_ dd** eee", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 5), (1, 18)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[1].children[1], &map),
+                ((1, 10), (1, 13)),
             );
         });
     }

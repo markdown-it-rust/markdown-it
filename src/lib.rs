@@ -12,7 +12,6 @@ pub mod syntax_base;
 pub mod token;
 
 use std::borrow::Cow;
-
 use derivative::Derivative;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -96,7 +95,7 @@ impl MarkdownIt {
     pub fn parse(&self, src: &str) -> Vec<token::Token> {
         let src = &normalize_text(src);
         let mut tokens = Vec::new();
-        self.block.parse(src, self, &mut env::Env::new(), &mut tokens);
+        self.block.parse(src.to_string(), self, &mut env::Env::new(), &mut tokens);
         tokens
     }
 

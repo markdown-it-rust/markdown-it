@@ -155,10 +155,6 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     state.line_max = old_line_max;
 
     let children = std::mem::replace(state.tokens, old_tokens);
-    let mut token = Token::new(Blockquote);
-    token.children = children;
-    token.map = state.get_map(start_line, next_line);
-    state.push(token);
 
     // Restore original tShift; this might not be necessary since the parser
     // has already been here, but just to make sure we can do that.
@@ -166,6 +162,11 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         std::mem::swap(&mut state.line_offsets[i + start_line], &mut old_line_offsets[i]);
     }
     state.blk_indent = old_indent;
+
+    let mut token = Token::new(Blockquote);
+    token.children = children;
+    token.map = state.get_map(start_line, next_line - 1);
+    state.push(token);
 
     true
 }

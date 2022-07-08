@@ -86,7 +86,7 @@ impl Parser {
 
     // Process input string and push block tokens into `out_tokens`
     //
-    pub fn parse(&self, src: &str, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>) {
+    pub fn parse(&self, src: String, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>) {
         let mut state = State::new(src, md, env, out_tokens);
         state.env.state_push::<Block>();
         state.env.state_push::<BlockLvl>();

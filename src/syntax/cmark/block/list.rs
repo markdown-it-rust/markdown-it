@@ -157,6 +157,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         }
     }
 
+    let start_line = state.line;
     let mut current_line = state.get_line(state.line).to_owned();
 
     let marker_value;
@@ -284,7 +285,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         let end_line = state.line;
         let children = std::mem::replace(state.tokens, old_tokens);
         let mut token = Token::new(ListItem);
-        token.map = state.get_map(next_line, end_line);
+        token.map = state.get_map(next_line, end_line - 1);
         token.children = children;
         state.push(token);
         next_line = state.line;
@@ -353,7 +354,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         })
     };
 
-    token.map = state.get_map(next_line, next_line);
+    token.map = state.get_map(start_line, next_line - 1);
     token.children = children;
     state.push(token);
 

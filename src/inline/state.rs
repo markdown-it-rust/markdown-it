@@ -2,6 +2,7 @@
 //
 use crate::env::Env;
 use crate::MarkdownIt;
+use crate::sourcemap::SourcePos;
 use crate::syntax_base::builtin::Text;
 use crate::token::Token;
 use std::collections::HashMap;
@@ -47,6 +48,7 @@ fn is_punct_char(ch: char) -> bool {
 #[derive(Debug)]
 pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     pub src: String,
+    pub srcmap: Vec<(usize, usize)>,
     pub env: &'b mut Env,
     pub md: &'a MarkdownIt,
     pub tokens: &'c mut Vec<Token>,
@@ -68,21 +70,38 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
 }
 
 impl<'a, 'b, 'c> State<'a, 'b, 'c> {
-    pub fn new(src: &str, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Token>) -> Self {
-        let src = src.trim().to_owned();
-        let len = src.len();
-
-        Self {
+    pub fn new(
+        src: String,
+        srcmap: Vec<(usize, usize)>,
+        md: &'a MarkdownIt,
+        env: &'b mut Env,
+        out_tokens: &'c mut Vec<Token>
+    ) -> Self {
+        let mut result = Self {
+            pos:        0,
+            pos_max:    src.len(),
             src,
+            srcmap,
             env,
             md,
             tokens:     out_tokens,
-            pos:        0,
-            pos_max:    len,
             pending:    String::new(),
             cache:      HashMap::new(),
             link_level: 0,
             level:      0,
+        };
+
+        result.trim_src();
+        result
+    }
+
+    fn trim_src(&mut self) {
+        let mut chars = self.src.as_bytes().iter();
+        while let Some(b' ' | b'\t') = chars.next_back() {
+            self.pos_max -= 1;
+        }
+        while let Some(b' ' | b'\t') = chars.next() {
+            self.pos += 1;
         }
     }
 
@@ -181,5 +200,23 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             can_close,
             length: count
         }
+    }
+
+    fn get_source_pos_for(&self, pos: usize) -> usize {
+        let line = match self.srcmap.binary_search_by(|x| x.0.cmp(&pos)) {
+            Ok(x) => x,
+            Err(x) => x - 1,
+        };
+        self.srcmap[line].1 + (pos - self.srcmap[line].0)
+    }
+
+    pub fn get_map(&self, _start_pos: usize, _end_pos: usize) -> Option<SourcePos> {
+        #[cfg(not(feature="sourcemap"))]
+        return None;
+        #[cfg(feature="sourcemap")]
+        return Some(SourcePos::new(
+            self.get_source_pos_for(_start_pos),
+            self.get_source_pos_for(_end_pos)
+        ));
     }
 }

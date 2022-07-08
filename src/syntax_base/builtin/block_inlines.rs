@@ -30,9 +30,11 @@ pub fn rule(state: &mut block::State) {
 pub fn walk(state: &mut block::State, tokens: &mut Vec<Token>) {
     let mut idx = 0;
     while idx < tokens.len() {
-        if let Some(data) = tokens[idx].data.downcast_ref::<InlineNodes>() {
+        if let Some(data) = tokens[idx].data.downcast_mut::<InlineNodes>() {
             let mut children = Vec::new();
-            state.md.inline.parse(&data.content, state.md, state.env, &mut children);
+            let content = std::mem::take(&mut data.content);
+            let mapping = std::mem::take(&mut data.mapping);
+            state.md.inline.parse(content, mapping, state.md, state.env, &mut children);
             let len = children.len();
             tokens.splice(idx..idx+1, children);
             idx += len;

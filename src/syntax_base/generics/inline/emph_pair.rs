@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::MarkdownIt;
 use crate::env;
 use crate::inline;
+use crate::sourcemap::SourcePos;
 use crate::syntax_base::builtin::Text;
 use crate::token::Token;
 
@@ -75,7 +76,9 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
 
             let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
             let content = state.src[state.pos..state.pos+scanned.length].to_string();
-            state.push(Token::new(Text { content }));
+            let mut token = Token::new(Text { content });
+            token.map = state.get_map(state.pos, state.pos + scanned.length);
+            state.push(token);
             state.pos += scanned.length;
 
             state.env.get_or_insert::<Delimiters>().push(scanned, state.tokens.len() - 1);
@@ -176,13 +179,29 @@ fn rule(state: &mut inline::State) {
                             let data = token.data
                                 .downcast_mut::<Text>().expect("delimiter points at non-text node");
                             for _ in 0..marker_len { data.content.pop(); };
+                            let mut end_map_pos = 0;
+                            #[cfg(feature="sourcemap")]
+                            if let Some(map) = token.map {
+                                let (start, end) = map.get_byte_offsets();
+                                token.map = Some(SourcePos::new(start + marker_len, end));
+                                end_map_pos = start + marker_len;
+                            }
 
                             // cut marker_len chars from end, i.e. "12345" -> "123" (but they should be all the same)
                             auxinfo[opener_idx].remaining -= marker_len;
-                            let data = out_tokens.last_mut().unwrap().data
+                            let starttoken = out_tokens.last_mut().unwrap();
+                            let data = starttoken.data
                                 .downcast_mut::<Text>().expect("delimiter points at non-text node");
                             for _ in 0..marker_len { data.content.pop(); };
+                            let mut start_map_pos = 0;
+                            #[cfg(feature="sourcemap")]
+                            if let Some(map) = starttoken.map {
+                                let (start, end) = map.get_byte_offsets();
+                                starttoken.map = Some(SourcePos::new(start, end - marker_len));
+                                start_map_pos = end - marker_len;
+                            }
 
+                            new_token.map = state.get_map(start_map_pos, end_map_pos);
                             new_min_opener_idx = 0;
                             out_tokens.push(new_token);
                             continue 'outer;
@@ -242,28 +261,44 @@ fn is_odd_match(opener: &Delimiter, closer: &Delimiter) -> bool {
 // leaves them as text (needed to merge with adjacent text) or turns them
 // into opening/closing tags (which messes up levels inside).
 //
-fn fragments_join(mut in_tokens: Vec<Token>) -> Vec<Token> {
-    let tokens = &mut in_tokens;
-    let mut curr = 0;
-    let mut last = 0;
-    let max = tokens.len();
+fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
+    // collapse adjacent text tokens
+    for idx in 1..tokens.len() {
+        let ( tokens1, tokens2 ) = tokens.split_at_mut(idx);
 
-    while curr < max {
-        if tokens[curr].data.is::<Text>() && curr + 1 < max && tokens[curr + 1].data.is::<Text>() {
-            // collapse two adjacent text nodes
-            let t2_data = tokens[curr + 1].data.downcast_mut::<Text>().unwrap();
-            let t2_content = std::mem::take(&mut t2_data.content);
-            let t1_data = tokens[curr].data.downcast_mut::<Text>().unwrap();
-            t1_data.content += &t2_content;
-            tokens.swap(curr, curr + 1);
-        } else {
-            if curr != last { tokens.swap(last, curr); }
-            last += 1;
+        let token1 = tokens1.last_mut().unwrap();
+        if let Some(t1_data) = token1.data.downcast_mut::<Text>() {
+
+            let token2 = tokens2.first_mut().unwrap();
+            if let Some(t2_data) = token2.data.downcast_mut::<Text>() {
+                // concat contents
+                let t2_content = std::mem::take(&mut t2_data.content);
+                t1_data.content += &t2_content;
+
+                // adjust source maps
+                #[cfg(feature="sourcemap")]
+                if let Some(map1) = token1.map {
+                    if let Some(map2) = token2.map {
+                        token1.map = Some(SourcePos::new(
+                            map1.get_byte_offsets().0,
+                            map2.get_byte_offsets().1
+                        ));
+                    }
+                }
+
+                tokens.swap(idx - 1, idx);
+            }
         }
-        curr += 1;
     }
 
-    if curr != last { tokens.truncate(last); }
+    // remove all empty tokens
+    tokens.retain(|token| {
+        if let Some(data) = token.data.downcast_ref::<Text>() {
+            !data.content.is_empty()
+        } else {
+            true
+        }
+    });
 
-    in_tokens
+    tokens
 }
