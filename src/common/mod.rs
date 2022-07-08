@@ -129,13 +129,11 @@ pub fn normalize_reference(str: &str) -> String {
 //
 pub fn rfind_and_count(source: &str, char: char) -> usize {
     let mut result = 0;
-
     for c in source.chars().rev() {
         if c == char { break; }
         result += 1;
     }
-
-    return result;
+    result
 }
 
 // Calculate number of spaces from `pos` to first non-space character
@@ -171,19 +169,19 @@ pub fn find_indent_of(line: &str, mut pos: usize) -> (usize, usize) {
 // Example: cut_right_whitespace_with_tabstops("\t\t", 6) would return "  \t" (two preceding
 // spaces) because first tab gets expanded to 6 spaces.
 //
-pub fn cut_right_whitespace_with_tabstops<'a>(source: &'a str, indent: i32) -> Cow<'a, str> {
+pub fn cut_right_whitespace_with_tabstops(source: &str, indent: i32) -> Cow<str> {
     let (num_spaces, start) = calc_right_whitespace_with_tabstops(source, indent);
 
     if num_spaces > 0 {
         let mut result = " ".repeat(num_spaces as usize);
         result += &source[start..];
-        return Cow::Owned(result);
+        Cow::Owned(result)
     } else {
         Cow::Borrowed(&source[start..])
     }
 }
 
-pub fn calc_right_whitespace_with_tabstops<'a>(source: &'a str, mut indent: i32) -> (usize, usize) {
+pub fn calc_right_whitespace_with_tabstops(source: &str, mut indent: i32) -> (usize, usize) {
     let mut start = source.len();
     let mut chars = source.char_indices().rev();
 

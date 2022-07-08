@@ -53,8 +53,7 @@ mod charmapping {
             let mark = &self.marks[found];
             let line = mark.line;
             let mut column = mark.column;
-            let mut indices = self.src[mark.offset..].char_indices();
-            while let Some((offset, _)) = indices.next() {
+            for (offset, _) in self.src[mark.offset..].char_indices() {
                 if mark.offset + offset >= byte_offset { break; }
                 column += 1;
             }

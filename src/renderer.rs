@@ -96,7 +96,7 @@ mod fmt_default {
         }
 
         fn text_raw(&mut self, text: &str) {
-            self.result.push_str(&text);
+            self.result.push_str(text);
         }
     }
 }
@@ -155,7 +155,7 @@ mod fmt_sourcemap {
     impl<const XHTML: bool> Formatter for FormatterSourceMap<XHTML> {
         fn open(&mut self, tag: &str, attrs: &[(&str, &str)]) {
             if let Some((key, value)) = self.make_srcmap_attr() {
-                let mut new_attrs = Vec::new();
+                let mut new_attrs = Vec::with_capacity(attrs.len() + 1);
                 new_attrs.push((key, value.as_str()));
                 new_attrs.extend(attrs);
                 self.f.open(tag, &new_attrs);
@@ -170,7 +170,7 @@ mod fmt_sourcemap {
 
         fn self_close(&mut self, tag: &str, attrs: &[(&str, &str)]) {
             if let Some((key, value)) = self.make_srcmap_attr() {
-                let mut new_attrs = Vec::new();
+                let mut new_attrs = Vec::with_capacity(attrs.len() + 1);
                 new_attrs.push((key, value.as_str()));
                 new_attrs.extend(attrs);
                 self.f.self_close(tag, &new_attrs);

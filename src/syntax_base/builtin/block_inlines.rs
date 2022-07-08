@@ -32,7 +32,7 @@ pub fn walk(state: &mut block::State, tokens: &mut Vec<Token>) {
     while idx < tokens.len() {
         if let Some(data) = tokens[idx].data.downcast_ref::<InlineNodes>() {
             let mut children = Vec::new();
-            state.md.inline.parse(&data.content, state.md, &mut state.env, &mut children);
+            state.md.inline.parse(&data.content, state.md, state.env, &mut children);
             let len = children.len();
             tokens.splice(idx..idx+1, children);
             idx += len;

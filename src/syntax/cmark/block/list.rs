@@ -342,18 +342,16 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         }
     }
 
-    let mut token;
-
-    if let Some(int) = marker_value {
-        token = Token::new(OrderedList {
+    let mut token = if let Some(int) = marker_value {
+        Token::new(OrderedList {
             start: int,
             marker: marker_char
-        });
+        })
     } else {
-        token = Token::new(BulletList {
+        Token::new(BulletList {
             marker: marker_char
-        });
-    }
+        })
+    };
 
     token.map = state.get_map(next_line, next_line);
     token.children = children;

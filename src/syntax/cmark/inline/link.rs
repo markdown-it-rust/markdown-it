@@ -13,7 +13,7 @@ pub struct Link {
 
 impl TokenData for Link {
     fn render(&self, token: &Token, f: &mut dyn Formatter) {
-        let mut attrs : Vec<(&str, &str)> = Vec::new();
+        let mut attrs : Vec<(&str, &str)> = Vec::with_capacity(2);
         attrs.push(("href", &self.url));
 
         if let Some(title) = &self.title {

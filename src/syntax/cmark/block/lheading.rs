@@ -86,7 +86,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         return false;
     }
 
-    let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false).to_owned();
+    let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false);
     state.line = next_line + 1;
 
     let mut token = Token::new(SetextHeader {
