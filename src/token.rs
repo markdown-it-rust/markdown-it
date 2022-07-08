@@ -1,6 +1,6 @@
 use crate::Formatter;
 use crate::sourcemap::SourcePos;
-use std::any::{Any, TypeId};
+use downcast_rs::{Downcast, impl_downcast};
 use std::fmt::Debug;
 
 pub type TokenAttrs = Vec<(&'static str, String)>;
@@ -33,32 +33,8 @@ impl Token {
     }
 }
 
-pub trait TokenData : Any + Debug {
+pub trait TokenData : Debug + Downcast {
     fn render(&self, token: &Token, f: &mut dyn Formatter);
 }
 
-impl dyn TokenData {
-    pub fn is<T: 'static>(&self) -> bool {
-        self.type_id() == TypeId::of::<T>()
-    }
-
-    pub fn downcast_ref<T: 'static>(&self) -> Option<&T> {
-        if self.is::<T>() {
-            let ptr = self as *const dyn TokenData as *const T;
-            // SAFETY: type checked above
-            Some(unsafe { &*ptr })
-        } else {
-            None
-        }
-    }
-
-    pub fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
-        if self.is::<T>() {
-            let ptr = self as *mut dyn TokenData as *mut T;
-            // SAFETY: type checked above
-            Some(unsafe { &mut *ptr })
-        } else {
-            None
-        }
-    }
-}
+impl_downcast!(TokenData);

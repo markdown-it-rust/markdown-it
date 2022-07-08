@@ -1,10 +1,11 @@
 // see https://github.com/malobre/erased_set for inspiration and API
 // see https://lucumr.pocoo.org/2022/1/7/as-any-hack/ for additional impl details
 
+use downcast_rs::{Downcast, impl_downcast};
+use std::any::{self, TypeId};
 use std::collections::HashMap;
-use std::any::{self, Any, TypeId};
-use std::hash::{Hash, Hasher};
 use std::fmt::{self, Debug};
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub struct ErasedSet(HashMap<TypeKey, Box<dyn AnyDebug>>);
@@ -36,68 +37,58 @@ impl ErasedSet {
     }
 
     #[must_use]
-    pub fn get<T: Any + Debug>(&self) -> Option<&T> {
+    pub fn get<T: Debug + Downcast>(&self) -> Option<&T> {
         let key = TypeKey::of::<T>();
         let result = self.0.get(&key)?;
-        let ptr = result.as_ref() as *const dyn AnyDebug as *const T;
-        // SAFETY: Hash is indexed by TypeId, therefore we know that whatever we got has the same TypeId as T.
-        // With hash being private, new hash value can only be inserted as T::default() -> T from this function.
-        // New value can be assigned by user via &mut T, but it should also be T.
-        Some(unsafe { &*ptr })
+        Some(&result.downcast_ref::<ErasedMember<T>>()?.0)
     }
 
     #[must_use]
-    pub fn get_mut<T: Any + Debug>(&mut self) -> Option<&mut T> {
+    pub fn get_mut<T: Debug + Downcast>(&mut self) -> Option<&mut T> {
         let key = TypeKey::of::<T>();
         let result = self.0.get_mut(&key)?;
-        let ptr = result.as_mut() as *mut dyn AnyDebug as *mut T;
-        Some(unsafe { &mut *ptr })
+        Some(&mut result.downcast_mut::<ErasedMember<T>>()?.0)
     }
 
-    pub fn get_or_insert<T: Any + Debug>(&mut self, value: T) -> &mut T {
+    pub fn get_or_insert<T: Debug + Downcast>(&mut self, value: T) -> &mut T {
         let key = TypeKey::of::<T>();
         let result = self.0.entry(key).or_insert_with(|| Box::new(ErasedMember(value)));
-        let ptr = result.as_mut() as *mut dyn AnyDebug as *mut T;
-        unsafe { &mut *ptr }
+        &mut result.downcast_mut::<ErasedMember<T>>().unwrap().0
     }
 
-    pub fn get_or_insert_with<T: Any + Debug>(&mut self, f: impl FnOnce() -> T) -> &mut T {
+    pub fn get_or_insert_with<T: Debug + Downcast>(&mut self, f: impl FnOnce() -> T) -> &mut T {
         let key = TypeKey::of::<T>();
         let result = self.0.entry(key).or_insert_with(|| Box::new(ErasedMember(f())));
-        let ptr = result.as_mut() as *mut dyn AnyDebug as *mut T;
-        unsafe { &mut *ptr }
+        &mut result.downcast_mut::<ErasedMember<T>>().unwrap().0
     }
 
-    pub fn get_or_insert_default<T: Any + Debug + Default>(&mut self) -> &mut T {
+    pub fn get_or_insert_default<T: Debug + Downcast + Default>(&mut self) -> &mut T {
         let key = TypeKey::of::<T>();
         let result = self.0.entry(key).or_insert_with(|| Box::new(ErasedMember(T::default())));
-        let ptr = result.as_mut() as *mut dyn AnyDebug as *mut T;
-        unsafe { &mut *ptr }
+        &mut result.downcast_mut::<ErasedMember<T>>().unwrap().0
     }
 
-    pub fn insert<T: Any + Debug>(&mut self, value: T) -> Option<T> {
+    pub fn insert<T: Debug + Downcast>(&mut self, value: T) -> Option<T> {
         let key = TypeKey::of::<T>();
         let result = self.0.insert(key, Box::new(ErasedMember(value)))?;
-        let ptr = Box::into_raw(result) as *mut T;
-        Some( unsafe { *Box::from_raw(ptr) })
+        return Some(result.downcast::<ErasedMember<T>>().unwrap().0);
     }
 
-    pub fn remove<T: Any + Debug>(&mut self) -> Option<T> {
+    pub fn remove<T: Debug + Downcast>(&mut self) -> Option<T> {
         let key = TypeKey::of::<T>();
         let result = self.0.remove(&key)?;
-        let ptr = Box::into_raw(result) as *mut T;
-        Some( unsafe { *Box::from_raw(ptr) })
+        return Some(result.downcast::<ErasedMember<T>>().unwrap().0);
     }
 }
 
-trait AnyDebug : Any + Debug {}
+trait AnyDebug : Debug + Downcast {}
+impl_downcast!(AnyDebug);
 
-#[repr(transparent)]
+impl<T: Debug + Downcast> AnyDebug for T {}
+
 struct ErasedMember<T>(T);
 
-impl<T: Any + Debug> AnyDebug for ErasedMember<T> {}
-
-impl<T: Any + Debug> Debug for ErasedMember<T> {
+impl<T: Debug + Downcast> Debug for ErasedMember<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
