@@ -126,4 +126,32 @@ mod test_sourcemaps {
             );
         });
     }
+
+    #[test]
+    fn code_block() {
+        // same as commonmark.js
+        run("      foo\n", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0], &map),
+                ((1, 5), (1, 9)),
+            );
+        });
+
+        // same as commonmark.js
+        run("   a\n    b\n     c\n", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0], &map),
+                ((1, 4), (3, 6)),
+            );
+        });
+
+        // this I believe to be error in commonmark, code block
+        // only have 1 line as per spec, but cmark reports 3 lines
+        run("    foobar  \n    \n    \n\nbar\n", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0], &map),
+                ((1, 5), (1, 12)),
+            );
+        });
+    }
 }

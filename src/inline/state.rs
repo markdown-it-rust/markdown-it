@@ -69,17 +69,20 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
 
 impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     pub fn new(src: &str, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Token>) -> Self {
+        let src = src.trim().to_owned();
+        let len = src.len();
+
         Self {
-            src:               src.to_owned(),
+            src,
             env,
             md,
-            tokens:            out_tokens,
-            pos:               0,
-            pos_max:           src.len(),
-            pending:           String::new(),
-            cache:             HashMap::new(),
-            link_level:        0,
-            level:             0,
+            tokens:     out_tokens,
+            pos:        0,
+            pos_max:    len,
+            pending:    String::new(),
+            cache:      HashMap::new(),
+            link_level: 0,
+            level:      0,
         }
     }
 

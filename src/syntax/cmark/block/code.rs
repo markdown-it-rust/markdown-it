@@ -51,10 +51,11 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let start_line = state.line;
     state.line = last;
 
-    let content = state.get_lines(start_line, last, 4 + state.blk_indent, false) + "\n";
+    let (mut content, mapping) = state.get_lines(start_line, last, 4 + state.blk_indent, false);
+    content += "\n";
 
     let mut token = Token::new(CodeBlock { content });
-    token.map = state.get_map(start_line, last);
+    token.map = state.get_map_from_offsets(mapping[0].1, state.line_offsets[state.line - 1].line_end);
     state.push(token);
 
     true

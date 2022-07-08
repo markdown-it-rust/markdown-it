@@ -75,7 +75,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         state.line = old_state_line;
     }
 
-    let str_before_trim = state.get_lines(start_line, next_line, state.blk_indent, false);
+    let (str_before_trim, _) = state.get_lines(start_line, next_line, state.blk_indent, false);
     let str = str_before_trim.trim();
     let mut chars = str.char_indices();
     chars.next(); // skip '['

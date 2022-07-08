@@ -133,7 +133,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     // If a fence has heading spaces, they should be removed from its inner block
     let indent = state.line_offsets[start_line].indent_nonspace;
-    let content = state.get_lines(start_line + 1, next_line, indent as usize, true);
+    let (content, _) = state.get_lines(start_line + 1, next_line, indent as usize, true);
     let params = params.to_owned();
 
     let lang_prefix = state.md.env.get::<FenceSettings>().unwrap().0.get();

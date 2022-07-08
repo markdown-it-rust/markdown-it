@@ -171,7 +171,19 @@ pub fn find_indent_of(line: &str, mut pos: usize) -> (usize, usize) {
 // Example: cut_right_whitespace_with_tabstops("\t\t", 6) would return "  \t" (two preceding
 // spaces) because first tab gets expanded to 6 spaces.
 //
-pub fn cut_right_whitespace_with_tabstops<'a>(source: &'a str, mut indent: i32) -> Cow<'a, str> {
+pub fn cut_right_whitespace_with_tabstops<'a>(source: &'a str, indent: i32) -> Cow<'a, str> {
+    let (num_spaces, start) = calc_right_whitespace_with_tabstops(source, indent);
+
+    if num_spaces > 0 {
+        let mut result = " ".repeat(num_spaces as usize);
+        result += &source[start..];
+        return Cow::Owned(result);
+    } else {
+        Cow::Borrowed(&source[start..])
+    }
+}
+
+pub fn calc_right_whitespace_with_tabstops<'a>(source: &'a str, mut indent: i32) -> (usize, usize) {
     let mut start = source.len();
     let mut chars = source.char_indices().rev();
 
@@ -184,9 +196,7 @@ pub fn cut_right_whitespace_with_tabstops<'a>(source: &'a str, mut indent: i32) 
                 let tab_width = 4 - indent_from_start as i32 % 4;
 
                 if indent < tab_width {
-                    let mut result = " ".repeat(indent as usize);
-                    result += &source[start..];
-                    return Cow::Owned(result);
+                    return ( indent as usize, start );
                 }
 
                 indent -= tab_width;
@@ -203,7 +213,7 @@ pub fn cut_right_whitespace_with_tabstops<'a>(source: &'a str, mut indent: i32) 
         }
     }
 
-    Cow::Borrowed(&source[start..])
+    ( 0, start )
 }
 
 #[cfg(test)]

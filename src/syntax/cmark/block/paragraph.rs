@@ -55,13 +55,14 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         state.line = old_state_line;
     }
 
-    let content = state.get_lines(start_line, next_line, state.blk_indent, false).trim().to_owned();
+    let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false).to_owned();
     state.line = next_line;
 
     let mut token = Token::new(Paragraph);
     token.map = state.get_map(start_line, state.line - 1);
     token.children.push(Token::new(InlineNodes {
-        content
+        content,
+        mapping,
     }));
     state.push(token);
 

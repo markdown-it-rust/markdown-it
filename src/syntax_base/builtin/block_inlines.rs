@@ -5,7 +5,8 @@ use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
 pub struct InlineNodes {
-    pub content: String
+    pub content: String,
+    pub mapping: Vec<(usize, usize)>,
 }
 
 // this token is supposed to be replaced by one or many actual tokens by inline rule

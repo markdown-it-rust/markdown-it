@@ -1,6 +1,6 @@
 // Parser state class
 //
-use crate::common::cut_right_whitespace_with_tabstops;
+use crate::common::calc_right_whitespace_with_tabstops;
 use crate::env::Env;
 use crate::MarkdownIt;
 use crate::sourcemap::SourcePos;
@@ -183,10 +183,12 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         &self.src[pos..max]
     }
 
-    // cut lines range from source.
-    pub fn get_lines(&self, begin: usize, end: usize, indent: usize, keep_last_lf: bool) -> String {
+    // Cut a range of lines begin..end (not including end) from the source without preceding indent.
+    // Returns a string (lines) plus a mapping (start of each line in result -> start of each line in source).
+    pub fn get_lines(&self, begin: usize, end: usize, indent: usize, keep_last_lf: bool) -> (String, Vec<(usize, usize)>) {
         let mut line = begin;
         let mut result = String::new();
+        let mut mapping = Vec::new();
 
         while line < end {
             let offsets = &self.line_offsets[line];
@@ -200,16 +202,18 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
             if last > self.src.len() { last = self.src.len(); }
 
-            result += &cut_right_whitespace_with_tabstops(
+            let (num_spaces, first) = calc_right_whitespace_with_tabstops(
                 &self.src[offsets.line_start..offsets.first_nonspace],
                 offsets.indent_nonspace - indent as i32
             );
-            result += &self.src[offsets.first_nonspace..last];
 
+            mapping.push(( result.len(), first ));
+            result += &" ".repeat(num_spaces as usize);
+            result += &self.src[offsets.line_start+first..last];
             line += 1;
         }
 
-        result
+        ( result, mapping )
     }
 
     pub fn get_map(&self, _start_line: usize, _end_line: usize) -> Option<SourcePos> {
@@ -220,5 +224,12 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             self.line_offsets[_start_line].first_nonspace,
             self.line_offsets[_end_line].line_end
         ));
+    }
+
+    pub fn get_map_from_offsets(&self, _start_pos: usize, _end_pos: usize) -> Option<SourcePos> {
+        #[cfg(not(feature="sourcemap"))]
+        return None;
+        #[cfg(feature="sourcemap")]
+        return Some(SourcePos::new(_start_pos, _end_pos));
     }
 }

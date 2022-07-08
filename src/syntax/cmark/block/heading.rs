@@ -76,17 +76,18 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         None => text_pos,
     };
 
-    let start_line = state.line;
-    let content = line[text_pos..text_max].trim().to_owned();
-
-    state.line += 1;
+    let content = line[text_pos..text_max].to_owned();
+    let mapping = vec![(0, state.line_offsets[state.line].first_nonspace + text_pos)];
 
     let mut token = Token::new(ATXHeading { level });
-    token.map = state.get_map(start_line, start_line);
+    token.map = state.get_map(state.line, state.line);
     token.children.push(Token::new(InlineNodes {
-        content
+        content,
+        mapping,
     }));
     state.push(token);
+
+    state.line += 1;
 
     true
 }
