@@ -331,4 +331,48 @@ mod test_sourcemaps {
             );
         });
     }
+
+    #[test]
+    fn backticks() {
+        run("foo ```bar``` baz", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 5), (1, 13)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[1].children[0], &map),
+                ((1, 8), (1, 10)),
+            );
+        });
+
+        run("foo ` bar ` baz", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 5), (1, 11)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[1].children[0], &map),
+                ((1, 7), (1, 9)),
+            );
+        });
+    }
+
+    #[test]
+    fn imglink() {
+        run("foo [bar](baz) quux", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 5), (1, 14)),
+            );
+        });
+
+        run("foo ![bar](baz) quux", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 5), (1, 15)),
+            );
+        });
+    }
 }

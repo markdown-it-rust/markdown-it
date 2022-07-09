@@ -46,6 +46,8 @@ fn rule(
     offset: usize,
     f: fn (Option<String>, Option<String>) -> Token
 ) -> bool {
+    let start = state.pos;
+
     if let Some(result) = parse_link(state, state.pos + offset, enable_nested) {
         //
         // We found the end of the link, and know for a fact it's a valid link;
@@ -64,6 +66,7 @@ fn rule(
             let children = std::mem::replace(state.tokens, old_tokens);
 
             let mut token = f(result.href, result.title);
+            token.map = state.get_map(start, result.end);
             token.children = children;
             state.push(token);
             state.link_level -= 1;

@@ -108,28 +108,30 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
                                        .and_then(|t| t.cast_mut::<Text>()) {
             text.content.push_str(&self.src[start..end]);
         } else {
-            let token = Token::new(Text { content: self.src[start..end].to_owned() });
+            let mut token = Token::new(Text { content: self.src[start..end].to_owned() });
+            token.map = self.get_map(start, end);
             self.tokens.push(token);
         }
     }
 
     pub fn trailing_text_pop(&mut self, count: usize) {
-        if count != 0 {
-            let text = self.tokens.last_mut().unwrap().cast_mut::<Text>().unwrap();
-            if text.content.len() == count {
-                self.tokens.pop();
-            } else {
-                text.content.truncate(text.content.len() - count);
-                /*let token = self.tokens.last_mut().unwrap();
-                #[cfg(feature="sourcemap")]
-                if let Some(map) = s.map {
-                    let (start, end) = map.get_byte_offsets();
-                    starttoken.map = Some(SourcePos::new(start, end - marker_len));
-                    start_map_pos = end - marker_len;
-                }
+        if count == 0 { return; }
 
-                self.tokens.last_mut().*/
+        let mut token = self.tokens.pop().unwrap();
+        let text = token.cast_mut::<Text>().unwrap();
+        if text.content.len() == count {
+            // do nothing, just remove the token
+            drop(token);
+        } else {
+            // modify the token and reinsert it later
+            text.content.truncate(text.content.len() - count);
+            #[cfg(feature="sourcemap")]
+            if let Some(map) = token.map {
+                let (start, end) = map.get_byte_offsets();
+                let new_end = self.get_source_pos_for(end - count);
+                token.map = Some(SourcePos::new(start, new_end));
             }
+            self.tokens.push(token);
         }
     }
 

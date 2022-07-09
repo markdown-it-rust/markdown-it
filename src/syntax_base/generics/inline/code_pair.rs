@@ -74,11 +74,18 @@ fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
                 let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
                 if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
                     content = content[1..content.len() - 1].to_owned();
+                    pos += 1;
+                    match_start -= 1;
                 }
 
                 let f = state.md.env.get::<BacktickCfg<MARKER>>().unwrap().0;
                 let mut token = f(opener_len);
-                token.children.push(Token::new(Text { content }));
+                token.map = state.get_map(state.pos, match_end);
+
+                let mut inner_token = Token::new(Text { content });
+                inner_token.map = state.get_map(pos, match_start);
+
+                token.children.push(inner_token);
                 state.push(token);
             }
             state.pos = match_end;

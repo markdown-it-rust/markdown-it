@@ -1,4 +1,12 @@
-use markdown_it;
+use markdown_it::{self, token::Token};
+
+// TODO: generic walk
+fn check_srcmaps(tokens: &Vec<Token>) {
+    for t in tokens.iter() {
+        assert!(t.map.is_some());
+        check_srcmaps(&t.children);
+    }
+}
 
 fn run(input: &str, output: &str) {
     let output = if output == "" { "".to_owned() } else { output.to_owned() + "\n" };
@@ -8,6 +16,7 @@ fn run(input: &str, output: &str) {
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
     let tokens = md.parse(&(input.to_owned() + "\n"));
+    check_srcmaps(&tokens);
     let result = markdown_it::renderer::xhtml(&tokens);
     assert_eq!(result, output);
 }
