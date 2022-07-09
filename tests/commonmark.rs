@@ -10,9 +10,7 @@ fn check_srcmaps(tokens: &Vec<Token>) {
 
 fn run(input: &str, output: &str) {
     let output = if output == "" { "".to_owned() } else { output.to_owned() + "\n" };
-    let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
-        max_nesting: None,
-    }));
+    let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
     let tokens = md.parse(&(input.to_owned() + "\n"));

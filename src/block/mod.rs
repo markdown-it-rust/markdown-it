@@ -30,7 +30,6 @@ impl Parser {
     // Generate tokens for input range
     //
     pub fn tokenize(&self, state: &mut State) {
-        let max_nesting = state.md.options.max_nesting.unwrap_or(100);
         let mut has_empty_lines = false;
 
         while state.line < state.line_max {
@@ -43,7 +42,7 @@ impl Parser {
 
             // If nesting level exceeded - skip tail to the end. That's not ordinary
             // situation and we should not care about content.
-            if state.level >= max_nesting {
+            if state.level >= state.md.max_nesting {
                 state.line = state.line_max;
                 break;
             }

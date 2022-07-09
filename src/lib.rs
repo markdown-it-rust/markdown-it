@@ -17,11 +17,6 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use token::Token;
 
-#[derive(Default, Debug)]
-pub struct Options {
-    pub max_nesting: Option<u32>,
-}
-
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct MarkdownIt {
@@ -34,7 +29,7 @@ pub struct MarkdownIt {
     #[derivative(Debug="ignore")]
     pub normalize_link_text: fn (&str) -> String,
     pub env: erasedset::ErasedSet,
-    pub options: Options,
+    pub max_nesting: u32,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -78,7 +73,7 @@ fn normalize_text(src: &str) -> Cow<str> {
 }
 
 impl MarkdownIt {
-    pub fn new(options: Option<Options>) -> Self {
+    pub fn new() -> Self {
         let mut md = Self {
             block: block::Parser::new(),
             inline: inline::Parser::new(),
@@ -86,7 +81,7 @@ impl MarkdownIt {
             normalize_link,
             normalize_link_text,
             env: erasedset::ErasedSet::new(),
-            options: options.unwrap_or_default(),
+            max_nesting: 100,
         };
         syntax_base::builtin::add(&mut md);
         md

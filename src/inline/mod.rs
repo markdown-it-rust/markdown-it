@@ -36,14 +36,13 @@ impl Parser {
     pub fn skip_token(&self, state: &mut State) {
         let pos = state.pos;
         let mut ok = false;
-        let max_nesting = state.md.options.max_nesting.unwrap_or(100);
 
         if let Some(x) = state.cache.get(&pos) {
             state.pos = *x;
             return;
         }
 
-        if state.level < max_nesting {
+        if state.level < state.md.max_nesting {
             for rule in self.ruler.iter() {
                 ok = rule(state, true);
                 if ok {
@@ -79,7 +78,6 @@ impl Parser {
         state.env.state_push::<InlineLvl>();
 
         let end = state.pos_max;
-        let max_nesting = state.md.options.max_nesting.unwrap_or(100);
 
         while state.pos < end {
             // Try all possible rules.
@@ -91,7 +89,7 @@ impl Parser {
             let mut ok = false;
             let prev_pos = state.pos;
 
-            if state.level < max_nesting {
+            if state.level < state.md.max_nesting {
                 for rule in self.ruler.iter() {
                     ok = rule(state, false);
                     if ok {

@@ -3,9 +3,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 pub fn benchmark(c: &mut Criterion) {
 
     let source = std::fs::read_to_string("benches/test-file.md").unwrap();
-    let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
-        max_nesting: None,
-    }));
+    let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
 

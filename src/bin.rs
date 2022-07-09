@@ -49,9 +49,7 @@ fn main() {
     };
 
     let source = String::from_utf8_lossy(&vec);
-    let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
-        max_nesting: None,
-    }));
+    let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::syntax::cmark::add(md);
     if !no_html {
         markdown_it::syntax::html::add(md);
