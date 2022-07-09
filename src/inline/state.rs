@@ -6,8 +6,8 @@ use crate::sourcemap::SourcePos;
 use crate::syntax_base::builtin::Text;
 use crate::token::Token;
 use std::collections::HashMap;
-use std::mem;
 
+#[derive(Debug, Clone, Copy)]
 pub struct DelimRun {
     // Starting marker
     pub marker: char,
@@ -55,7 +55,6 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
 
     pub pos: usize,
     pub pos_max: usize,
-    pub pending: String,
 
     // Stores { start: end } pairs. Useful for backtrack
     // optimization of pairs parse (emphasis, strikes).
@@ -85,7 +84,6 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             env,
             md,
             tokens:     out_tokens,
-            pending:    String::new(),
             cache:      HashMap::new(),
             link_level: 0,
             level:      0,
@@ -105,22 +103,48 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         }
     }
 
-    // Flush pending text
-    //
-    pub fn push_pending(&mut self) {
-        let content = mem::take(&mut self.pending);
-        let token = Token::new(Text { content });
-        self.tokens.push(token);
+    pub fn trailing_text_push(&mut self, start: usize, end: usize) {
+        if let Some(text) = self.tokens.last_mut()
+                                       .and_then(|t| t.data.downcast_mut::<Text>()) {
+            text.content.push_str(&self.src[start..end]);
+        } else {
+            let token = Token::new(Text { content: self.src[start..end].to_owned() });
+            self.tokens.push(token);
+        }
     }
 
-    // Push new token to "stream".
-    // If pending text exists - flush it as text token
-    //
+    pub fn trailing_text_pop(&mut self, count: usize) {
+        if count != 0 {
+            let text = self.tokens.last_mut().unwrap().data.downcast_mut::<Text>().unwrap();
+            if text.content.len() == count {
+                self.tokens.pop();
+            } else {
+                text.content.truncate(text.content.len() - count);
+                /*let token = self.tokens.last_mut().unwrap();
+                #[cfg(feature="sourcemap")]
+                if let Some(map) = s.map {
+                    let (start, end) = map.get_byte_offsets();
+                    starttoken.map = Some(SourcePos::new(start, end - marker_len));
+                    start_map_pos = end - marker_len;
+                }
+
+                self.tokens.last_mut().*/
+            }
+        }
+    }
+
+    pub fn trailing_text_get(&self) -> &str {
+        if let Some(text) = self.tokens.last()
+                                       .and_then(|t| t.data.downcast_ref::<Text>()) {
+            text.content.as_str()
+        } else {
+            ""
+        }
+    }
+
     pub fn push(&mut self, token: Token) {
-        if !self.pending.is_empty() { self.push_pending(); }
         self.tokens.push(token);
     }
-
 
     // Scan a sequence of emphasis-like markers, and determine whether
     // it can start an emphasis sequence or end an emphasis sequence.
@@ -202,6 +226,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         }
     }
 
+    #[cfg(feature="sourcemap")]
     fn get_source_pos_for(&self, pos: usize) -> usize {
         let line = match self.srcmap.binary_search_by(|x| x.0.cmp(&pos)) {
             Ok(x) => x,
@@ -211,6 +236,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     }
 
     pub fn get_map(&self, _start_pos: usize, _end_pos: usize) -> Option<SourcePos> {
+        debug_assert!(_start_pos <= _end_pos);
         #[cfg(not(feature="sourcemap"))]
         return None;
         #[cfg(feature="sourcemap")]

@@ -1,12 +1,13 @@
 use derivative::Derivative;
 use std::cmp::min;
 use std::collections::HashMap;
+use crate::Formatter;
 use crate::MarkdownIt;
 use crate::env;
 use crate::inline;
 use crate::sourcemap::SourcePos;
 use crate::syntax_base::builtin::Text;
-use crate::token::Token;
+use crate::token::{Token, TokenData};
 
 #[derive(Debug, Default)]
 struct Pairs {
@@ -24,6 +25,19 @@ impl Pairs {
         assert!((1..=3).contains(&len), "only pairs with len=1..3 are supported");
         self.map.get(&ch)?[len as usize - 1]
     }*/
+}
+
+#[derive(Debug)]
+pub struct EmphMarker {
+    pub marker: char,
+    pub length: usize,
+}
+
+// this token is supposed to be replaced by actual emph or text node
+impl TokenData for EmphMarker {
+    fn render(&self, _: &Token, _: &mut dyn Formatter) {
+        unimplemented!()
+    }
 }
 
 #[derive(Derivative)]
@@ -75,8 +89,7 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
             if chars.next().unwrap() != MARKER { return false; }
 
             let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
-            let content = state.src[state.pos..state.pos+scanned.length].to_string();
-            let mut token = Token::new(Text { content });
+            let mut token = Token::new(EmphMarker { marker: MARKER, length: scanned.length });
             token.map = state.get_map(state.pos, state.pos + scanned.length);
             state.push(token);
             state.pos += scanned.length;
@@ -177,8 +190,8 @@ fn rule(state: &mut inline::State) {
                             auxinfo[closer_idx].remaining -= marker_len;
                             auxinfo[closer_idx].jumps = closer_idx - opener_idx;
                             let data = token.data
-                                .downcast_mut::<Text>().expect("delimiter points at non-text node");
-                            for _ in 0..marker_len { data.content.pop(); };
+                                .downcast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
+                            data.length -= marker_len;
                             let mut end_map_pos = 0;
                             #[cfg(feature="sourcemap")]
                             if let Some(map) = token.map {
@@ -191,8 +204,8 @@ fn rule(state: &mut inline::State) {
                             auxinfo[opener_idx].remaining -= marker_len;
                             let starttoken = out_tokens.last_mut().unwrap();
                             let data = starttoken.data
-                                .downcast_mut::<Text>().expect("delimiter points at non-text node");
-                            for _ in 0..marker_len { data.content.pop(); };
+                                .downcast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
+                            data.length -= marker_len;
                             let mut start_map_pos = 0;
                             #[cfg(feature="sourcemap")]
                             if let Some(map) = starttoken.map {
@@ -262,6 +275,19 @@ fn is_odd_match(opener: &Delimiter, closer: &Delimiter) -> bool {
 // into opening/closing tags (which messes up levels inside).
 //
 fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
+    // replace all emph markers with text tokens
+    for token in tokens.iter_mut() {
+        if let Some(data) = token.data.downcast_ref::<EmphMarker>() {
+            let new_token = Token::new(Text {
+                content: data.marker.to_string().repeat(data.length)
+            });
+            let Token { name: _, data: _, map, children, block } = std::mem::replace(token, new_token);
+            token.map = map;
+            token.block = block;
+            token.children = children;
+        }
+    }
+
     // collapse adjacent text tokens
     for idx in 1..tokens.len() {
         let ( tokens1, tokens2 ) = tokens.split_at_mut(idx);

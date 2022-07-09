@@ -44,18 +44,18 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
     // '  \n' -> hardbreak
     if !silent {
         let mut tail_size = 0;
+        let trailing_text = state.trailing_text_get();
 
-        loop {
+        for ch in trailing_text.chars().rev() {
             // TODO: adjust srcmaps for backtrack
-            match state.pending.pop() {
-                Some(' ') => tail_size += 1,
-                Some(ch) => {
-                    state.pending.push(ch);
-                    break;
-                }
-                None => break,
+            if ch == ' ' {
+                tail_size += 1;
+            } else {
+                break;
             }
         }
+
+        state.trailing_text_pop(tail_size);
 
         let mut token = if tail_size >= 2 {
             Token::new(Hardbreak)
@@ -63,7 +63,7 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             Token::new(Softbreak)
         };
 
-        token.map = state.get_map(state.pos, pos);
+        token.map = state.get_map(state.pos - tail_size, pos);
         state.push(token);
     }
 

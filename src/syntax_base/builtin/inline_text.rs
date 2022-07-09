@@ -64,7 +64,7 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
     if pos == state.pos { return false; }
 
-    if !silent { state.pending += &state.src[state.pos..pos]; }
+    if !silent { state.trailing_text_push(state.pos, pos); }
     state.pos = pos;
 
     true

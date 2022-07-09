@@ -107,11 +107,10 @@ impl Parser {
             }
 
             let ch = state.src[state.pos..state.pos_max].chars().next().unwrap();
-            state.pending.push(ch);
-            state.pos += ch.len_utf8();
+            let len = ch.len_utf8();
+            state.trailing_text_push(state.pos, state.pos + len);
+            state.pos += len;
         }
-
-        if !state.pending.is_empty() { state.push_pending(); }
 
         for rule in self.ruler2.iter() {
             rule(state);

@@ -249,15 +249,20 @@ mod test_sourcemaps {
 
     #[test]
     fn newline() {
-        run("foo  \nbar\nbaz", |tokens, map| {
+        run("foo  \nbar \nbaz\nquux", |tokens, map| {
             assert_eq!(
                 getmap(&tokens[0].children[1], &map),
-                ((2, 0), (2, 0)),
+                ((1, 4), (2, 0)),
             );
 
             assert_eq!(
                 getmap(&tokens[0].children[3], &map),
-                ((3, 0), (3, 0)),
+                ((2, 4), (3, 0)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[5], &map),
+                ((4, 0), (4, 0)),
             );
 
             /*let marks : Vec<_> = tokens[0].children.iter().map(|x| getmap(x, &map)).collect();

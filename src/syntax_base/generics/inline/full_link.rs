@@ -52,8 +52,6 @@ fn rule(
         // so all that's left to do is to call tokenizer.
         //
         if !silent {
-            if !state.pending.is_empty() { state.push_pending(); }
-
             let old_tokens = std::mem::take(state.tokens);
             let max = state.pos_max;
 

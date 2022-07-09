@@ -186,6 +186,8 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     // Cut a range of lines begin..end (not including end) from the source without preceding indent.
     // Returns a string (lines) plus a mapping (start of each line in result -> start of each line in source).
     pub fn get_lines(&self, begin: usize, end: usize, indent: usize, keep_last_lf: bool) -> (String, Vec<(usize, usize)>) {
+        debug_assert!(begin <= end);
+
         let mut line = begin;
         let mut result = String::new();
         let mut mapping = Vec::new();
@@ -217,6 +219,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     }
 
     pub fn get_map(&self, _start_line: usize, _end_line: usize) -> Option<SourcePos> {
+        debug_assert!(_start_line <= _end_line);
         #[cfg(not(feature="sourcemap"))]
         return None;
         #[cfg(feature="sourcemap")]
@@ -227,6 +230,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     }
 
     pub fn get_map_from_offsets(&self, _start_pos: usize, _end_pos: usize) -> Option<SourcePos> {
+        debug_assert!(_start_pos <= _end_pos);
         #[cfg(not(feature="sourcemap"))]
         return None;
         #[cfg(feature="sourcemap")]

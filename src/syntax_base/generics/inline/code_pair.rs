@@ -28,6 +28,7 @@ pub fn add_with<const MARKER: char>(md: &mut MarkdownIt, f: fn (usize) -> Token)
 fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
     let mut chars = state.src[state.pos..state.pos_max].chars();
     if chars.next().unwrap() != MARKER { return false; }
+    if state.trailing_text_get().ends_with(MARKER) { return false; }
 
     let mut pos = state.pos + 1;
 
@@ -38,14 +39,13 @@ fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
 
     // backtick length => last seen position
     let backticks = state.env.get_or_insert::<BacktickCache<MARKER>>();
-
-    let marker = &state.src[state.pos..pos];
     let opener_len = pos - state.pos;
 
     if backticks.scanned && backticks.max[opener_len] <= state.pos {
-        if !silent { state.pending += marker; }
-        state.pos += opener_len;
-        return true;
+        // performance note: adding entire sequence into pending is 5x faster,
+        // but it will interfere with other rules working on the same char;
+        // and it is extremely rare that user would put a thousand "`" in text
+        return false;
     }
 
     let mut match_start;
@@ -93,7 +93,5 @@ fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
     // Scanned through the end, didn't find anything
     backticks.scanned = true;
 
-    if !silent { state.pending += marker; }
-    state.pos += opener_len;
-    true
+    false
 }
