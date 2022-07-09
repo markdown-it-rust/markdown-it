@@ -125,7 +125,6 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         } else {
             // modify the token and reinsert it later
             text.content.truncate(text.content.len() - count);
-            #[cfg(feature="sourcemap")]
             if let Some(map) = token.map {
                 let (start, end) = map.get_byte_offsets();
                 let new_end = self.get_source_pos_for(end - count);
@@ -228,7 +227,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         }
     }
 
-    #[cfg(feature="sourcemap")]
+    #[must_use]
     fn get_source_pos_for(&self, pos: usize) -> usize {
         let line = match self.srcmap.binary_search_by(|x| x.0.cmp(&pos)) {
             Ok(x) => x,
@@ -237,14 +236,13 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         self.srcmap[line].1 + (pos - self.srcmap[line].0)
     }
 
-    pub fn get_map(&self, _start_pos: usize, _end_pos: usize) -> Option<SourcePos> {
-        debug_assert!(_start_pos <= _end_pos);
-        #[cfg(not(feature="sourcemap"))]
-        return None;
-        #[cfg(feature="sourcemap")]
-        return Some(SourcePos::new(
-            self.get_source_pos_for(_start_pos),
-            self.get_source_pos_for(_end_pos)
-        ));
+    #[must_use]
+    pub fn get_map(&self, start_pos: usize, end_pos: usize) -> Option<SourcePos> {
+        debug_assert!(start_pos <= end_pos);
+
+        Some(SourcePos::new(
+            self.get_source_pos_for(start_pos),
+            self.get_source_pos_for(end_pos)
+        ))
     }
 }

@@ -16,11 +16,6 @@ path = "src/lib.rs"
 name = "markdown-it"
 path = "src/bin.rs"
 
-[features]
-default = ["sourcemap"]
-#default = []
-sourcemap = []
-
 [dependencies]
 argparse = "0.2.2"
 const_format = "0.2.23"

@@ -97,12 +97,7 @@ fn main() {
 
     let result;
     if sourcepos {
-        #[cfg(feature="sourcemap")] {
-            result = markdown_it::renderer::html_with_srcmap(&source, &md.parse(&source));
-        }
-        #[cfg(not(feature="sourcemap"))] {
-            panic!(r#"--sourcepos requires markdown-it to be built with --features=sourcemap"#);
-        }
+        result = markdown_it::renderer::html_with_srcmap(&source, &md.parse(&source));
     } else {
         result = md.render(&source);
     }

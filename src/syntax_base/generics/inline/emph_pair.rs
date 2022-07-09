@@ -192,7 +192,6 @@ fn rule(state: &mut inline::State) {
                             let data = token.cast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
                             data.length -= marker_len;
                             let mut end_map_pos = 0;
-                            #[cfg(feature="sourcemap")]
                             if let Some(map) = token.map {
                                 let (start, end) = map.get_byte_offsets();
                                 token.map = Some(SourcePos::new(start + marker_len, end));
@@ -205,7 +204,6 @@ fn rule(state: &mut inline::State) {
                             let data = starttoken.cast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
                             data.length -= marker_len;
                             let mut start_map_pos = 0;
-                            #[cfg(feature="sourcemap")]
                             if let Some(map) = starttoken.map {
                                 let (start, end) = map.get_byte_offsets();
                                 starttoken.map = Some(SourcePos::new(start, end - marker_len));
@@ -295,7 +293,6 @@ fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
                 t1_data.content += &t2_content;
 
                 // adjust source maps
-                #[cfg(feature="sourcemap")]
                 if let Some(map1) = token1.map {
                     if let Some(map2) = token2.map {
                         token1.map = Some(SourcePos::new(

@@ -218,22 +218,20 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         ( result, mapping )
     }
 
-    pub fn get_map(&self, _start_line: usize, _end_line: usize) -> Option<SourcePos> {
-        debug_assert!(_start_line <= _end_line);
-        #[cfg(not(feature="sourcemap"))]
-        return None;
-        #[cfg(feature="sourcemap")]
-        return Some(SourcePos::new(
-            self.line_offsets[_start_line].first_nonspace,
-            self.line_offsets[_end_line].line_end
-        ));
+    #[must_use]
+    pub fn get_map(&self, start_line: usize, end_line: usize) -> Option<SourcePos> {
+        debug_assert!(start_line <= end_line);
+
+        Some(SourcePos::new(
+            self.line_offsets[start_line].first_nonspace,
+            self.line_offsets[end_line].line_end
+        ))
     }
 
-    pub fn get_map_from_offsets(&self, _start_pos: usize, _end_pos: usize) -> Option<SourcePos> {
-        debug_assert!(_start_pos <= _end_pos);
-        #[cfg(not(feature="sourcemap"))]
-        return None;
-        #[cfg(feature="sourcemap")]
-        return Some(SourcePos::new(_start_pos, _end_pos));
+    #[must_use]
+    pub fn get_map_from_offsets(&self, start_pos: usize, end_pos: usize) -> Option<SourcePos> {
+        debug_assert!(start_pos <= end_pos);
+
+        Some(SourcePos::new(start_pos, end_pos))
     }
 }
