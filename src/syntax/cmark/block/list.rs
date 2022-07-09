@@ -111,7 +111,7 @@ fn skip_ordered_list_marker(src: &str) -> Option<usize> {
 fn mark_tight_paragraphs(tokens: &mut Vec<Token>) {
     let mut idx = 0;
     while idx < tokens.len() {
-        if tokens[idx].data.is::<Paragraph>() {
+        if tokens[idx].is::<Paragraph>() {
             let children = std::mem::take(&mut tokens[idx].children);
             let len = children.len();
             tokens.splice(idx..idx+1, children);
@@ -338,7 +338,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     // mark paragraphs tight if needed
     if tight {
         for child in children.iter_mut() {
-            debug_assert!(child.data.is::<ListItem>());
+            debug_assert!(child.is::<ListItem>());
             mark_tight_paragraphs(&mut child.children);
         }
     }

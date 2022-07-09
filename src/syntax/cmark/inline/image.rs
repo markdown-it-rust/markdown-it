@@ -28,7 +28,7 @@ impl TokenData for Image {
         }
 
         walk(&token.children, &mut |t| {
-            if let Some(text) = t.data.downcast_ref::<Text>() {
+            if let Some(text) = t.cast::<Text>() {
                 alt.push_str(text.content.as_str());
             }
         });

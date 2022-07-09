@@ -189,8 +189,7 @@ fn rule(state: &mut inline::State) {
                             // cut marker_len chars from start, i.e. "12345" -> "345" (but they should be all the same)
                             auxinfo[closer_idx].remaining -= marker_len;
                             auxinfo[closer_idx].jumps = closer_idx - opener_idx;
-                            let data = token.data
-                                .downcast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
+                            let data = token.cast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
                             data.length -= marker_len;
                             let mut end_map_pos = 0;
                             #[cfg(feature="sourcemap")]
@@ -203,8 +202,7 @@ fn rule(state: &mut inline::State) {
                             // cut marker_len chars from end, i.e. "12345" -> "123" (but they should be all the same)
                             auxinfo[opener_idx].remaining -= marker_len;
                             let starttoken = out_tokens.last_mut().unwrap();
-                            let data = starttoken.data
-                                .downcast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
+                            let data = starttoken.cast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
                             data.length -= marker_len;
                             let mut start_map_pos = 0;
                             #[cfg(feature="sourcemap")]
@@ -277,14 +275,9 @@ fn is_odd_match(opener: &Delimiter, closer: &Delimiter) -> bool {
 fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
     // replace all emph markers with text tokens
     for token in tokens.iter_mut() {
-        if let Some(data) = token.data.downcast_ref::<EmphMarker>() {
-            let new_token = Token::new(Text {
-                content: data.marker.to_string().repeat(data.length)
-            });
-            let Token { name: _, data: _, map, children, block } = std::mem::replace(token, new_token);
-            token.map = map;
-            token.block = block;
-            token.children = children;
+        if let Some(data) = token.cast::<EmphMarker>() {
+            let content = data.marker.to_string().repeat(data.length);
+            token.replace(Text { content });
         }
     }
 
@@ -293,10 +286,10 @@ fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
         let ( tokens1, tokens2 ) = tokens.split_at_mut(idx);
 
         let token1 = tokens1.last_mut().unwrap();
-        if let Some(t1_data) = token1.data.downcast_mut::<Text>() {
+        if let Some(t1_data) = token1.cast_mut::<Text>() {
 
             let token2 = tokens2.first_mut().unwrap();
-            if let Some(t2_data) = token2.data.downcast_mut::<Text>() {
+            if let Some(t2_data) = token2.cast_mut::<Text>() {
                 // concat contents
                 let t2_content = std::mem::take(&mut t2_data.content);
                 t1_data.content += &t2_content;
@@ -319,7 +312,7 @@ fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
 
     // remove all empty tokens
     tokens.retain(|token| {
-        if let Some(data) = token.data.downcast_ref::<Text>() {
+        if let Some(data) = token.cast::<Text>() {
             !data.content.is_empty()
         } else {
             true

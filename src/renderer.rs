@@ -80,7 +80,7 @@ mod fmt_default {
 
         fn contents(&mut self, tokens: &[Token]) {
             for token in tokens {
-                token.data.render(token, self);
+                token.render(self);
             }
         }
 
@@ -182,7 +182,7 @@ mod fmt_sourcemap {
         fn contents(&mut self, tokens: &[Token]) {
             for token in tokens {
                 self.current_map = token.map;
-                token.data.render(token, self);
+                token.render(self);
                 self.current_map = None;
             }
         }

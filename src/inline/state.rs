@@ -105,7 +105,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
     pub fn trailing_text_push(&mut self, start: usize, end: usize) {
         if let Some(text) = self.tokens.last_mut()
-                                       .and_then(|t| t.data.downcast_mut::<Text>()) {
+                                       .and_then(|t| t.cast_mut::<Text>()) {
             text.content.push_str(&self.src[start..end]);
         } else {
             let token = Token::new(Text { content: self.src[start..end].to_owned() });
@@ -115,7 +115,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
     pub fn trailing_text_pop(&mut self, count: usize) {
         if count != 0 {
-            let text = self.tokens.last_mut().unwrap().data.downcast_mut::<Text>().unwrap();
+            let text = self.tokens.last_mut().unwrap().cast_mut::<Text>().unwrap();
             if text.content.len() == count {
                 self.tokens.pop();
             } else {
@@ -135,7 +135,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
 
     pub fn trailing_text_get(&self) -> &str {
         if let Some(text) = self.tokens.last()
-                                       .and_then(|t| t.data.downcast_ref::<Text>()) {
+                                       .and_then(|t| t.cast::<Text>()) {
             text.content.as_str()
         } else {
             ""

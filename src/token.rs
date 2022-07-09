@@ -8,9 +8,6 @@ pub type TokenAttrs = Vec<(&'static str, String)>;
 // Token class
 #[derive(Debug)]
 pub struct Token {
-    // Type name used for debugging
-    pub name: &'static str,
-
     // Source map info. Format: `[ line_begin, line_end ]`
     pub map: Option<SourcePos>,
 
@@ -21,19 +18,47 @@ pub struct Token {
     // Used in renderer to calculate line breaks
     pub block: bool,
 
+    // Type name used for debugging
+    name: &'static str,
+
     // Storage for arbitrary token-specific data
-    pub data: Box<dyn TokenData>,
+    payload: Box<dyn TokenData>,
 }
 
 impl Token {
-    pub fn new<T: TokenData>(data: T) -> Self {
+    pub fn new<T: TokenData>(payload: T) -> Self {
         Self {
             name:      std::any::type_name::<T>(),
             map:       None,
             children:  Vec::new(),
             block:     false,
-            data:      Box::new(data),
+            payload:   Box::new(payload),
         }
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.name
+    }
+
+    pub fn is<T: TokenData>(&self) -> bool {
+        self.payload.is::<T>()
+    }
+
+    pub fn cast<T: TokenData>(&self) -> Option<&T> {
+        self.payload.downcast_ref::<T>()
+    }
+
+    pub fn cast_mut<T: TokenData>(&mut self) -> Option<&mut T> {
+        self.payload.downcast_mut::<T>()
+    }
+
+    pub fn render(&self, f: &mut dyn Formatter) {
+        self.payload.render(self, f);
+    }
+
+    pub fn replace<T: TokenData>(&mut self, data: T) {
+        self.name = std::any::type_name::<T>();
+        self.payload = Box::new(data);
     }
 }
 
