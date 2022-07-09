@@ -16,6 +16,12 @@ mod markdown_it_rs_extras {
     use super::run;
 
     #[test]
+    fn regression_test_img() {
+        // ! at end of line
+        run("Hello!", "<p>Hello!</p>");
+    }
+
+    #[test]
     fn tab_offset_in_lists() {
         run("   > -\tfoo\n   >\n   >         foo\n",
 r#"<blockquote>

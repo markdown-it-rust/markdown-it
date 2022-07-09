@@ -32,8 +32,8 @@ pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
 
     md.inline.ruler.add("generic::full_link", |state: &mut inline::State, silent: bool| -> bool {
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != PREFIX { return false; }
-        if chars.next().unwrap() != '[' { return false; }
+        if chars.next() != Some(PREFIX) { return false; }
+        if chars.next() != Some('[') { return false; }
         let f = state.md.env.get::<LinkCfg<PREFIX>>().unwrap().0;
         rule(state, silent, ENABLE_NESTED, 1, f)
     });
