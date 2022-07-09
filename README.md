@@ -1,33 +1,25 @@
-[markdown-it](https://github.com/markdown-it/markdown-it) js library rewritten in rust
+# markdown-it
 
-This is mostly a research project at this stage. Main goals are:
+[<img alt="github" src="https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/rlidwka/markdown-it.rs)
+[<img alt="crates.io" src="https://img.shields.io/crates/v/markdown-it.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/markdown-it)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-not%20yet-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/markdown-it)
+[<img alt="build status" src="https://img.shields.io/github/workflow/status/rlidwka/markdown-it.rs/CI?style=for-the-badge" height="20">](https://github.com/rlidwka/markdown-it.rs/actions?query=branch%3Amaster)
 
- - comparing speed of rust native code, rust wasm code, and javascript
- - check out how well rust code can be extended by plugins (spoiler alert: not that well)
- - clean up markdown-it.js original code with the aid of rust compiler (unused variables and such)
+Rust port of [markdown-it](https://github.com/markdown-it/markdown-it) javascript library.
 
-This is not a strict port, there are many improvements that can't be made in original js library for compatibility reasons.
-
-### What works
-
-100% of commonmark tests pass.
-
-no plugins yet, but it's being worked on
+**Work In Progress**
 
 ### Usage
 
 ```rs
-let md = markdown_it::MarkdownIt::new(None);
-assert_eq!(md.render("Hello **world**!"), "<p>Hello <strong>world</strong>!</p>\n");
+let parser = &mut markdown_it::MarkdownIt::new(None);
+markdown_it::syntax::cmark::add(parser);
+
+let ast = parser.parse("Hello **world**!");
+let html = markdown_it::renderer::html(&ast);
+
+print!("{html}");
+// prints "<p>Hello <strong>world</strong>!</p>"
 ```
 
 The rest of the API is very experimental and will likely change tomorrow.
-
-### Benchmarks
-
-On 10 kB test file:
-
- - `markdown-it`: 420 μs
- - `comrak`: 380 μs
-
-roughly the same, it's being worked on

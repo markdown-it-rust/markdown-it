@@ -1,5 +1,16 @@
 use markdown_it;
 
+#[test]
+fn title_example() {
+    let parser = &mut markdown_it::MarkdownIt::new(None);
+    markdown_it::syntax::cmark::add(parser);
+
+    let ast = parser.parse("Hello **world**!");
+    let html = markdown_it::renderer::html(&ast);
+
+    assert_eq!(html, "<p>Hello <strong>world</strong>!</p>\n");
+}
+
 fn run(input: &str, output: &str) {
     let output = if output == "" { "".to_owned() } else { output.to_owned() + "\n" };
     let md = &mut markdown_it::MarkdownIt::new(Some(markdown_it::Options {
