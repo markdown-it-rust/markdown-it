@@ -1,10 +1,10 @@
 // Inline parser state
 //
-use crate::env::Env;
-use crate::MarkdownIt;
-use crate::sourcemap::SourcePos;
-use crate::syntax_base::builtin::Text;
-use crate::token::Token;
+use crate::Node;
+use crate::parser::MarkdownIt;
+use crate::parser::internals::env::Env;
+use crate::parser::internals::sourcemap::SourcePos;
+use crate::parser::internals::syntax_base::builtin::Text;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy)]
@@ -51,7 +51,7 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     pub srcmap: Vec<(usize, usize)>,
     pub env: &'b mut Env,
     pub md: &'a MarkdownIt,
-    pub tokens: &'c mut Vec<Token>,
+    pub tokens: &'c mut Vec<Node>,
 
     pub pos: usize,
     pub pos_max: usize,
@@ -74,7 +74,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         srcmap: Vec<(usize, usize)>,
         md: &'a MarkdownIt,
         env: &'b mut Env,
-        out_tokens: &'c mut Vec<Token>
+        out_tokens: &'c mut Vec<Node>
     ) -> Self {
         let mut result = Self {
             pos:        0,
@@ -108,29 +108,29 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
                                        .and_then(|t| t.cast_mut::<Text>()) {
             text.content.push_str(&self.src[start..end]);
         } else {
-            let mut token = Token::new(Text { content: self.src[start..end].to_owned() });
-            token.map = self.get_map(start, end);
-            self.tokens.push(token);
+            let mut node = Node::new(Text { content: self.src[start..end].to_owned() });
+            node.srcmap = self.get_map(start, end);
+            self.tokens.push(node);
         }
     }
 
     pub fn trailing_text_pop(&mut self, count: usize) {
         if count == 0 { return; }
 
-        let mut token = self.tokens.pop().unwrap();
-        let text = token.cast_mut::<Text>().unwrap();
+        let mut node = self.tokens.pop().unwrap();
+        let text = node.cast_mut::<Text>().unwrap();
         if text.content.len() == count {
-            // do nothing, just remove the token
-            drop(token);
+            // do nothing, just remove the node
+            drop(node);
         } else {
             // modify the token and reinsert it later
             text.content.truncate(text.content.len() - count);
-            if let Some(map) = token.map {
+            if let Some(map) = node.srcmap {
                 let (start, end) = map.get_byte_offsets();
                 let new_end = self.get_source_pos_for(end - count);
-                token.map = Some(SourcePos::new(start, new_end));
+                node.srcmap = Some(SourcePos::new(start, new_end));
             }
-            self.tokens.push(token);
+            self.tokens.push(node);
         }
     }
 
@@ -143,8 +143,8 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
         }
     }
 
-    pub fn push(&mut self, token: Token) {
-        self.tokens.push(token);
+    pub fn push(&mut self, node: Node) {
+        self.tokens.push(node);
     }
 
     // Scan a sequence of emphasis-like markers, and determine whether

@@ -1,11 +1,11 @@
 // References
 //
 use std::collections::HashMap;
-use crate::MarkdownIt;
-use crate::block;
-use crate::common::normalize_reference;
-use crate::env;
-use crate::syntax_base::generics::inline::full_link;
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
+use crate::parser::internals::common::normalize_reference;
+use crate::parser::internals::env;
+use crate::parser::internals::syntax_base::generics::inline::full_link;
 
 #[derive(Debug, Default)]
 pub struct ReferenceEnv {

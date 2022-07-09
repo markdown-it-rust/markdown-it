@@ -1,10 +1,10 @@
 // Process escaped chars and hardbreaks
 //
-use crate::MarkdownIt;
-use crate::inline;
-use crate::syntax_base::builtin::TextSpecial;
+use crate::Node;
+use crate::parser::MarkdownIt;
+use crate::parser::internals::inline;
+use crate::parser::internals::syntax_base::builtin::TextSpecial;
 use crate::syntax::cmark::inline::newline::Hardbreak;
-use crate::token::Token;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("escape", rule);
@@ -26,9 +26,9 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             }
 
             if !silent {
-                let mut token = Token::new(Hardbreak);
-                token.map = state.get_map(map_start, map_end);
-                state.push(token);
+                let mut node = Node::new(Hardbreak);
+                node.srcmap = state.get_map(map_start, map_end);
+                state.push(node);
             }
 
             true
@@ -45,13 +45,13 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
                     _ => orig_str.clone()
                 };
 
-                let mut token = Token::new(TextSpecial {
+                let mut node = Node::new(TextSpecial {
                     content: content_str,
                     markup: orig_str,
                     info: "escape",
                 });
-                token.map = state.get_map(state.pos, state.pos + 1 + chr.len_utf8());
-                state.push(token);
+                node.srcmap = state.get_map(state.pos, state.pos + 1 + chr.len_utf8());
+                state.push(node);
             }
             state.pos += 1 + chr.len_utf8();
             true

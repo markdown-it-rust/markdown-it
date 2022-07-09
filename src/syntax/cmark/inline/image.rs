@@ -1,10 +1,9 @@
 // Process ![image](<src> "title")
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::syntax_base::builtin::Text;
-use crate::syntax_base::generics::inline::full_link;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::syntax_base::builtin::Text;
+use crate::parser::internals::syntax_base::generics::inline::full_link;
 
 #[derive(Debug)]
 pub struct Image {
@@ -12,22 +11,22 @@ pub struct Image {
     pub title: Option<String>,
 }
 
-impl TokenData for Image {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for Image {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         let mut attrs : Vec<(&str, &str)> = Vec::new();
         attrs.push(("src", &self.url));
 
         let mut alt = String::new();
 
         // TODO: generic walk
-        fn walk(tokens: &Vec<Token>, f: &mut dyn FnMut (&Token)) {
-            for token in tokens.iter() {
-                f(token);
-                walk(&token.children, f);
+        fn walk(nodes: &Vec<Node>, f: &mut dyn FnMut (&Node)) {
+            for node in nodes.iter() {
+                f(node);
+                walk(&node.children, f);
             }
         }
 
-        walk(&token.children, &mut |t| {
+        walk(&node.children, &mut |t| {
             if let Some(text) = t.cast::<Text>() {
                 alt.push_str(text.content.as_str());
             }
@@ -44,7 +43,7 @@ impl TokenData for Image {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    full_link::add_prefix::<'!', true>(md, |href, title| Token::new(Image {
+    full_link::add_prefix::<'!', true>(md, |href, title| Node::new(Image {
         url: href.unwrap_or_default(),
         title,
     }));

@@ -2,10 +2,9 @@
 //
 use once_cell::sync::Lazy;
 use regex::Regex;
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
 use super::utils::blocks::*;
 use super::utils::regexps::*;
 
@@ -14,8 +13,8 @@ pub struct HtmlBlock {
     pub content: String,
 }
 
-impl TokenData for HtmlBlock {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for HtmlBlock {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.cr();
         f.text_raw(&self.content);
         f.cr();
@@ -138,9 +137,9 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     state.line = next_line;
 
     let (content, _) = state.get_lines(start_line, next_line, state.blk_indent, true);
-    let mut token = Token::new(HtmlBlock { content });
-    token.map = state.get_map(start_line, next_line - 1);
-    state.push(token);
+    let mut node = Node::new(HtmlBlock { content });
+    node.srcmap = state.get_map(start_line, next_line - 1);
+    state.push(node);
 
     true
 }

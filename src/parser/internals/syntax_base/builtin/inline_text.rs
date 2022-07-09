@@ -2,17 +2,17 @@
 // and increment current pos
 //
 use crate::Formatter;
-use crate::MarkdownIt;
-use crate::inline;
-use crate::token::{Token, TokenData};
+use crate::parser::internals::inline;
+use crate::parser::MarkdownIt;
+use crate::{Node, NodeValue};
 
 #[derive(Debug)]
 pub struct Text {
     pub content: String
 }
 
-impl TokenData for Text {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for Text {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.text(&self.content);
     }
 }
@@ -24,8 +24,8 @@ pub struct TextSpecial {
     pub info: &'static str,
 }
 
-impl TokenData for TextSpecial {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for TextSpecial {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.text(&self.content);
     }
 }

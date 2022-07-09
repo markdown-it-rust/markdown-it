@@ -1,7 +1,7 @@
 use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::token::{Token, TokenData};
+use crate::parser::internals::block;
+use crate::parser::MarkdownIt;
+use crate::{Node, NodeValue};
 
 #[derive(Debug)]
 pub struct InlineNodes {
@@ -10,8 +10,8 @@ pub struct InlineNodes {
 }
 
 // this token is supposed to be replaced by one or many actual tokens by inline rule
-impl TokenData for InlineNodes {
-    fn render(&self, _: &Token, _: &mut dyn Formatter) {
+impl NodeValue for InlineNodes {
+    fn render(&self, _: &Node, _: &mut dyn Formatter) {
         unimplemented!()
     }
 }
@@ -27,7 +27,7 @@ pub fn rule(state: &mut block::State) {
     *state.tokens = tokens;
 }
 
-pub fn walk(state: &mut block::State, tokens: &mut Vec<Token>) {
+pub fn walk(state: &mut block::State, tokens: &mut Vec<Node>) {
     let mut idx = 0;
     while idx < tokens.len() {
         // TODO: generic walk

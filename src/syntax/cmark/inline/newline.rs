@@ -1,15 +1,14 @@
 // Process '\n'
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::inline;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::inline;
 
 #[derive(Debug)]
 pub struct Hardbreak;
 
-impl TokenData for Hardbreak {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for Hardbreak {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.self_close("br", &[]);
         f.cr();
     }
@@ -18,8 +17,8 @@ impl TokenData for Hardbreak {
 #[derive(Debug)]
 pub struct Softbreak;
 
-impl TokenData for Softbreak {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for Softbreak {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.cr();
     }
 }
@@ -57,14 +56,14 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
         state.trailing_text_pop(tail_size);
 
-        let mut token = if tail_size >= 2 {
-            Token::new(Hardbreak)
+        let mut node = if tail_size >= 2 {
+            Node::new(Hardbreak)
         } else {
-            Token::new(Softbreak)
+            Node::new(Softbreak)
         };
 
-        token.map = state.get_map(state.pos - tail_size, pos);
-        state.push(token);
+        node.srcmap = state.get_map(state.pos - tail_size, pos);
+        state.push(node);
     }
 
     state.pos = pos;

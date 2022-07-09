@@ -13,7 +13,7 @@ name = "markdown_it"
 path = "src/lib.rs"
 
 [[bin]]
-name = "markdown-it"
+name = "mdit"
 path = "src/bin.rs"
 
 [dependencies]

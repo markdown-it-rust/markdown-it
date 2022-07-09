@@ -1,10 +1,10 @@
 // Parse backticks
 //
-use crate::MarkdownIt;
-use crate::env;
-use crate::inline;
-use crate::syntax_base::builtin::Text;
-use crate::token::Token;
+use crate::Node;
+use crate::parser::MarkdownIt;
+use crate::parser::internals::env;
+use crate::parser::internals::inline;
+use crate::parser::internals::syntax_base::builtin::Text;
 
 #[derive(Debug, Default)]
 struct BacktickCache<const MARKER: char> {
@@ -17,9 +17,9 @@ impl<const MARKER: char> env::EnvMember for BacktickCache<MARKER> {
 }
 
 #[derive(Debug)]
-struct BacktickCfg<const MARKER: char>(fn (usize) -> Token);
+struct BacktickCfg<const MARKER: char>(fn (usize) -> Node);
 
-pub fn add_with<const MARKER: char>(md: &mut MarkdownIt, f: fn (usize) -> Token) {
+pub fn add_with<const MARKER: char>(md: &mut MarkdownIt, f: fn (usize) -> Node) {
     md.env.insert(BacktickCfg::<MARKER>(f));
 
     md.inline.ruler.add("generic::code_pair", rule::<MARKER>);
@@ -79,14 +79,14 @@ fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
                 }
 
                 let f = state.md.env.get::<BacktickCfg<MARKER>>().unwrap().0;
-                let mut token = f(opener_len);
-                token.map = state.get_map(state.pos, match_end);
+                let mut node = f(opener_len);
+                node.srcmap = state.get_map(state.pos, match_end);
 
-                let mut inner_token = Token::new(Text { content });
-                inner_token.map = state.get_map(pos, match_start);
+                let mut inner_node = Node::new(Text { content });
+                inner_node.srcmap = state.get_map(pos, match_start);
 
-                token.children.push(inner_token);
-                state.push(token);
+                node.children.push(inner_node);
+                state.push(node);
             }
             state.pos = match_end;
             return true;

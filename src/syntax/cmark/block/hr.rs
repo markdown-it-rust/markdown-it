@@ -1,9 +1,8 @@
 // Horizontal rule
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
 
 #[derive(Debug)]
 pub struct ThematicBreak {
@@ -11,8 +10,8 @@ pub struct ThematicBreak {
     pub marker_len: usize,
 }
 
-impl TokenData for ThematicBreak {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for ThematicBreak {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.cr();
         f.self_close("hr", &[]);
         f.cr();
@@ -50,9 +49,9 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     if cnt < 3 { return false; }
     if silent { return true; }
 
-    let mut token = Token::new(ThematicBreak { marker, marker_len: cnt });
-    token.map = state.get_map(state.line, state.line);
-    state.push(token);
+    let mut node = Node::new(ThematicBreak { marker, marker_len: cnt });
+    node.srcmap = state.get_map(state.line, state.line);
+    state.push(node);
     state.line += 1;
 
     true

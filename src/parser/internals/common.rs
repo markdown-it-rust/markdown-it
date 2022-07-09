@@ -1,9 +1,18 @@
-pub mod entities;
-
+use entities;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::borrow::Cow;
+use std::collections::HashMap;
 
+pub static ENTITIES_HASH : Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+    let mut mapping = HashMap::new();
+    for e in &entities::ENTITIES {
+        if e.entity.ends_with(';') {
+            mapping.insert(e.entity, e.characters);
+        }
+    }
+    mapping
+});
 
 const UNESCAPE_MD_RE : &str = r##"\\([!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])"##;
 const ENTITY_RE      : &str = r##"&([A-Za-z#][A-Za-z0-9]{1,31});"##;
@@ -32,7 +41,7 @@ pub fn is_valid_entity_code(code: u32) -> bool {
 }
 
 fn replace_entity_pattern(str: &str) -> Option<String> {
-    if let Some(entity) = entities::ENTITIES_HASH.get(str) {
+    if let Some(entity) = ENTITIES_HASH.get(str) {
         Some((*entity).to_owned())
     } else if DIGITAL_ENTITY_TEST_RE.is_match(str) {
         let code = if str.starts_with('x') || str.starts_with('X') {

@@ -1,7 +1,6 @@
-use argparse;
-use markdown_it;
-use markdown_it::syntax_base::builtin::Text;
-use markdown_it::syntax_base::builtin::TextSpecial;
+use markdown_it::Node;
+use markdown_it::parser::internals::syntax_base::builtin::Text;
+use markdown_it::parser::internals::syntax_base::builtin::TextSpecial;
 use std::io::Read;
 use std::io::Write;
 
@@ -49,36 +48,34 @@ fn main() {
     };
 
     let source = String::from_utf8_lossy(&vec);
-    let md = &mut markdown_it::MarkdownIt::new();
+    let md = &mut markdown_it::parser::new();
     markdown_it::syntax::cmark::add(md);
     if !no_html {
         markdown_it::syntax::html::add(md);
     }
 
-    if show_tree {
-        use markdown_it::token::Token;
+    let mut ast = md.parse(&source);
 
-        pub trait TokenList {
-            fn walk(&mut self, f: fn (&mut Token, lvl: u32));
+    if show_tree {
+        pub trait NodeList {
+            fn walk(&mut self, f: fn (&mut Node, lvl: u32));
         }
 
-        impl TokenList for Vec<Token> {
-            fn walk(&mut self, f: fn (&mut Token, lvl: u32)) {
+        impl NodeList for Vec<Node> {
+            fn walk(&mut self, f: fn (&mut Node, lvl: u32)) {
                 walk(self, f, 0);
             }
         }
 
         // TODO: generic walk
-        fn walk(tokens: &mut Vec<Token>, f: fn (&mut Token, lvl: u32), lvl: u32) {
-            for token in tokens.iter_mut() {
-                f(token, lvl);
-                walk(&mut token.children, f, lvl + 1);
+        fn walk(nodes: &mut Vec<Node>, f: fn (&mut Node, lvl: u32), lvl: u32) {
+            for node in nodes.iter_mut() {
+                f(node, lvl);
+                walk(&mut node.children, f, lvl + 1);
             }
         }
 
-        let mut tree = md.parse(&source);
-
-        tree.walk(|node, lvl| {
+        ast.walk(|node, lvl| {
             print!("{}", "    ".repeat(lvl as usize));
             let name = &node.name()[node.name().rfind("::").map(|x| x+2).unwrap_or_default()..];
             if let Some(data) = node.cast::<Text>() {
@@ -95,9 +92,9 @@ fn main() {
 
     let result;
     if sourcepos {
-        result = markdown_it::renderer::html_with_srcmap(&source, &md.parse(&source));
+        result = markdown_it::renderer::html_with_srcmap(&source, &ast);
     } else {
-        result = md.render(&source);
+        result = markdown_it::renderer::html(&ast);
     }
 
     if output == "-" {

@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::erasedset::ErasedSet;
+use crate::parser::internals::erasedset::ErasedSet;
 
 type EnvState = ErasedSet;
 

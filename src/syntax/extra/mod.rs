@@ -1,6 +1,6 @@
 pub mod inline;
 
-use crate::MarkdownIt;
+use crate::parser::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
     //inline::linkify::add(md);

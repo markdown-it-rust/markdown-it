@@ -1,9 +1,8 @@
 // Process escaped chars and hardbreaks
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::inline;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::inline;
 use super::utils::regexps::*;
 
 #[derive(Debug)]
@@ -11,8 +10,8 @@ pub struct HtmlInline {
     pub content: String,
 }
 
-impl TokenData for HtmlInline {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for HtmlInline {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.text_raw(&self.content);
     }
 }
@@ -47,9 +46,9 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             state.link_level -= 1;
         }
 
-        let mut token = Token::new(HtmlInline { content });
-        token.map = state.get_map(state.pos, state.pos + capture_len);
-        state.push(token);
+        let mut node = Node::new(HtmlInline { content });
+        node.srcmap = state.get_map(state.pos, state.pos + capture_len);
+        state.push(node);
     }
 
     state.pos += capture_len;

@@ -2,21 +2,20 @@
 //
 use once_cell::sync::Lazy;
 use regex::Regex;
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::inline;
-use crate::syntax_base::builtin::Text;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::inline;
+use crate::parser::internals::syntax_base::builtin::Text;
 
 #[derive(Debug)]
 pub struct AutoLink {
     pub url: String,
 }
 
-impl TokenData for AutoLink {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for AutoLink {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         f.open("a", &[("href", &self.url)]);
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.close("a");
     }
 }
@@ -64,14 +63,14 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
     if !silent {
         let content = (state.md.normalize_link_text)(url);
 
-        let mut token = Token::new(AutoLink { url: full_url });
-        token.map = state.get_map(state.pos, pos);
+        let mut node = Node::new(AutoLink { url: full_url });
+        node.srcmap = state.get_map(state.pos, pos);
 
-        let mut inner_token = Token::new(Text { content });
-        inner_token.map = state.get_map(state.pos + 1, pos - 1);
+        let mut inner_node = Node::new(Text { content });
+        inner_node.srcmap = state.get_map(state.pos + 1, pos - 1);
 
-        token.children.push(inner_token);
-        state.push(token);
+        node.children.push(inner_node);
+        state.push(node);
     }
 
     state.pos = pos;

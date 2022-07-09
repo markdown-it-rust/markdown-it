@@ -2,12 +2,11 @@
 //
 use once_cell::sync::Lazy;
 use regex::Regex;
-use crate::MarkdownIt;
-use crate::common::entities;
-use crate::common::is_valid_entity_code;
-use crate::inline;
-use crate::syntax_base::builtin::TextSpecial;
-use crate::token::Token;
+use crate::Node;
+use crate::parser::MarkdownIt;
+use crate::parser::internals::common;
+use crate::parser::internals::inline;
+use crate::parser::internals::syntax_base::builtin::TextSpecial;
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.ruler.add("entity", rule);
@@ -36,7 +35,7 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
                     u32::from_str_radix(entity, 10).unwrap()
                 };
 
-                let content_str = if is_valid_entity_code(code) {
+                let content_str = if common::is_valid_entity_code(code) {
                     char::from_u32(code).unwrap().into()
                 } else {
                     '\u{FFFD}'.into()
@@ -44,13 +43,13 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
                 let markup_str = capture[0].to_owned();
 
-                let mut token = Token::new(TextSpecial {
+                let mut node = Node::new(TextSpecial {
                     content: content_str,
                     markup: markup_str,
                     info: "entity",
                 });
-                token.map = state.get_map(state.pos, state.pos + entity_len);
-                state.push(token);
+                node.srcmap = state.get_map(state.pos, state.pos + entity_len);
+                state.push(node);
             }
             state.pos += entity_len;
             true
@@ -59,19 +58,19 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
         }
     } else {
         if let Some(capture) = NAMED_RE.captures(&state.src[state.pos..]) {
-            if let Some(str) = entities::ENTITIES_HASH.get(&capture[0]) {
+            if let Some(str) = common::ENTITIES_HASH.get(&capture[0]) {
                 let entity_len = &capture[0].len();
                 if !silent {
                     let markup_str = capture[0].to_owned();
                     let content_str = (*str).to_owned();
 
-                    let mut token = Token::new(TextSpecial {
+                    let mut node = Node::new(TextSpecial {
                         content: content_str,
                         markup: markup_str,
                         info: "entity",
                     });
-                    token.map = state.get_map(state.pos, state.pos + entity_len);
-                    state.push(token);
+                    node.srcmap = state.get_map(state.pos, state.pos + entity_len);
+                    state.push(node);
                 }
                 state.pos += entity_len;
                 true

@@ -2,7 +2,7 @@ pub mod html_inline;
 pub mod html_block;
 mod utils;
 
-use crate::MarkdownIt;
+use crate::parser::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
     html_inline::add(md);

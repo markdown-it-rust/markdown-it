@@ -1,10 +1,9 @@
 // Paragraph
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::syntax_base::builtin::InlineNodes;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
+use crate::parser::internals::syntax_base::builtin::InlineNodes;
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("paragraph", rule)
@@ -14,11 +13,11 @@ pub fn add(md: &mut MarkdownIt) {
 #[derive(Debug)]
 pub struct Paragraph;
 
-impl TokenData for Paragraph {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for Paragraph {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         f.cr();
         f.open("p", &[]);
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.close("p");
         f.cr();
     }
@@ -58,13 +57,13 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false).to_owned();
     state.line = next_line;
 
-    let mut token = Token::new(Paragraph);
-    token.map = state.get_map(start_line, state.line - 1);
-    token.children.push(Token::new(InlineNodes {
+    let mut node = Node::new(Paragraph);
+    node.srcmap = state.get_map(start_line, state.line - 1);
+    node.children.push(Node::new(InlineNodes {
         content,
         mapping,
     }));
-    state.push(token);
+    state.push(node);
 
     true
 }

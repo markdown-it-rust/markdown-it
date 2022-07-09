@@ -1,18 +1,18 @@
 // Process [link](<to> "stuff")
 //
-use crate::MarkdownIt;
-use crate::common::normalize_reference;
-use crate::common::unescape_all;
-use crate::inline;
+use crate::Node;
+use crate::parser::MarkdownIt;
+use crate::parser::internals::common::normalize_reference;
+use crate::parser::internals::common::unescape_all;
+use crate::parser::internals::inline;
 use crate::syntax::cmark::block::reference::ReferenceEnv;
-use crate::token::Token;
 
 #[derive(Debug)]
-struct LinkCfg<const PREFIX: char>(fn (Option<String>, Option<String>) -> Token);
+struct LinkCfg<const PREFIX: char>(fn (Option<String>, Option<String>) -> Node);
 
 pub fn add<const ENABLE_NESTED: bool>(
     md: &mut MarkdownIt,
-    f: fn (Option<String>, Option<String>) -> Token
+    f: fn (Option<String>, Option<String>) -> Node
 ) {
     md.env.insert(LinkCfg::<'\0'>(f));
 
@@ -27,7 +27,7 @@ pub fn add<const ENABLE_NESTED: bool>(
 pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
     md: &mut MarkdownIt,
     f: fn (Option<String>, Option<String>
-) -> Token) {
+) -> Node) {
     md.env.insert(LinkCfg::<PREFIX>(f));
 
     md.inline.ruler.add("generic::full_link", |state: &mut inline::State, silent: bool| -> bool {
@@ -44,7 +44,7 @@ fn rule(
     silent: bool,
     enable_nested: bool,
     offset: usize,
-    f: fn (Option<String>, Option<String>) -> Token
+    f: fn (Option<String>, Option<String>) -> Node
 ) -> bool {
     let start = state.pos;
 
@@ -66,7 +66,7 @@ fn rule(
             let children = std::mem::replace(state.tokens, old_tokens);
 
             let mut token = f(result.href, result.title);
-            token.map = state.get_map(start, result.end);
+            token.srcmap = state.get_map(start, result.end);
             token.children = children;
             state.push(token);
             state.link_level -= 1;

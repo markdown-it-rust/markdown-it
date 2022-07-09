@@ -1,17 +1,16 @@
 // Code block (4 spaces padded)
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
 
 #[derive(Debug)]
 pub struct CodeBlock {
     pub content: String,
 }
 
-impl TokenData for CodeBlock {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for CodeBlock {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         f.cr();
         f.open("pre", &[]);
             f.open("code", &[]);
@@ -54,9 +53,9 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let (mut content, mapping) = state.get_lines(start_line, last, 4 + state.blk_indent, false);
     content += "\n";
 
-    let mut token = Token::new(CodeBlock { content });
-    token.map = state.get_map_from_offsets(mapping[0].1, state.line_offsets[state.line - 1].line_end);
-    state.push(token);
+    let mut node = Node::new(CodeBlock { content });
+    node.srcmap = state.get_map_from_offsets(mapping[0].1, state.line_offsets[state.line - 1].line_end);
+    state.push(node);
 
     true
 }

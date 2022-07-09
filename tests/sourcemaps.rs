@@ -1,17 +1,17 @@
 use markdown_it;
-use markdown_it::token::Token;
-use markdown_it::sourcemap::CharMapping;
+use markdown_it::Node;
+use markdown_it::parser::internals::sourcemap::CharMapping;
 
-fn run(input: &str, f: fn (&[Token], CharMapping)) {
-    let md = &mut markdown_it::MarkdownIt::new();
+fn run(input: &str, f: fn (&[Node], CharMapping)) {
+    let md = &mut markdown_it::parser::new();
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
     let tokens = md.parse(&input);
     f(&tokens, CharMapping::new(input));
 }
 
-fn getmap(token: &Token, map: &CharMapping) -> ((u32, u32), (u32, u32)) {
-    token.map.unwrap().get_positions(map)
+fn getmap(token: &Node, map: &CharMapping) -> ((u32, u32), (u32, u32)) {
+    token.srcmap.unwrap().get_positions(map)
 }
 
 #[test]

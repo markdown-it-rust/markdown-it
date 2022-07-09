@@ -1,9 +1,8 @@
 // Parse backticks
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::syntax_base::generics::inline::code_pair;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::syntax_base::generics::inline::code_pair;
 
 #[derive(Debug)]
 pub struct CodeInline {
@@ -11,16 +10,16 @@ pub struct CodeInline {
     pub marker_len: usize,
 }
 
-impl TokenData for CodeInline {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for CodeInline {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         f.open("code", &[]);
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.close("code");
     }
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    code_pair::add_with::<'`'>(md, |len| Token::new(CodeInline {
+    code_pair::add_with::<'`'>(md, |len| Node::new(CodeInline {
         marker: '`',
         marker_len: len,
     }));

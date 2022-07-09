@@ -1,9 +1,8 @@
 // Process [link](<to> "stuff")
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::syntax_base::generics::inline::full_link;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::syntax_base::generics::inline::full_link;
 
 #[derive(Debug)]
 pub struct Link {
@@ -11,8 +10,8 @@ pub struct Link {
     pub title: Option<String>,
 }
 
-impl TokenData for Link {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for Link {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         let mut attrs : Vec<(&str, &str)> = Vec::with_capacity(2);
         attrs.push(("href", &self.url));
 
@@ -21,13 +20,13 @@ impl TokenData for Link {
         }
 
         f.open("a", &attrs);
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.close("a");
     }
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    full_link::add::<false>(md, |href, title| Token::new(Link {
+    full_link::add::<false>(md, |href, title| Node::new(Link {
         url: href.unwrap_or_default(),
         title,
     }));

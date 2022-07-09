@@ -1,11 +1,10 @@
 // Lists
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::common::find_indent_of;
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
+use crate::parser::internals::common::find_indent_of;
 use crate::syntax::cmark::block::paragraph::Paragraph;
-use crate::token::{Token, TokenData};
 
 #[derive(Debug)]
 pub struct OrderedList {
@@ -13,8 +12,8 @@ pub struct OrderedList {
     pub marker: char,
 }
 
-impl TokenData for OrderedList {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for OrderedList {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         let mut attrs = Vec::new();
         let start;
         if self.start != 1 {
@@ -24,7 +23,7 @@ impl TokenData for OrderedList {
         f.cr();
         f.open("ol", &attrs);
         f.cr();
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.cr();
         f.close("ol");
         f.cr();
@@ -36,12 +35,12 @@ pub struct BulletList {
     pub marker: char,
 }
 
-impl TokenData for BulletList {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for BulletList {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         f.cr();
         f.open("ul", &[]);
         f.cr();
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.cr();
         f.close("ul");
         f.cr();
@@ -51,10 +50,10 @@ impl TokenData for BulletList {
 #[derive(Debug)]
 pub struct ListItem;
 
-impl TokenData for ListItem {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for ListItem {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         f.open("li", &[]);
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.close("li");
         f.cr();
     }
@@ -108,13 +107,13 @@ fn skip_ordered_list_marker(src: &str) -> Option<usize> {
     }
 }
 
-fn mark_tight_paragraphs(tokens: &mut Vec<Token>) {
+fn mark_tight_paragraphs(nodes: &mut Vec<Node>) {
     let mut idx = 0;
-    while idx < tokens.len() {
-        if tokens[idx].is::<Paragraph>() {
-            let children = std::mem::take(&mut tokens[idx].children);
+    while idx < nodes.len() {
+        if nodes[idx].is::<Paragraph>() {
+            let children = std::mem::take(&mut nodes[idx].children);
             let len = children.len();
-            tokens.splice(idx..idx+1, children);
+            nodes.splice(idx..idx+1, children);
             idx += len;
         } else {
             idx += 1;
@@ -284,10 +283,10 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
         let end_line = state.line;
         let children = std::mem::replace(state.tokens, old_tokens);
-        let mut token = Token::new(ListItem);
-        token.map = state.get_map(next_line, end_line - 1);
-        token.children = children;
-        state.push(token);
+        let mut node = Node::new(ListItem);
+        node.srcmap = state.get_map(next_line, end_line - 1);
+        node.children = children;
+        state.push(node);
         next_line = state.line;
 
         if next_line >= state.line_max { break; }
@@ -343,20 +342,20 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         }
     }
 
-    let mut token = if let Some(int) = marker_value {
-        Token::new(OrderedList {
+    let mut node = if let Some(int) = marker_value {
+        Node::new(OrderedList {
             start: int,
             marker: marker_char
         })
     } else {
-        Token::new(BulletList {
+        Node::new(BulletList {
             marker: marker_char
         })
     };
 
-    token.map = state.get_map(start_line, next_line - 1);
-    token.children = children;
-    state.push(token);
+    node.srcmap = state.get_map(start_line, next_line - 1);
+    node.children = children;
+    state.push(node);
 
     true
 }

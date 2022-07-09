@@ -1,10 +1,9 @@
 // fences (``` lang, ~~~ lang)
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::common::unescape_all;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
+use crate::parser::internals::common::unescape_all;
 
 #[derive(Debug)]
 pub struct CodeFence {
@@ -15,8 +14,8 @@ pub struct CodeFence {
     pub lang_prefix: &'static str,
 }
 
-impl TokenData for CodeFence {
-    fn render(&self, _: &Token, f: &mut dyn Formatter) {
+impl NodeValue for CodeFence {
+    fn render(&self, _: &Node, f: &mut dyn Formatter) {
         let info = unescape_all(&self.info);
         let mut split = info.split_whitespace();
         let lang_name = split.next().unwrap_or("");
@@ -137,15 +136,15 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let params = params.to_owned();
 
     let lang_prefix = state.md.env.get::<FenceSettings>().unwrap().0.get();
-    let mut token = Token::new(CodeFence {
+    let mut node = Node::new(CodeFence {
         info: params,
         marker,
         marker_len: len,
         content,
         lang_prefix,
     });
-    token.map = state.get_map(start_line, next_line - if have_end_marker { 0 } else { 1 });
-    state.push(token);
+    node.srcmap = state.get_map(start_line, next_line - if have_end_marker { 0 } else { 1 });
+    state.push(node);
 
     state.line = next_line + if have_end_marker { 1 } else { 0 };
 

@@ -1,7 +1,7 @@
 pub mod inline;
 pub mod block;
 
-use crate::MarkdownIt;
+use crate::parser::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
     inline::newline::add(md);

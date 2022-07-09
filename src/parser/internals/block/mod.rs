@@ -3,11 +3,11 @@
 pub mod state;
 pub use state::State;
 
-use crate::env::Env;
-use crate::env::scope::{BlockLvl, Block};
-use crate::MarkdownIt;
-use crate::ruler::Ruler;
-use crate::token::Token;
+use crate::Node;
+use crate::parser::MarkdownIt;
+use crate::parser::internals::env::Env;
+use crate::parser::internals::env::scope::{BlockLvl, Block};
+use crate::parser::internals::ruler::Ruler;
 
 pub type Rule = fn (&mut State, bool) -> bool;
 pub type Rule2 = fn (&mut State);
@@ -85,8 +85,8 @@ impl Parser {
 
     // Process input string and push block tokens into `out_tokens`
     //
-    pub fn parse(&self, src: String, md: &MarkdownIt, env: &mut Env, out_tokens: &mut Vec<Token>) {
-        let mut state = State::new(src, md, env, out_tokens);
+    pub fn parse(&self, src: String, md: &MarkdownIt, env: &mut Env, out_nodes: &mut Vec<Node>) {
+        let mut state = State::new(src, md, env, out_nodes);
         state.env.state_push::<Block>();
         state.env.state_push::<BlockLvl>();
 

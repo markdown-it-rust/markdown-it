@@ -1,10 +1,9 @@
 // lheading (---, ===)
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::syntax_base::builtin::InlineNodes;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
+use crate::parser::internals::syntax_base::builtin::InlineNodes;
 
 #[derive(Debug)]
 pub struct SetextHeader {
@@ -12,14 +11,14 @@ pub struct SetextHeader {
     pub marker: char,
 }
 
-impl TokenData for SetextHeader {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for SetextHeader {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         static TAG : [&str; 2] = [ "h1", "h2" ];
         debug_assert!(self.level >= 1 && self.level <= 2);
 
         f.cr();
         f.open(TAG[self.level as usize - 1], &[]);
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.close(TAG[self.level as usize - 1]);
         f.cr();
     }
@@ -89,16 +88,16 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false);
     state.line = next_line + 1;
 
-    let mut token = Token::new(SetextHeader {
+    let mut node = Node::new(SetextHeader {
         level,
         marker: if level == 2 { '-' } else { '=' }
     });
-    token.map = state.get_map(start_line, state.line - 1);
-    token.children.push(Token::new(InlineNodes {
+    node.srcmap = state.get_map(start_line, state.line - 1);
+    node.children.push(Node::new(InlineNodes {
         content,
         mapping,
     }));
-    state.push(token);
+    state.push(node);
 
     true
 }

@@ -1,24 +1,23 @@
 // heading (#, ##, ...)
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::syntax_base::builtin::InlineNodes;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
+use crate::parser::internals::syntax_base::builtin::InlineNodes;
 
 #[derive(Debug)]
 pub struct ATXHeading {
     pub level: u8,
 }
 
-impl TokenData for ATXHeading {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for ATXHeading {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         static TAG : [&str; 6] = [ "h1", "h2", "h3", "h4", "h5", "h6" ];
         debug_assert!(self.level >= 1 && self.level <= 6);
 
         f.cr();
         f.open(TAG[self.level as usize - 1], &[]);
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.close(TAG[self.level as usize - 1]);
         f.cr();
     }
@@ -79,13 +78,13 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let content = line[text_pos..text_max].to_owned();
     let mapping = vec![(0, state.line_offsets[state.line].first_nonspace + text_pos)];
 
-    let mut token = Token::new(ATXHeading { level });
-    token.map = state.get_map(state.line, state.line);
-    token.children.push(Token::new(InlineNodes {
+    let mut node = Node::new(ATXHeading { level });
+    node.srcmap = state.get_map(state.line, state.line);
+    node.children.push(Node::new(InlineNodes {
         content,
         mapping,
     }));
-    state.push(token);
+    state.push(node);
 
     state.line += 1;
 

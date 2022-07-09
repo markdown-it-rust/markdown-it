@@ -1,20 +1,19 @@
 // Block quotes
 //
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::block;
-use crate::common::find_indent_of;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::block;
+use crate::parser::internals::common::find_indent_of;
 
 #[derive(Debug)]
 pub struct Blockquote;
 
-impl TokenData for Blockquote {
-    fn render(&self, token: &Token, f: &mut dyn Formatter) {
+impl NodeValue for Blockquote {
+    fn render(&self, node: &Node, f: &mut dyn Formatter) {
         f.cr();
         f.open("blockquote", &[]);
         f.cr();
-        f.contents(&token.children);
+        f.contents(&node.children);
         f.cr();
         f.close("blockquote");
         f.cr();
@@ -120,7 +119,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
         if terminate {
             // Quirk to enforce "hard termination mode" for paragraphs;
-            // normally if you call `tokenize(state, startLine, nextLine)`,
+            // normally if you call `nodeize(state, startLine, nextLine)`,
             // paragraphs will look below nextLine for paragraph continuation,
             // but if blockquote is terminated by another tag, they shouldn't
             //state.line_max = next_line;
@@ -163,10 +162,10 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     }
     state.blk_indent = old_indent;
 
-    let mut token = Token::new(Blockquote);
-    token.children = children;
-    token.map = state.get_map(start_line, next_line - 1);
-    state.push(token);
+    let mut node = Node::new(Blockquote);
+    node.children = children;
+    node.srcmap = state.get_map(start_line, next_line - 1);
+    state.push(node);
 
     true
 }

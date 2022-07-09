@@ -1,27 +1,26 @@
 use derivative::Derivative;
 use std::cmp::min;
 use std::collections::HashMap;
-use crate::Formatter;
-use crate::MarkdownIt;
-use crate::env;
-use crate::inline;
-use crate::sourcemap::SourcePos;
-use crate::syntax_base::builtin::Text;
-use crate::token::{Token, TokenData};
+use crate::{Formatter, Node, NodeValue};
+use crate::parser::MarkdownIt;
+use crate::parser::internals::env;
+use crate::parser::internals::inline;
+use crate::parser::internals::sourcemap::SourcePos;
+use crate::parser::internals::syntax_base::builtin::Text;
 
 #[derive(Debug, Default)]
 struct Pairs {
     rule_inserted: bool,
-    map: HashMap<char, [Option<fn () -> Token>; 3]>
+    map: HashMap<char, [Option<fn () -> Node>; 3]>
 }
 
 impl Pairs {
-    pub fn set(&mut self, ch: char, len: u8, f: fn() -> Token) {
+    pub fn set(&mut self, ch: char, len: u8, f: fn() -> Node) {
         assert!((1..=3).contains(&len), "only pairs with len=1..3 are supported");
         self.map.entry(ch).or_default()[len as usize - 1] = Some(f);
     }
 
-    /*pub fn get(&self, ch: char, len: u8) -> Option<fn() -> Token> {
+    /*pub fn get(&self, ch: char, len: u8) -> Option<fn() -> Node> {
         assert!((1..=3).contains(&len), "only pairs with len=1..3 are supported");
         self.map.get(&ch)?[len as usize - 1]
     }*/
@@ -33,9 +32,9 @@ pub struct EmphMarker {
     pub length: usize,
 }
 
-// this token is supposed to be replaced by actual emph or text node
-impl TokenData for EmphMarker {
-    fn render(&self, _: &Token, _: &mut dyn Formatter) {
+// this node is supposed to be replaced by actual emph or text node
+impl NodeValue for EmphMarker {
+    fn render(&self, _: &Node, _: &mut dyn Formatter) {
         unimplemented!()
     }
 }
@@ -78,7 +77,7 @@ impl env::EnvMember for Delimiters {
     type Scope = env::scope::InlineLvl;
 }
 
-pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool>(md: &mut MarkdownIt, f: fn () -> Token) {
+pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool>(md: &mut MarkdownIt, f: fn () -> Node) {
     let pairs = md.env.get_or_insert_default::<Pairs>();
 
     if !pairs.map.contains_key(&MARKER) {
@@ -89,8 +88,8 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
             if chars.next().unwrap() != MARKER { return false; }
 
             let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
-            let mut token = Token::new(EmphMarker { marker: MARKER, length: scanned.length });
-            token.map = state.get_map(state.pos, state.pos + scanned.length);
+            let mut token = Node::new(EmphMarker { marker: MARKER, length: scanned.length });
+            token.srcmap = state.get_map(state.pos, state.pos + scanned.length);
             state.push(token);
             state.pos += scanned.length;
 
@@ -192,9 +191,9 @@ fn rule(state: &mut inline::State) {
                             let data = token.cast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
                             data.length -= marker_len;
                             let mut end_map_pos = 0;
-                            if let Some(map) = token.map {
+                            if let Some(map) = token.srcmap {
                                 let (start, end) = map.get_byte_offsets();
-                                token.map = Some(SourcePos::new(start + marker_len, end));
+                                token.srcmap = Some(SourcePos::new(start + marker_len, end));
                                 end_map_pos = start + marker_len;
                             }
 
@@ -204,13 +203,13 @@ fn rule(state: &mut inline::State) {
                             let data = starttoken.cast_mut::<EmphMarker>().expect("delimiter points at non-emph node");
                             data.length -= marker_len;
                             let mut start_map_pos = 0;
-                            if let Some(map) = starttoken.map {
+                            if let Some(map) = starttoken.srcmap {
                                 let (start, end) = map.get_byte_offsets();
-                                starttoken.map = Some(SourcePos::new(start, end - marker_len));
+                                starttoken.srcmap = Some(SourcePos::new(start, end - marker_len));
                                 start_map_pos = end - marker_len;
                             }
 
-                            new_token.map = state.get_map(start_map_pos, end_map_pos);
+                            new_token.srcmap = state.get_map(start_map_pos, end_map_pos);
                             new_min_opener_idx = 0;
                             out_tokens.push(new_token);
                             continue 'outer;
@@ -270,7 +269,7 @@ fn is_odd_match(opener: &Delimiter, closer: &Delimiter) -> bool {
 // leaves them as text (needed to merge with adjacent text) or turns them
 // into opening/closing tags (which messes up levels inside).
 //
-fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
+fn fragments_join(mut tokens: Vec<Node>) -> Vec<Node> {
     // replace all emph markers with text tokens
     for token in tokens.iter_mut() {
         if let Some(data) = token.cast::<EmphMarker>() {
@@ -293,9 +292,9 @@ fn fragments_join(mut tokens: Vec<Token>) -> Vec<Token> {
                 t1_data.content += &t2_content;
 
                 // adjust source maps
-                if let Some(map1) = token1.map {
-                    if let Some(map2) = token2.map {
-                        token1.map = Some(SourcePos::new(
+                if let Some(map1) = token1.srcmap {
+                    if let Some(map2) = token2.srcmap {
+                        token1.srcmap = Some(SourcePos::new(
                             map1.get_byte_offsets().0,
                             map2.get_byte_offsets().1
                         ));
