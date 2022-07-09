@@ -19,6 +19,7 @@ impl TokenData for Image {
 
         let mut alt = String::new();
 
+        // TODO: generic walk
         fn walk(tokens: &Vec<Token>, f: &mut dyn FnMut (&Token)) {
             for token in tokens.iter() {
                 f(token);

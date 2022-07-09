@@ -44,11 +44,13 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
                 let markup_str = capture[0].to_owned();
 
-                state.push(Token::new(TextSpecial {
+                let mut token = Token::new(TextSpecial {
                     content: content_str,
                     markup: markup_str,
                     info: "entity",
-                }));
+                });
+                token.map = state.get_map(state.pos, state.pos + entity_len);
+                state.push(token);
             }
             state.pos += entity_len;
             true
@@ -63,11 +65,13 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
                     let markup_str = capture[0].to_owned();
                     let content_str = (*str).to_owned();
 
-                    state.push(Token::new(TextSpecial {
+                    let mut token = Token::new(TextSpecial {
                         content: content_str,
                         markup: markup_str,
                         info: "entity",
-                    }));
+                    });
+                    token.map = state.get_map(state.pos, state.pos + entity_len);
+                    state.push(token);
                 }
                 state.pos += entity_len;
                 true

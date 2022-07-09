@@ -36,7 +36,7 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
         return false;
     }
 
-    state.pos += capture.len();
+    let capture_len = capture.len();
 
     if !silent {
         let content = capture.to_owned();
@@ -47,8 +47,12 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             state.link_level -= 1;
         }
 
-        state.push(Token::new(HtmlInline { content }));
+        let mut token = Token::new(HtmlInline { content });
+        token.map = state.get_map(state.pos, state.pos + capture_len);
+        state.push(token);
     }
+
+    state.pos += capture_len;
 
     true
 }

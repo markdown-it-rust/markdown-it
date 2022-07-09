@@ -70,6 +70,7 @@ fn main() {
             }
         }
 
+        // TODO: generic walk
         fn walk(tokens: &mut Vec<Token>, f: fn (&mut Token, lvl: u32), lvl: u32) {
             for token in tokens.iter_mut() {
                 f(token, lvl);

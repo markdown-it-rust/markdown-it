@@ -30,6 +30,7 @@ pub fn rule(state: &mut block::State) {
 pub fn walk(state: &mut block::State, tokens: &mut Vec<Token>) {
     let mut idx = 0;
     while idx < tokens.len() {
+        // TODO: generic walk
         if let Some(data) = tokens[idx].data.downcast_mut::<InlineNodes>() {
             let mut children = Vec::new();
             let content = std::mem::take(&mut data.content);

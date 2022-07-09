@@ -16,7 +16,9 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
     match chars.next() {
         Some('\n') => {
+            let map_start = state.pos;
             state.pos += 2;
+            let map_end = state.pos;
 
             // skip leading whitespaces from next line
             while let Some(' ' | '\t') = chars.next() {
@@ -24,7 +26,9 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             }
 
             if !silent {
-                state.push(Token::new(Hardbreak));
+                let mut token = Token::new(Hardbreak);
+                token.map = state.get_map(map_start, map_end);
+                state.push(token);
             }
 
             true
@@ -41,11 +45,13 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
                     _ => orig_str.clone()
                 };
 
-                state.push(Token::new(TextSpecial {
+                let mut token = Token::new(TextSpecial {
                     content: content_str,
                     markup: orig_str,
                     info: "escape",
-                }));
+                });
+                token.map = state.get_map(state.pos, state.pos + 1 + chr.len_utf8());
+                state.push(token);
             }
             state.pos += 1 + chr.len_utf8();
             true

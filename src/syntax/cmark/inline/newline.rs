@@ -33,11 +33,12 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
 
     if chars.next().unwrap() != '\n' { return false; }
 
-    state.pos += 1;
+    let mut pos = state.pos;
+    pos += 1;
 
     // skip leading whitespaces from next line
     while let Some(' ' | '\t') = chars.next() {
-        state.pos += 1;
+        pos += 1;
     }
 
     // '  \n' -> hardbreak
@@ -45,6 +46,7 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
         let mut tail_size = 0;
 
         loop {
+            // TODO: adjust srcmaps for backtrack
             match state.pending.pop() {
                 Some(' ') => tail_size += 1,
                 Some(ch) => {
@@ -55,12 +57,16 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
             }
         }
 
-        if tail_size >= 2 {
-            state.push(Token::new(Hardbreak));
+        let mut token = if tail_size >= 2 {
+            Token::new(Hardbreak)
         } else {
-            state.push(Token::new(Softbreak));
-        }
+            Token::new(Softbreak)
+        };
+
+        token.map = state.get_map(state.pos, pos);
+        state.push(token);
     }
 
+    state.pos = pos;
     true
 }

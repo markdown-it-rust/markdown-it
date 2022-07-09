@@ -246,4 +246,84 @@ mod test_sourcemaps {
             );
         });
     }
+
+    #[test]
+    fn newline() {
+        run("foo  \nbar\nbaz", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((2, 0), (2, 0)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[3], &map),
+                ((3, 0), (3, 0)),
+            );
+
+            /*let marks : Vec<_> = tokens[0].children.iter().map(|x| getmap(x, &map)).collect();
+            assert_eq!(marks, [
+                ((1, 1), (1, 5)),
+                ((2, 0), (2, 1)),
+                ((2, 1), (2, 3)),
+                ((3, 0), (3, 0)),
+                ((3, 1), (3, 3)),
+            ]);*/
+        });
+    }
+
+    #[test]
+    fn escapes() {
+        run("foo\\Δ\\*bar", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 4), (1, 5)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[2], &map),
+                ((1, 6), (1, 7)),
+            );
+        });
+
+        run("  foo  \\\n  bar  ", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 8), (2, 0)),
+            );
+        });
+    }
+
+    #[test]
+    fn entities() {
+        run("aa &nbsp; bb &#20; cc", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 4), (1, 9)),
+            );
+
+            assert_eq!(
+                getmap(&tokens[0].children[3], &map),
+                ((1, 14), (1, 18)),
+            );
+
+            /*let marks : Vec<_> = tokens[0].children.iter().map(|x| getmap(x, &map)).collect();
+            assert_eq!(marks, [
+                ((1, 1), (1, 5)),
+                ((2, 0), (2, 1)),
+                ((2, 1), (2, 3)),
+                ((3, 0), (3, 0)),
+                ((3, 1), (3, 3)),
+            ]);*/
+        });
+    }
+
+    #[test]
+    fn html_inline() {
+        run("foo <bar> baz", |tokens, map| {
+            assert_eq!(
+                getmap(&tokens[0].children[1], &map),
+                ((1, 5), (1, 9)),
+            );
+        });
+    }
 }
