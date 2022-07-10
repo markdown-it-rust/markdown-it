@@ -122,7 +122,7 @@ fn mark_tight_paragraphs(nodes: &mut Vec<Node>) {
 }
 
 fn rule(state: &mut block::State, silent: bool) -> bool {
-    if silent && state.parent_is_list { return false; }
+    if silent && (state.node.is::<BulletList>() || state.node.is::<OrderedList>()) { return false; }
 
     // if it's indented more than 3 spaces, it should be a code block
     if state.line_indent(state.line) >= 4 { return false; }
@@ -310,15 +310,11 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         if state.line_indent(next_line) >= 4 { break; }
 
         // fail if terminating block found
-        let old_parent_is_list = state.parent_is_list;
-        state.parent_is_list = true;
         for rule in state.md.block.ruler.iter() {
             if rule(state, true) {
-                state.parent_is_list = old_parent_is_list;
                 break 'outer;
             }
         }
-        state.parent_is_list = old_parent_is_list;
 
         current_line = state.get_line(state.line).to_owned();
 

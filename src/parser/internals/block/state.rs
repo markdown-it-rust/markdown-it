@@ -30,8 +30,6 @@ pub struct State<'a, 'b> where 'b: 'a {
     pub tight: bool,              // loose/tight mode for lists
     pub list_indent: Option<u32>, // indent of the current list block
 
-    pub parent_is_list: bool,
-
     pub level: u32,
 }
 
@@ -89,7 +87,6 @@ impl<'a, 'b> State<'a, 'b> {
             line_max: 0,
             tight: false,
             list_indent: None,
-            parent_is_list: false,
             level: 0,
         };
 
