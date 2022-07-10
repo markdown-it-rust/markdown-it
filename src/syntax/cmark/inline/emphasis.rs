@@ -1,6 +1,6 @@
 // Process *this* and _that_
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::syntax_base::generics::inline::emph_pair;
 
@@ -10,10 +10,10 @@ pub struct Em {
 }
 
 impl NodeValue for Em {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.open("em", &[]);
-        f.contents(&node.children);
-        f.close("em");
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.open("em", &[]);
+        fmt.contents(&node.children);
+        fmt.close("em");
     }
 }
 
@@ -23,10 +23,10 @@ pub struct Strong {
 }
 
 impl NodeValue for Strong {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.open("strong", &[]);
-        f.contents(&node.children);
-        f.close("strong");
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.open("strong", &[]);
+        fmt.contents(&node.children);
+        fmt.close("strong");
     }
 }
 

@@ -1,6 +1,6 @@
 // Process ![image](<src> "title")
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::syntax_base::builtin::Text;
 use crate::parser::internals::syntax_base::generics::inline::full_link;
@@ -12,7 +12,7 @@ pub struct Image {
 }
 
 impl NodeValue for Image {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let mut attrs : Vec<(&str, &str)> = Vec::new();
         attrs.push(("src", &self.url));
 
@@ -38,7 +38,7 @@ impl NodeValue for Image {
             attrs.push(("title", &*title));
         }
 
-        f.self_close("img", &attrs);
+        fmt.self_close("img", &attrs);
     }
 }
 

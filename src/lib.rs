@@ -6,7 +6,7 @@ use crate::parser::internals::sourcemap::SourcePos;
 use downcast_rs::{Downcast, impl_downcast};
 use std::fmt::Debug;
 
-pub trait Formatter {
+pub trait Renderer {
     fn open(&mut self, tag: &str, attrs: &[(&str, &str)]);
     fn close(&mut self, tag: &str);
     fn self_close(&mut self, tag: &str, attrs: &[(&str, &str)]);
@@ -33,12 +33,12 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new<T: NodeValue>(payload: T) -> Self {
+    pub fn new<T: NodeValue>(value: T) -> Self {
         Self {
             children:  Vec::new(),
             srcmap:    None,
             name:      std::any::type_name::<T>(),
-            value:     Box::new(payload),
+            value:     Box::new(value),
         }
     }
 
@@ -58,18 +58,18 @@ impl Node {
         self.value.downcast_mut::<T>()
     }
 
-    pub fn render(&self, f: &mut dyn Formatter) {
-        self.value.render(self, f);
+    pub fn render(&self, fmt: &mut dyn Renderer) {
+        self.value.render(self, fmt);
     }
 
-    pub fn replace<T: NodeValue>(&mut self, data: T) {
+    pub fn replace<T: NodeValue>(&mut self, value: T) {
         self.name = std::any::type_name::<T>();
-        self.value = Box::new(data);
+        self.value = Box::new(value);
     }
 }
 
 pub trait NodeValue : Debug + Downcast {
-    fn render(&self, node: &Node, f: &mut dyn Formatter);
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer);
 }
 
 impl_downcast!(NodeValue);

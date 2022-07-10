@@ -1,10 +1,20 @@
 mod block_inlines;
 mod inline_text;
 
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 
-pub use block_inlines::InlineNodes;
+pub use block_inlines::InlineNode;
 pub use inline_text::{Text, TextSpecial};
+
+#[derive(Debug)]
+pub struct Root;
+
+impl NodeValue for Root {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.contents(&node.children);
+    }
+}
 
 pub fn add(md: &mut MarkdownIt) {
     inline_text::add(md);

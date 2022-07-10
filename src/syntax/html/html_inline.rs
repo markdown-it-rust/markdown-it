@@ -1,6 +1,6 @@
 // Process escaped chars and hardbreaks
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::inline;
 use super::utils::regexps::*;
@@ -11,8 +11,8 @@ pub struct HtmlInline {
 }
 
 impl NodeValue for HtmlInline {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.text_raw(&self.content);
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.text_raw(&self.content);
     }
 }
 

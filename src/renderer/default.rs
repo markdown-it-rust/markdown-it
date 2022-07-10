@@ -1,26 +1,33 @@
-use crate::{Formatter, Node};
+use std::fmt::Debug;
+
+use crate::{Node, Renderer};
 use crate::parser::internals::common::escape_html;
 
-pub fn html(tokens: &[Node]) -> String {
-    let mut f = FormatterDefault::<false>::new();
-    f.contents(tokens);
-    f.into()
+pub fn html(node: &Node) -> String {
+    DefaultRenderer::new(false).render(node)
 }
 
-pub fn xhtml(tokens: &[Node]) -> String {
-    let mut f = FormatterDefault::<true>::new();
-    f.contents(tokens);
-    f.into()
+pub fn xhtml(node: &Node) -> String {
+    DefaultRenderer::new(true).render(node)
 }
 
 #[derive(Debug, Default)]
-pub(super) struct FormatterDefault<const XHTML: bool = false> {
+pub struct DefaultRenderer {
+    xhtml: bool,
     result: String,
 }
 
-impl<const XHTML: bool> FormatterDefault<XHTML> {
-    pub fn new() -> Self {
-        Self::default()
+impl DefaultRenderer {
+    pub fn new(xhtml: bool) -> Self {
+        Self {
+            xhtml,
+            result: String::new(),
+        }
+    }
+
+    pub fn render(mut self, node: &Node) -> String {
+        node.render(&mut self);
+        self.into()
     }
 
     fn make_attr(&mut self, name: &str, value: &str) {
@@ -39,13 +46,13 @@ impl<const XHTML: bool> FormatterDefault<XHTML> {
     }
 }
 
-impl<const XHTML: bool> From<FormatterDefault::<XHTML>> for String {
-    fn from(f: FormatterDefault::<XHTML>) -> Self {
+impl From<DefaultRenderer> for String {
+    fn from(f: DefaultRenderer) -> Self {
         f.result
     }
 }
 
-impl<const XHTML: bool> Formatter for FormatterDefault<XHTML> {
+impl Renderer for DefaultRenderer {
     fn open(&mut self, tag: &str, attrs: &[(&str, &str)]) {
         self.result.push('<');
         self.result.push_str(tag);
@@ -64,16 +71,16 @@ impl<const XHTML: bool> Formatter for FormatterDefault<XHTML> {
         self.result.push('<');
         self.result.push_str(tag);
         self.make_attrs(attrs);
-        if XHTML {
+        if self.xhtml {
             self.result.push(' ');
             self.result.push('/');
         }
         self.result.push('>');
     }
 
-    fn contents(&mut self, tokens: &[Node]) {
-        for token in tokens {
-            token.render(self);
+    fn contents(&mut self, nodes: &[Node]) {
+        for node in nodes.iter() {
+            node.render(self);
         }
     }
 

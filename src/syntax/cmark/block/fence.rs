@@ -1,6 +1,6 @@
 // fences (``` lang, ~~~ lang)
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
 use crate::parser::internals::common::unescape_all;
@@ -15,7 +15,7 @@ pub struct CodeFence {
 }
 
 impl NodeValue for CodeFence {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
         let info = unescape_all(&self.info);
         let mut split = info.split_whitespace();
         let lang_name = split.next().unwrap_or("");
@@ -27,13 +27,13 @@ impl NodeValue for CodeFence {
             attrs.push(("class", class.as_str()));
         }
 
-        f.cr();
-        f.open("pre", &[]);
-            f.open("code", &attrs);
-            f.text(&self.content);
-            f.close("code");
-        f.close("pre");
-        f.cr();
+        fmt.cr();
+        fmt.open("pre", &[]);
+            fmt.open("code", &attrs);
+            fmt.text(&self.content);
+            fmt.close("code");
+        fmt.close("pre");
+        fmt.cr();
     }
 }
 

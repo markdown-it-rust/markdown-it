@@ -75,7 +75,7 @@ fn main() {
             }
         }
 
-        ast.walk(|node, lvl| {
+        ast.children.walk(|node, lvl| {
             print!("{}", "    ".repeat(lvl as usize));
             let name = &node.name()[node.name().rfind("::").map(|x| x+2).unwrap_or_default()..];
             if let Some(data) = node.cast::<Text>() {

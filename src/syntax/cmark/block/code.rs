@@ -1,6 +1,6 @@
 // Code block (4 spaces padded)
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
 
@@ -10,14 +10,14 @@ pub struct CodeBlock {
 }
 
 impl NodeValue for CodeBlock {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.cr();
-        f.open("pre", &[]);
-            f.open("code", &[]);
-            f.text(&self.content);
-            f.close("code");
-        f.close("pre");
-        f.cr();
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.cr();
+        fmt.open("pre", &[]);
+            fmt.open("code", &[]);
+            fmt.text(&self.content);
+            fmt.close("code");
+        fmt.close("pre");
+        fmt.cr();
     }
 }
 

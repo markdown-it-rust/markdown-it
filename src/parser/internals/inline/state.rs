@@ -46,12 +46,12 @@ fn is_punct_char(ch: char) -> bool {
 }
 
 #[derive(Debug)]
-pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
+pub struct State<'a, 'b> where 'b: 'a {
     pub src: String,
     pub srcmap: Vec<(usize, usize)>,
     pub env: &'b mut Env,
     pub md: &'a MarkdownIt,
-    pub tokens: &'c mut Vec<Node>,
+    pub node: Node,
 
     pub pos: usize,
     pub pos_max: usize,
@@ -68,13 +68,13 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     pub level: u32,
 }
 
-impl<'a, 'b, 'c> State<'a, 'b, 'c> {
+impl<'a, 'b> State<'a, 'b> {
     pub fn new(
         src: String,
         srcmap: Vec<(usize, usize)>,
         md: &'a MarkdownIt,
         env: &'b mut Env,
-        out_tokens: &'c mut Vec<Node>
+        node: Node,
     ) -> Self {
         let mut result = Self {
             pos:        0,
@@ -83,7 +83,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
             srcmap,
             env,
             md,
-            tokens:     out_tokens,
+            node,
             cache:      HashMap::new(),
             link_level: 0,
             level:      0,
@@ -104,20 +104,20 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     }
 
     pub fn trailing_text_push(&mut self, start: usize, end: usize) {
-        if let Some(text) = self.tokens.last_mut()
+        if let Some(text) = self.node.children.last_mut()
                                        .and_then(|t| t.cast_mut::<Text>()) {
             text.content.push_str(&self.src[start..end]);
         } else {
             let mut node = Node::new(Text { content: self.src[start..end].to_owned() });
             node.srcmap = self.get_map(start, end);
-            self.tokens.push(node);
+            self.node.children.push(node);
         }
     }
 
     pub fn trailing_text_pop(&mut self, count: usize) {
         if count == 0 { return; }
 
-        let mut node = self.tokens.pop().unwrap();
+        let mut node = self.node.children.pop().unwrap();
         let text = node.cast_mut::<Text>().unwrap();
         if text.content.len() == count {
             // do nothing, just remove the node
@@ -130,13 +130,13 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
                 let new_end = self.get_source_pos_for(end - count);
                 node.srcmap = Some(SourcePos::new(start, new_end));
             }
-            self.tokens.push(node);
+            self.node.children.push(node);
         }
     }
 
     pub fn trailing_text_get(&self) -> &str {
-        if let Some(text) = self.tokens.last()
-                                       .and_then(|t| t.cast::<Text>()) {
+        if let Some(text) = self.node.children.last()
+                                .and_then(|t| t.cast::<Text>()) {
             text.content.as_str()
         } else {
             ""
@@ -144,7 +144,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     }
 
     pub fn push(&mut self, node: Node) {
-        self.tokens.push(node);
+        self.node.children.push(node);
     }
 
     // Scan a sequence of emphasis-like markers, and determine whether

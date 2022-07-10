@@ -54,7 +54,7 @@ fn rule(
         // so all that's left to do is to call tokenizer.
         //
         if !silent {
-            let old_tokens = std::mem::take(state.tokens);
+            let old_node = std::mem::replace(&mut state.node, f(result.href, result.title));
             let max = state.pos_max;
 
             state.link_level += 1;
@@ -63,12 +63,9 @@ fn rule(
             state.md.inline.tokenize(state);
             state.pos_max = max;
 
-            let children = std::mem::replace(state.tokens, old_tokens);
-
-            let mut token = f(result.href, result.title);
-            token.srcmap = state.get_map(start, result.end);
-            token.children = children;
-            state.push(token);
+            let mut node = std::mem::replace(&mut state.node, old_node);
+            node.srcmap = state.get_map(start, result.end);
+            state.push(node);
             state.link_level -= 1;
         }
 

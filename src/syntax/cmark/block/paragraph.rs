@@ -1,9 +1,9 @@
 // Paragraph
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
-use crate::parser::internals::syntax_base::builtin::InlineNodes;
+use crate::parser::internals::syntax_base::builtin::InlineNode;
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("paragraph", rule)
@@ -14,12 +14,12 @@ pub fn add(md: &mut MarkdownIt) {
 pub struct Paragraph;
 
 impl NodeValue for Paragraph {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.cr();
-        f.open("p", &[]);
-        f.contents(&node.children);
-        f.close("p");
-        f.cr();
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.cr();
+        fmt.open("p", &[]);
+        fmt.contents(&node.children);
+        fmt.close("p");
+        fmt.cr();
     }
 }
 
@@ -59,7 +59,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     let mut node = Node::new(Paragraph);
     node.srcmap = state.get_map(start_line, state.line - 1);
-    node.children.push(Node::new(InlineNodes {
+    node.children.push(Node::new(InlineNode {
         content,
         mapping,
     }));

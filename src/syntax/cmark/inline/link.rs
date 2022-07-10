@@ -1,6 +1,6 @@
 // Process [link](<to> "stuff")
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::syntax_base::generics::inline::full_link;
 
@@ -11,7 +11,7 @@ pub struct Link {
 }
 
 impl NodeValue for Link {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let mut attrs : Vec<(&str, &str)> = Vec::with_capacity(2);
         attrs.push(("href", &self.url));
 
@@ -19,9 +19,9 @@ impl NodeValue for Link {
             attrs.push(("title", &*title));
         }
 
-        f.open("a", &attrs);
-        f.contents(&node.children);
-        f.close("a");
+        fmt.open("a", &attrs);
+        fmt.contents(&node.children);
+        fmt.close("a");
     }
 }
 

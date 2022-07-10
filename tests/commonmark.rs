@@ -1,10 +1,10 @@
 use markdown_it::{self, Node};
 
 // TODO: generic walk
-fn check_srcmaps(tokens: &Vec<Node>) {
-    for t in tokens.iter() {
-        assert!(t.srcmap.is_some());
-        check_srcmaps(&t.children);
+fn check_srcmaps(node: &Node) {
+    assert!(node.srcmap.is_some());
+    for n in node.children.iter() {
+        check_srcmaps(&n);
     }
 }
 
@@ -13,9 +13,9 @@ fn run(input: &str, output: &str) {
     let md = &mut markdown_it::parser::new();
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
-    let tokens = md.parse(&(input.to_owned() + "\n"));
-    check_srcmaps(&tokens);
-    let result = markdown_it::renderer::xhtml(&tokens);
+    let node = md.parse(&(input.to_owned() + "\n"));
+    check_srcmaps(&node);
+    let result = markdown_it::renderer::xhtml(&node);
     assert_eq!(result, output);
 }
 

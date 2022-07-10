@@ -71,11 +71,9 @@ impl MarkdownIt {
         Self::default()
     }
 
-    pub fn parse(&self, src: &str) -> Vec<Node> {
+    pub fn parse(&self, src: &str) -> Node {
         let src = &normalize_text(src);
-        let mut nodes = Vec::new();
-        self.block.parse(src.to_string(), self, &mut env::Env::new(), &mut nodes);
-        nodes
+        self.block.parse(src.to_string(), self, &mut env::Env::new())
     }
 }
 

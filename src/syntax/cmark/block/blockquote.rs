@@ -1,6 +1,6 @@
 // Block quotes
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
 use crate::parser::internals::common::find_indent_of;
@@ -9,14 +9,14 @@ use crate::parser::internals::common::find_indent_of;
 pub struct Blockquote;
 
 impl NodeValue for Blockquote {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.cr();
-        f.open("blockquote", &[]);
-        f.cr();
-        f.contents(&node.children);
-        f.cr();
-        f.close("blockquote");
-        f.cr();
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.cr();
+        fmt.open("blockquote", &[]);
+        fmt.cr();
+        fmt.contents(&node.children);
+        fmt.cr();
+        fmt.close("blockquote");
+        fmt.cr();
     }
 }
 
@@ -146,14 +146,12 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     let old_indent = state.blk_indent;
     state.blk_indent = 0;
 
-    let old_tokens = std::mem::take(state.tokens);
+    let old_node = std::mem::replace(&mut state.node, Node::new(Blockquote));
     let old_line_max = state.line_max;
     state.line = start_line;
     state.line_max = next_line;
     state.md.block.tokenize(state);
     state.line_max = old_line_max;
-
-    let children = std::mem::replace(state.tokens, old_tokens);
 
     // Restore original tShift; this might not be necessary since the parser
     // has already been here, but just to make sure we can do that.
@@ -162,8 +160,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     }
     state.blk_indent = old_indent;
 
-    let mut node = Node::new(Blockquote);
-    node.children = children;
+    let mut node = std::mem::replace(&mut state.node, old_node);
     node.srcmap = state.get_map(start_line, next_line - 1);
     state.push(node);
 

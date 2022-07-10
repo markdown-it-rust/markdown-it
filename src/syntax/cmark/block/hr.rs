@@ -1,6 +1,6 @@
 // Horizontal rule
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
 
@@ -11,10 +11,10 @@ pub struct ThematicBreak {
 }
 
 impl NodeValue for ThematicBreak {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.cr();
-        f.self_close("hr", &[]);
-        f.cr();
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.cr();
+        fmt.self_close("hr", &[]);
+        fmt.cr();
     }
 }
 

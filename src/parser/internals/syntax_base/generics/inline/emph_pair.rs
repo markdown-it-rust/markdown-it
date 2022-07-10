@@ -1,7 +1,7 @@
 use derivative::Derivative;
 use std::cmp::min;
 use std::collections::HashMap;
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::env;
 use crate::parser::internals::inline;
@@ -34,7 +34,7 @@ pub struct EmphMarker {
 
 // this node is supposed to be replaced by actual emph or text node
 impl NodeValue for EmphMarker {
-    fn render(&self, _: &Node, _: &mut dyn Formatter) {
+    fn render(&self, _: &Node, _: &mut dyn Renderer) {
         unimplemented!()
     }
 }
@@ -93,7 +93,7 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
             state.push(token);
             state.pos += scanned.length;
 
-            state.env.get_or_insert::<Delimiters>().push(scanned, state.tokens.len() - 1);
+            state.env.get_or_insert::<Delimiters>().push(scanned, state.node.children.len() - 1);
             true
         });
     }
@@ -124,7 +124,7 @@ fn rule(state: &mut inline::State) {
     struct AuxInfo { remaining: usize, out_idx: usize, jumps: usize }
     let mut auxinfo = Vec::with_capacity(delimiters.0.len());
 
-    for (idx, mut token) in std::mem::take(state.tokens).into_iter().enumerate() {
+    for (idx, mut token) in std::mem::take(&mut state.node.children).into_iter().enumerate() {
         let mut delim = None;
 
         // find a delimiter corresponding to this token,
@@ -238,7 +238,7 @@ fn rule(state: &mut inline::State) {
         out_tokens.push(token);
     }
 
-    *state.tokens = fragments_join(out_tokens);
+    state.node.children = fragments_join(out_tokens);
 }
 
 fn is_odd_match(opener: &Delimiter, closer: &Delimiter) -> bool {

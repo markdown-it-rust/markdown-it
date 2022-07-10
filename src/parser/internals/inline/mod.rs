@@ -9,6 +9,8 @@ use crate::parser::internals::env::Env;
 use crate::parser::internals::env::scope::{Inline, InlineLvl};
 use crate::parser::internals::ruler::Ruler;
 
+use super::syntax_base::builtin::Root;
+
 pub type Rule = fn (&mut State, silent: bool) -> bool;
 pub type Rule2 = fn (&mut State);
 
@@ -119,10 +121,12 @@ impl Parser {
 
     // Process input string and push inline tokens into `out_tokens`
     //
-    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, md: &MarkdownIt, env: &mut Env, out_nodes: &mut Vec<Node>) {
-        let mut state = State::new(src, srcmap, md, env, out_nodes);
+    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, md: &MarkdownIt, env: &mut Env) -> Node {
+        let node = Node::new(Root);
+        let mut state = State::new(src, srcmap, md, env, node);
         state.env.state_push::<Inline>();
         self.tokenize(&mut state);
         state.env.state_pop::<Inline>();
+        state.node
     }
 }

@@ -1,17 +1,16 @@
-use crate::Formatter;
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::internals::block;
 use crate::parser::MarkdownIt;
-use crate::{Node, NodeValue};
 
 #[derive(Debug)]
-pub struct InlineNodes {
+pub struct InlineNode {
     pub content: String,
     pub mapping: Vec<(usize, usize)>,
 }
 
 // this token is supposed to be replaced by one or many actual tokens by inline rule
-impl NodeValue for InlineNodes {
-    fn render(&self, _: &Node, _: &mut dyn Formatter) {
+impl NodeValue for InlineNode {
+    fn render(&self, _: &Node, _: &mut dyn Renderer) {
         unimplemented!()
     }
 }
@@ -22,25 +21,24 @@ pub fn add(md: &mut MarkdownIt) {
 }
 
 pub fn rule(state: &mut block::State) {
-    let mut tokens = std::mem::take(state.tokens);
-    walk(state, &mut tokens);
-    *state.tokens = tokens;
+    let mut nodes = std::mem::take(&mut state.node.children);
+    walk(state, &mut nodes);
+    state.node.children = nodes;
 }
 
-pub fn walk(state: &mut block::State, tokens: &mut Vec<Node>) {
+pub fn walk(state: &mut block::State, nodes: &mut Vec<Node>) {
     let mut idx = 0;
-    while idx < tokens.len() {
+    while idx < nodes.len() {
         // TODO: generic walk
-        if let Some(data) = tokens[idx].cast_mut::<InlineNodes>() {
-            let mut children = Vec::new();
+        if let Some(data) = nodes[idx].cast_mut::<InlineNode>() {
             let content = std::mem::take(&mut data.content);
             let mapping = std::mem::take(&mut data.mapping);
-            state.md.inline.parse(content, mapping, state.md, state.env, &mut children);
-            let len = children.len();
-            tokens.splice(idx..idx+1, children);
+            let node = state.md.inline.parse(content, mapping, state.md, state.env);
+            let len = node.children.len();
+            nodes.splice(idx..idx+1, node.children);
             idx += len;
         } else {
-            walk(state, &mut tokens[idx].children);
+            walk(state, &mut nodes[idx].children);
             idx += 1;
         }
     }

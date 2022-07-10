@@ -2,28 +2,28 @@ use markdown_it;
 use markdown_it::Node;
 use markdown_it::parser::internals::sourcemap::CharMapping;
 
-fn run(input: &str, f: fn (&[Node], CharMapping)) {
+fn run(input: &str, f: fn (&Node, CharMapping)) {
     let md = &mut markdown_it::parser::new();
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
-    let tokens = md.parse(&input);
-    f(&tokens, CharMapping::new(input));
+    let node = md.parse(&input);
+    f(&node, CharMapping::new(input));
 }
 
-fn getmap(token: &Node, map: &CharMapping) -> ((u32, u32), (u32, u32)) {
-    token.srcmap.unwrap().get_positions(map)
+fn getmap(node: &Node, map: &CharMapping) -> ((u32, u32), (u32, u32)) {
+    node.srcmap.unwrap().get_positions(map)
 }
 
 #[test]
 fn paragraph() {
     // same as commonmark.js
-    run("foo   \n     \n     \n\n  barbaz\n\tquux   \n", |tokens, map| {
+    run("foo   \n     \n     \n\n  barbaz\n\tquux   \n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 1), (1, 6)),
         );
         assert_eq!(
-            getmap(&tokens[1], &map),
+            getmap(&node.children[1], &map),
             ((5, 3), (6, 8)),
         );
     });
@@ -32,13 +32,13 @@ fn paragraph() {
 #[test]
 fn hr() {
     // same as commonmark.js
-    run(" ---  \n\n  * * *\n", |tokens, map| {
+    run(" ---  \n\n  * * *\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 2), (1, 6)),
         );
         assert_eq!(
-            getmap(&tokens[1], &map),
+            getmap(&node.children[1], &map),
             ((3, 3), (3, 7)),
         );
     });
@@ -47,16 +47,16 @@ fn hr() {
 #[test]
 fn heading() {
     // same as commonmark.js
-    run("  \n  ### foo ###  \n\n", |tokens, map| {
+    run("  \n  ### foo ###  \n\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((2, 3), (2, 15)),
         );
     });
 
-    run("  #\n", |tokens, map| {
+    run("  #\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 3), (1, 3)),
         );
     });
@@ -65,9 +65,9 @@ fn heading() {
 #[test]
 fn lheading() {
     // same as commonmark.js
-    run("  foo\n bar\n ----\n\n", |tokens, map| {
+    run("  foo\n bar\n ----\n\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 3), (3, 5)),
         );
     });
@@ -76,30 +76,30 @@ fn lheading() {
 #[test]
 fn fence() {
     // same as commonmark.js
-    run("  ~~~ foo ~~~\n", |tokens, map| {
+    run("  ~~~ foo ~~~\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 3), (1, 13)),
         );
     });
 
-    run("  ```\n 12\n", |tokens, map| {
+    run("  ```\n 12\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 3), (2, 3)),
         );
     });
 
-    run("```\n\n\n\n", |tokens, map| {
+    run("```\n\n\n\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 1), (4, 0)),
         );
     });
 
-    run("~~~\na\nb\n~~~  \nc\n", |tokens, map| {
+    run("~~~\na\nb\n~~~  \nc\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 1), (4, 5)),
         );
     });
@@ -108,16 +108,16 @@ fn fence() {
 #[test]
 fn html_block() {
     // same as commonmark.js
-    run("  <div>\n", |tokens, map| {
+    run("  <div>\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 3), (1, 7)),
         );
     });
 
-    run("<div>\n</div>  \n", |tokens, map| {
+    run("<div>\n</div>  \n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 1), (2, 8)),
         );
     });
@@ -126,25 +126,25 @@ fn html_block() {
 #[test]
 fn code_block() {
     // same as commonmark.js
-    run("      foo\n", |tokens, map| {
+    run("      foo\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 5), (1, 9)),
         );
     });
 
-    run("   a\n    b\n     c\n", |tokens, map| {
+    run("   a\n    b\n     c\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 4), (3, 6)),
         );
     });
 
     // this I believe to be error in commonmark, code block
     // only have 1 line as per spec, but cmark reports 3 lines
-    run("    foobar  \n    \n    \n\nbar\n", |tokens, map| {
+    run("    foobar  \n    \n    \n\nbar\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 5), (1, 12)),
         );
     });
@@ -153,16 +153,16 @@ fn code_block() {
 #[test]
 fn blockquotes() {
     // same as commonmark.js
-    run("  > foo  \n", |tokens, map| {
+    run("  > foo  \n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 3), (1, 9)),
         );
     });
 
-    run("> foo\nbar\n\n", |tokens, map| {
+    run("> foo\nbar\n\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 1), (2, 3)),
         );
     });
@@ -171,31 +171,31 @@ fn blockquotes() {
 #[test]
 fn lists() {
     // same as commonmark.js
-    run(" 1. foo\n 2. bar\n", |tokens, map| {
+    run(" 1. foo\n 2. bar\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 2), (2, 7)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[0], &map),
+            getmap(&node.children[0].children[0], &map),
             ((1, 2), (1, 7)),
         );
     });
 
-    run(" - foo\n\n - bar\n", |tokens, map| {
+    run(" - foo\n\n - bar\n", |node, map| {
         assert_eq!(
-            getmap(&tokens[0], &map),
+            getmap(&node.children[0], &map),
             ((1, 2), (3, 6)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[0], &map),
+            getmap(&node.children[0].children[0], &map),
             ((1, 2), (2, 0)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((3, 2), (3, 6)),
         );
     });
@@ -203,14 +203,14 @@ fn lists() {
 
 #[test]
 fn autolinks() {
-    run("foo <http://google.com> bar", |tokens, map| {
+    run("foo <http://google.com> bar", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 5), (1, 23)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[1].children[0], &map),
+            getmap(&node.children[0].children[1].children[0], &map),
             ((1, 6), (1, 22)),
         );
     });
@@ -218,26 +218,26 @@ fn autolinks() {
 
 #[test]
 fn emphasis() {
-    run("***foo***", |tokens, map| {
+    run("***foo***", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[0], &map),
+            getmap(&node.children[0].children[0], &map),
             ((1, 1), (1, 9)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[0].children[0], &map),
+            getmap(&node.children[0].children[0].children[0], &map),
             ((1, 2), (1, 8)),
         );
     });
 
-    run("aaa **bb _cc_ dd** eee", |tokens, map| {
+    run("aaa **bb _cc_ dd** eee", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 5), (1, 18)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[1].children[1], &map),
+            getmap(&node.children[0].children[1].children[1], &map),
             ((1, 10), (1, 13)),
         );
     });
@@ -245,23 +245,23 @@ fn emphasis() {
 
 #[test]
 fn newline() {
-    run("foo  \nbar \nbaz\nquux", |tokens, map| {
+    run("foo  \nbar \nbaz\nquux", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 4), (2, 0)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[3], &map),
+            getmap(&node.children[0].children[3], &map),
             ((2, 4), (3, 0)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[5], &map),
+            getmap(&node.children[0].children[5], &map),
             ((4, 0), (4, 0)),
         );
 
-        /*let marks : Vec<_> = tokens[0].children.iter().map(|x| getmap(x, &map)).collect();
+        /*let marks : Vec<_> = node.children[0].children.iter().map(|x| getmap(x, &map)).collect();
         assert_eq!(marks, [
             ((1, 1), (1, 5)),
             ((2, 0), (2, 1)),
@@ -274,21 +274,21 @@ fn newline() {
 
 #[test]
 fn escapes() {
-    run("foo\\Δ\\*bar", |tokens, map| {
+    run("foo\\Δ\\*bar", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 4), (1, 5)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[2], &map),
+            getmap(&node.children[0].children[2], &map),
             ((1, 6), (1, 7)),
         );
     });
 
-    run("  foo  \\\n  bar  ", |tokens, map| {
+    run("  foo  \\\n  bar  ", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 8), (2, 0)),
         );
     });
@@ -296,18 +296,18 @@ fn escapes() {
 
 #[test]
 fn entities() {
-    run("aa &nbsp; bb &#20; cc", |tokens, map| {
+    run("aa &nbsp; bb &#20; cc", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 4), (1, 9)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[3], &map),
+            getmap(&node.children[0].children[3], &map),
             ((1, 14), (1, 18)),
         );
 
-        /*let marks : Vec<_> = tokens[0].children.iter().map(|x| getmap(x, &map)).collect();
+        /*let marks : Vec<_> = node.children[0].children.iter().map(|x| getmap(x, &map)).collect();
         assert_eq!(marks, [
             ((1, 1), (1, 5)),
             ((2, 0), (2, 1)),
@@ -320,9 +320,9 @@ fn entities() {
 
 #[test]
 fn html_inline() {
-    run("foo <bar> baz", |tokens, map| {
+    run("foo <bar> baz", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 5), (1, 9)),
         );
     });
@@ -330,26 +330,26 @@ fn html_inline() {
 
 #[test]
 fn backticks() {
-    run("foo ```bar``` baz", |tokens, map| {
+    run("foo ```bar``` baz", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 5), (1, 13)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[1].children[0], &map),
+            getmap(&node.children[0].children[1].children[0], &map),
             ((1, 8), (1, 10)),
         );
     });
 
-    run("foo ` bar ` baz", |tokens, map| {
+    run("foo ` bar ` baz", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 5), (1, 11)),
         );
 
         assert_eq!(
-            getmap(&tokens[0].children[1].children[0], &map),
+            getmap(&node.children[0].children[1].children[0], &map),
             ((1, 7), (1, 9)),
         );
     });
@@ -357,16 +357,16 @@ fn backticks() {
 
 #[test]
 fn imglink() {
-    run("foo [bar](baz) quux", |tokens, map| {
+    run("foo [bar](baz) quux", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 5), (1, 14)),
         );
     });
 
-    run("foo ![bar](baz) quux", |tokens, map| {
+    run("foo ![bar](baz) quux", |node, map| {
         assert_eq!(
-            getmap(&tokens[0].children[1], &map),
+            getmap(&node.children[0].children[1], &map),
             ((1, 5), (1, 15)),
         );
     });

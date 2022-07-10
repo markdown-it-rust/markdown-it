@@ -1,6 +1,6 @@
 // ~~strike through~~
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::syntax_base::generics::inline::emph_pair;
 
@@ -10,10 +10,10 @@ pub struct Strikethrough {
 }
 
 impl NodeValue for Strikethrough {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.open("s", &[]);
-        f.contents(&node.children);
-        f.close("s");
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.open("s", &[]);
+        fmt.contents(&node.children);
+        fmt.close("s");
     }
 }
 

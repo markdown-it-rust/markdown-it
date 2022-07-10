@@ -2,7 +2,7 @@
 //
 use once_cell::sync::Lazy;
 use regex::Regex;
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
 use super::utils::blocks::*;
@@ -14,10 +14,10 @@ pub struct HtmlBlock {
 }
 
 impl NodeValue for HtmlBlock {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.cr();
-        f.text_raw(&self.content);
-        f.cr();
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.cr();
+        fmt.text_raw(&self.content);
+        fmt.cr();
     }
 }
 

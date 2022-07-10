@@ -1,10 +1,9 @@
 // Skip text characters for text token, place those to pending buffer
 // and increment current pos
 //
-use crate::Formatter;
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::internals::inline;
 use crate::parser::MarkdownIt;
-use crate::{Node, NodeValue};
 
 #[derive(Debug)]
 pub struct Text {
@@ -12,8 +11,8 @@ pub struct Text {
 }
 
 impl NodeValue for Text {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.text(&self.content);
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.text(&self.content);
     }
 }
 
@@ -25,8 +24,8 @@ pub struct TextSpecial {
 }
 
 impl NodeValue for TextSpecial {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.text(&self.content);
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.text(&self.content);
     }
 }
 

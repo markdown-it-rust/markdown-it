@@ -7,7 +7,7 @@ use crate::parser::internals::env::Env;
 use crate::parser::internals::sourcemap::SourcePos;
 
 #[derive(Debug)]
-pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
+pub struct State<'a, 'b> where 'b: 'a {
     pub src: String,
 
     // link to parser instance
@@ -18,7 +18,7 @@ pub struct State<'a, 'b, 'c> where 'c: 'b, 'b: 'a {
     //
     // Internal state vartiables
     //
-    pub tokens: &'c mut Vec<Node>,
+    pub node: Node,
 
     pub line_offsets: Vec<LineOffset>,
 
@@ -76,13 +76,13 @@ pub struct LineOffset {
     pub indent_nonspace: i32,
 }
 
-impl<'a, 'b, 'c> State<'a, 'b, 'c> {
-    pub fn new(src: String, md: &'a MarkdownIt, env: &'b mut Env, out_tokens: &'c mut Vec<Node>) -> Self {
+impl<'a, 'b> State<'a, 'b> {
+    pub fn new(src: String, md: &'a MarkdownIt, env: &'b mut Env, node: Node) -> Self {
         let mut result = Self {
             src,
             md,
             env,
-            tokens: out_tokens,
+            node,
             line_offsets: Vec::new(),
             blk_indent: 0,
             line: 0,
@@ -154,7 +154,7 @@ impl<'a, 'b, 'c> State<'a, 'b, 'c> {
     // Push new token to "stream".
     //
     pub fn push(&mut self, node: Node) {
-        self.tokens.push(node);
+        self.node.children.push(node);
     }
 
     pub fn is_empty(&self, line: usize) -> bool {

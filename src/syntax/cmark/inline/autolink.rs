@@ -2,7 +2,7 @@
 //
 use once_cell::sync::Lazy;
 use regex::Regex;
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::inline;
 use crate::parser::internals::syntax_base::builtin::Text;
@@ -13,10 +13,10 @@ pub struct AutoLink {
 }
 
 impl NodeValue for AutoLink {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.open("a", &[("href", &self.url)]);
-        f.contents(&node.children);
-        f.close("a");
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.open("a", &[("href", &self.url)]);
+        fmt.contents(&node.children);
+        fmt.close("a");
     }
 }
 

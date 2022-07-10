@@ -1,6 +1,6 @@
 // Parse backticks
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::syntax_base::generics::inline::code_pair;
 
@@ -11,10 +11,10 @@ pub struct CodeInline {
 }
 
 impl NodeValue for CodeInline {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.open("code", &[]);
-        f.contents(&node.children);
-        f.close("code");
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.open("code", &[]);
+        fmt.contents(&node.children);
+        fmt.close("code");
     }
 }
 

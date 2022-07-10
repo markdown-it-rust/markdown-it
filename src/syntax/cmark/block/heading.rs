@@ -1,9 +1,9 @@
 // heading (#, ##, ...)
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
-use crate::parser::internals::syntax_base::builtin::InlineNodes;
+use crate::parser::internals::syntax_base::builtin::InlineNode;
 
 #[derive(Debug)]
 pub struct ATXHeading {
@@ -11,15 +11,15 @@ pub struct ATXHeading {
 }
 
 impl NodeValue for ATXHeading {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         static TAG : [&str; 6] = [ "h1", "h2", "h3", "h4", "h5", "h6" ];
         debug_assert!(self.level >= 1 && self.level <= 6);
 
-        f.cr();
-        f.open(TAG[self.level as usize - 1], &[]);
-        f.contents(&node.children);
-        f.close(TAG[self.level as usize - 1]);
-        f.cr();
+        fmt.cr();
+        fmt.open(TAG[self.level as usize - 1], &[]);
+        fmt.contents(&node.children);
+        fmt.close(TAG[self.level as usize - 1]);
+        fmt.cr();
     }
 }
 
@@ -80,7 +80,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     let mut node = Node::new(ATXHeading { level });
     node.srcmap = state.get_map(state.line, state.line);
-    node.children.push(Node::new(InlineNodes {
+    node.children.push(Node::new(InlineNode {
         content,
         mapping,
     }));

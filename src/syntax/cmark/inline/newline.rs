@@ -1,6 +1,6 @@
 // Process '\n'
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::inline;
 
@@ -8,9 +8,9 @@ use crate::parser::internals::inline;
 pub struct Hardbreak;
 
 impl NodeValue for Hardbreak {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.self_close("br", &[]);
-        f.cr();
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.self_close("br", &[]);
+        fmt.cr();
     }
 }
 
@@ -18,8 +18,8 @@ impl NodeValue for Hardbreak {
 pub struct Softbreak;
 
 impl NodeValue for Softbreak {
-    fn render(&self, _: &Node, f: &mut dyn Formatter) {
-        f.cr();
+    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+        fmt.cr();
     }
 }
 

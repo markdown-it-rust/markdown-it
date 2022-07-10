@@ -9,6 +9,9 @@ use crate::parser::internals::env::Env;
 use crate::parser::internals::env::scope::{BlockLvl, Block};
 use crate::parser::internals::ruler::Ruler;
 
+use super::sourcemap::SourcePos;
+use super::syntax_base::builtin::Root;
+
 pub type Rule = fn (&mut State, bool) -> bool;
 pub type Rule2 = fn (&mut State);
 
@@ -85,8 +88,11 @@ impl Parser {
 
     // Process input string and push block tokens into `out_tokens`
     //
-    pub fn parse(&self, src: String, md: &MarkdownIt, env: &mut Env, out_nodes: &mut Vec<Node>) {
-        let mut state = State::new(src, md, env, out_nodes);
+    pub fn parse(&self, src: String, md: &MarkdownIt, env: &mut Env) -> Node {
+        let mut node = Node::new(Root);
+        node.srcmap = Some(SourcePos::new(0, src.len()));
+
+        let mut state = State::new(src, md, env, node);
         state.env.state_push::<Block>();
         state.env.state_push::<BlockLvl>();
 
@@ -98,5 +104,6 @@ impl Parser {
 
         state.env.state_pop::<BlockLvl>();
         state.env.state_pop::<Block>();
+        state.node
     }
 }

@@ -1,9 +1,9 @@
 // lheading (---, ===)
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
-use crate::parser::internals::syntax_base::builtin::InlineNodes;
+use crate::parser::internals::syntax_base::builtin::InlineNode;
 
 #[derive(Debug)]
 pub struct SetextHeader {
@@ -12,15 +12,15 @@ pub struct SetextHeader {
 }
 
 impl NodeValue for SetextHeader {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         static TAG : [&str; 2] = [ "h1", "h2" ];
         debug_assert!(self.level >= 1 && self.level <= 2);
 
-        f.cr();
-        f.open(TAG[self.level as usize - 1], &[]);
-        f.contents(&node.children);
-        f.close(TAG[self.level as usize - 1]);
-        f.cr();
+        fmt.cr();
+        fmt.open(TAG[self.level as usize - 1], &[]);
+        fmt.contents(&node.children);
+        fmt.close(TAG[self.level as usize - 1]);
+        fmt.cr();
     }
 }
 
@@ -93,7 +93,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         marker: if level == 2 { '-' } else { '=' }
     });
     node.srcmap = state.get_map(start_line, state.line - 1);
-    node.children.push(Node::new(InlineNodes {
+    node.children.push(Node::new(InlineNode {
         content,
         mapping,
     }));

@@ -1,6 +1,6 @@
 // Lists
 //
-use crate::{Formatter, Node, NodeValue};
+use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
 use crate::parser::internals::common::find_indent_of;
@@ -13,20 +13,20 @@ pub struct OrderedList {
 }
 
 impl NodeValue for OrderedList {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let mut attrs = Vec::new();
         let start;
         if self.start != 1 {
             start = self.start.to_string();
             attrs.push(("start", start.as_str()));
         }
-        f.cr();
-        f.open("ol", &attrs);
-        f.cr();
-        f.contents(&node.children);
-        f.cr();
-        f.close("ol");
-        f.cr();
+        fmt.cr();
+        fmt.open("ol", &attrs);
+        fmt.cr();
+        fmt.contents(&node.children);
+        fmt.cr();
+        fmt.close("ol");
+        fmt.cr();
     }
 }
 
@@ -36,14 +36,14 @@ pub struct BulletList {
 }
 
 impl NodeValue for BulletList {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.cr();
-        f.open("ul", &[]);
-        f.cr();
-        f.contents(&node.children);
-        f.cr();
-        f.close("ul");
-        f.cr();
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.cr();
+        fmt.open("ul", &[]);
+        fmt.cr();
+        fmt.contents(&node.children);
+        fmt.cr();
+        fmt.close("ul");
+        fmt.cr();
     }
 }
 
@@ -51,11 +51,11 @@ impl NodeValue for BulletList {
 pub struct ListItem;
 
 impl NodeValue for ListItem {
-    fn render(&self, node: &Node, f: &mut dyn Formatter) {
-        f.open("li", &[]);
-        f.contents(&node.children);
-        f.close("li");
-        f.cr();
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+        fmt.open("li", &[]);
+        fmt.contents(&node.children);
+        fmt.close("li");
+        fmt.cr();
     }
 }
 
@@ -196,7 +196,19 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     // We should terminate list on style change. Remember first one to compare.
     let marker_char = current_line[..pos_after_marker].chars().next_back().unwrap();
-    let old_tokens_list = std::mem::take(state.tokens);
+
+    let new_node = if let Some(int) = marker_value {
+        Node::new(OrderedList {
+            start: int,
+            marker: marker_char
+        })
+    } else {
+        Node::new(BulletList {
+            marker: marker_char
+        })
+    };
+
+    let old_node = std::mem::replace(&mut state.node, new_node);
 
     //
     // Iterate list items
@@ -231,7 +243,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         let indent = initial + indent_after_marker;
 
         // Run subparser & write tokens
-        let old_tokens = std::mem::take(state.tokens);
+        let old_node = std::mem::replace(&mut state.node, Node::new(ListItem));
 
         // change current state, then restore it after parser subcall
         let old_tight = state.tight;
@@ -282,10 +294,8 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         state.tight = old_tight;
 
         let end_line = state.line;
-        let children = std::mem::replace(state.tokens, old_tokens);
-        let mut node = Node::new(ListItem);
+        let mut node = std::mem::replace(&mut state.node, old_node);
         node.srcmap = state.get_map(next_line, end_line - 1);
-        node.children = children;
         state.push(node);
         next_line = state.line;
 
@@ -331,30 +341,17 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         if next_marker_char != marker_char { break; }
     }
 
-    // Finalize list
-    let mut children = std::mem::replace(state.tokens, old_tokens_list);
-
     // mark paragraphs tight if needed
     if tight {
-        for child in children.iter_mut() {
+        for child in state.node.children.iter_mut() {
             debug_assert!(child.is::<ListItem>());
             mark_tight_paragraphs(&mut child.children);
         }
     }
 
-    let mut node = if let Some(int) = marker_value {
-        Node::new(OrderedList {
-            start: int,
-            marker: marker_char
-        })
-    } else {
-        Node::new(BulletList {
-            marker: marker_char
-        })
-    };
-
+    // Finalize list
+    let mut node = std::mem::replace(&mut state.node, old_node);
     node.srcmap = state.get_map(start_line, next_line - 1);
-    node.children = children;
     state.push(node);
 
     true
