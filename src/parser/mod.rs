@@ -1,3 +1,4 @@
+/// This part of API is not documented and not stable.
 pub mod internals;
 
 use std::borrow::Cow;

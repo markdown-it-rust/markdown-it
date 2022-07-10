@@ -46,7 +46,6 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
         let trailing_text = state.trailing_text_get();
 
         for ch in trailing_text.chars().rev() {
-            // TODO: adjust srcmaps for backtrack
             if ch == ' ' {
                 tail_size += 1;
             } else {

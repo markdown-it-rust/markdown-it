@@ -18,16 +18,8 @@ impl NodeValue for Image {
 
         let mut alt = String::new();
 
-        // TODO: generic walk
-        fn walk(nodes: &Vec<Node>, f: &mut dyn FnMut (&Node)) {
-            for node in nodes.iter() {
-                f(node);
-                walk(&node.children, f);
-            }
-        }
-
-        walk(&node.children, &mut |t| {
-            if let Some(text) = t.cast::<Text>() {
+        node.walk(|node, _| {
+            if let Some(text) = node.cast::<Text>() {
                 alt.push_str(text.content.as_str());
             }
         });

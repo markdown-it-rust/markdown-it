@@ -1,4 +1,3 @@
-use markdown_it::Node;
 use markdown_it::parser::internals::syntax_base::builtin::Text;
 use markdown_it::parser::internals::syntax_base::builtin::TextSpecial;
 use std::io::Read;
@@ -54,29 +53,11 @@ fn main() {
         markdown_it::syntax::html::add(md);
     }
 
-    let mut ast = md.parse(&source);
+    let ast = md.parse(&source);
 
     if show_tree {
-        pub trait NodeList {
-            fn walk(&mut self, f: fn (&mut Node, lvl: u32));
-        }
-
-        impl NodeList for Vec<Node> {
-            fn walk(&mut self, f: fn (&mut Node, lvl: u32)) {
-                walk(self, f, 0);
-            }
-        }
-
-        // TODO: generic walk
-        fn walk(nodes: &mut Vec<Node>, f: fn (&mut Node, lvl: u32), lvl: u32) {
-            for node in nodes.iter_mut() {
-                f(node, lvl);
-                walk(&mut node.children, f, lvl + 1);
-            }
-        }
-
-        ast.children.walk(|node, lvl| {
-            print!("{}", "    ".repeat(lvl as usize));
+        ast.walk(|node, depth| {
+            print!("{}", "    ".repeat(depth as usize));
             let name = &node.name()[node.name().rfind("::").map(|x| x+2).unwrap_or_default()..];
             if let Some(data) = node.cast::<Text>() {
                 println!("{}: {:?}", name, data.content);
@@ -86,7 +67,6 @@ fn main() {
                 println!("{}", name);
             }
         });
-
         return;
     }
 

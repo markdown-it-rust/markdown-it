@@ -7,6 +7,7 @@ fn run(input: &str, f: fn (&Node, CharMapping)) {
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
     let node = md.parse(&input);
+    node.walk(|node, _| assert!(node.srcmap.is_some()));
     f(&node, CharMapping::new(input));
 }
 

@@ -1,4 +1,3 @@
-use markdown_it;
 
 #[test]
 fn title_example() {
@@ -16,8 +15,9 @@ fn run(input: &str, output: &str) {
     let md = &mut markdown_it::parser::new();
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
-    let tokens = md.parse(&(input.to_owned() + "\n"));
-    let result = markdown_it::renderer::xhtml(&tokens);
+    let node = md.parse(&(input.to_owned() + "\n"));
+    node.walk(|node, _| assert!(node.srcmap.is_some()));
+    let result = markdown_it::renderer::xhtml(&node);
     assert_eq!(result, output);
 }
 

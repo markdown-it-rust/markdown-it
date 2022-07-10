@@ -29,7 +29,6 @@ pub fn rule(state: &mut block::State) {
 pub fn walk(state: &mut block::State, nodes: &mut Vec<Node>) {
     let mut idx = 0;
     while idx < nodes.len() {
-        // TODO: generic walk
         if let Some(data) = nodes[idx].cast_mut::<InlineNode>() {
             let content = std::mem::take(&mut data.content);
             let mapping = std::mem::take(&mut data.mapping);

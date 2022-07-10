@@ -16,19 +16,19 @@ pub trait Renderer {
     fn text_raw(&mut self, text: &str);
 }
 
-// Token class
+/// Single node in the CommonMark AST.
 #[derive(Debug)]
 pub struct Node {
-    // An array of child nodes (inline and img tokens)
+    /// Array of child nodes.
     pub children: Vec<Node>,
 
-    // Source map info. Format: `[ line_begin, line_end ]`
+    /// Source mapping info.
     pub srcmap: Option<SourcePos>,
 
-    // Type name used for debugging
+    /// Type name, used for debugging.
     name: &'static str,
 
-    // Storage for arbitrary token-specific data
+    /// Storage for arbitrary token-specific data.
     value: Box<dyn NodeValue>,
 }
 
@@ -66,8 +66,31 @@ impl Node {
         self.name = std::any::type_name::<T>();
         self.value = Box::new(value);
     }
+
+    pub fn walk(&self, mut f: impl FnMut(&Node, u32)) {
+        let mut stack = vec![(self, 0)];
+
+        while let Some((node, depth)) = stack.pop() {
+            f(node, depth);
+            for n in node.children.iter().rev() {
+                stack.push((n, depth + 1));
+            }
+        }
+    }
+
+    pub fn walk_mut(&mut self, mut f: impl FnMut(&mut Node, u32)) {
+        let mut stack = vec![(self, 0)];
+
+        while let Some((node, depth)) = stack.pop() {
+            f(node, depth);
+            for n in node.children.iter_mut().rev() {
+                stack.push((n, depth + 1));
+            }
+        }
+    }
 }
 
+/// Contents of the specific AST node.
 pub trait NodeValue : Debug + Downcast {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer);
 }

@@ -1,12 +1,3 @@
-use markdown_it::{self, Node};
-
-// TODO: generic walk
-fn check_srcmaps(node: &Node) {
-    assert!(node.srcmap.is_some());
-    for n in node.children.iter() {
-        check_srcmaps(&n);
-    }
-}
 
 fn run(input: &str, output: &str) {
     let output = if output == "" { "".to_owned() } else { output.to_owned() + "\n" };
@@ -14,7 +5,7 @@ fn run(input: &str, output: &str) {
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
-    check_srcmaps(&node);
+    node.walk(|node, _| assert!(node.srcmap.is_some()));
     let result = markdown_it::renderer::xhtml(&node);
     assert_eq!(result, output);
 }
