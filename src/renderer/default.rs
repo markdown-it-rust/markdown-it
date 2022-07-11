@@ -110,6 +110,7 @@ impl Renderer for DefaultRenderer {
     }
 
     fn cr(&mut self) {
+        // only push '\n' if last character isn't it
         match self.result.as_bytes().last() {
             Some(b'\n') | None => {}
             Some(_) => self.result.push('\n')

@@ -10,7 +10,8 @@ use std::fmt::Debug;
 ///
 /// Renderer is a struct that walks through AST and collects HTML from each node
 /// into internal buffer. You can implement your own renderer if you want to add
-/// custom HTML attributes or change whitespacing.
+/// custom HTML attributes or change whitespacing. See
+/// [DefaultRenderer](renderer::DefaultRenderer) for an example implementation.
 pub trait Renderer {
     /// Write opening html tag with attributes, e.g. `<a href="url">`.
     fn open(&mut self, tag: &str, attrs: &[(&str, &str)]);
@@ -45,6 +46,7 @@ pub struct Node {
 }
 
 impl Node {
+    /// Create a new [Node](Node) with a custom value.
     pub fn new<T: NodeValue>(value: T) -> Self {
         Self {
             children:  Vec::new(),
@@ -54,31 +56,40 @@ impl Node {
         }
     }
 
+    /// Return std::any::type_name() of node value.
     pub fn name(&self) -> &'static str {
         self.name
     }
 
+    /// Check that this node value is of given type.
     pub fn is<T: NodeValue>(&self) -> bool {
         self.value.is::<T>()
     }
 
+    /// Downcast node value to specific type.
     pub fn cast<T: NodeValue>(&self) -> Option<&T> {
         self.value.downcast_ref::<T>()
     }
 
+    /// Downcast node value to specific type.
     pub fn cast_mut<T: NodeValue>(&mut self) -> Option<&mut T> {
         self.value.downcast_mut::<T>()
     }
 
+    /// Render this node to html using Renderer API.
     pub fn render(&self, fmt: &mut dyn Renderer) {
         self.value.render(self, fmt);
     }
 
+    /// Replace custom value with another value (this is roughly equivalent
+    /// to replacing the entire node and copying children and sourcemaps).
     pub fn replace<T: NodeValue>(&mut self, value: T) {
         self.name = std::any::type_name::<T>();
         self.value = Box::new(value);
     }
 
+    /// Execute function `f` recursively on every member of AST tree
+    /// (using preorder deep-first search).
     pub fn walk(&self, mut f: impl FnMut(&Node, u32)) {
         let mut stack = vec![(self, 0)];
 
@@ -90,6 +101,8 @@ impl Node {
         }
     }
 
+    /// Execute function `f` recursively on every member of AST tree
+    /// (using preorder deep-first search).
     pub fn walk_mut(&mut self, mut f: impl FnMut(&mut Node, u32)) {
         let mut stack = vec![(self, 0)];
 
