@@ -3,6 +3,7 @@ use markdown_it::parser::internals::syntax_base::builtin::TextSpecial;
 use std::io::Read;
 use std::io::Write;
 
+#[cfg(not(tarpaulin_include))]
 fn main() {
     let mut input = "-".to_owned();
     let mut output = "-".to_owned();
@@ -72,7 +73,7 @@ fn main() {
 
     let result;
     if sourcepos {
-        result = markdown_it::renderer::html_with_srcmap(&source, &ast);
+        result = markdown_it::renderer::html_with_srcmap(&ast, &source);
     } else {
         result = markdown_it::renderer::html(&ast);
     }

@@ -1,4 +1,4 @@
-use crate::{Node, NodeValue, Renderer};
+use crate::{Node, NodeValue};
 use crate::parser::internals::block;
 use crate::parser::MarkdownIt;
 
@@ -9,11 +9,7 @@ pub struct InlineNode {
 }
 
 // this token is supposed to be replaced by one or many actual tokens by inline rule
-impl NodeValue for InlineNode {
-    fn render(&self, _: &Node, _: &mut dyn Renderer) {
-        unimplemented!()
-    }
-}
+impl NodeValue for InlineNode {}
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler2.add("builtin::inline", rule)

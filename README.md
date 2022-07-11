@@ -12,7 +12,7 @@ Rust port of [markdown-it](https://github.com/markdown-it/markdown-it) javascrip
 
 ### Usage
 
-```rs
+```rust
 let parser = &mut markdown_it::parser::new();
 markdown_it::syntax::cmark::add(parser);
 

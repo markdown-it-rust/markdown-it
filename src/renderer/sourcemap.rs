@@ -3,15 +3,46 @@ use crate::{Node, Renderer};
 use crate::parser::internals::sourcemap::{CharMapping, SourcePos};
 use super::default::DefaultRenderer;
 
-pub fn html_with_srcmap(source: &str, node: &Node) -> String {
-    SourceMapRenderer::new(false, source).render(node)
+/// Render HTML with source mapping, looks like this: `<stuff data-sourcepos="1:1-2:3">`.
+///
+/// Second argument is markdown source, example:
+/// ```rust
+/// let parser = &mut markdown_it::parser::new();
+/// markdown_it::syntax::cmark::add(parser);
+///
+/// let input = "# hello";
+/// let ast   = parser.parse(input);
+/// let html  = markdown_it::renderer::html_with_srcmap(&ast, input);
+///
+/// assert_eq!(html.trim(), r#"<h1 data-sourcepos="1:1-1:7">hello</h1>"#);
+/// ```
+pub fn html_with_srcmap(node: &Node, source: &str) -> String {
+    let mut fmt = SourceMapRenderer::new(false, source);
+    node.render(&mut fmt);
+    fmt.into()
 }
 
-pub fn xhtml_with_srcmap(source: &str, node: &Node) -> String {
-    SourceMapRenderer::new(true, source).render(node)
+/// Render XHTML with source mapping, looks like this: `<stuff data-sourcepos="1:2-2:3" />`.
+///
+/// Second argument is markdown source, example:
+/// ```rust
+/// let parser = &mut markdown_it::parser::new();
+/// markdown_it::syntax::cmark::add(parser);
+///
+/// let input = "# hello";
+/// let ast   = parser.parse(input);
+/// let html  = markdown_it::renderer::xhtml_with_srcmap(&ast, input);
+///
+/// assert_eq!(html.trim(), r#"<h1 data-sourcepos="1:1-1:7">hello</h1>"#);
+/// ```
+pub fn xhtml_with_srcmap(node: &Node, source: &str) -> String {
+    let mut fmt = SourceMapRenderer::new(true, source);
+    node.render(&mut fmt);
+    fmt.into()
 }
 
 #[derive(Debug)]
+/// Renderer that outputs source maps in `data-sourcepos` attribute.
 pub struct SourceMapRenderer {
     renderer: DefaultRenderer,
     mapping: CharMapping,
@@ -25,11 +56,6 @@ impl SourceMapRenderer {
             mapping: CharMapping::new(source),
             current_map: None,
         }
-    }
-
-    pub fn render(mut self, node: &Node) -> String {
-        node.render(&mut self);
-        self.renderer.into()
     }
 
     fn make_srcmap_attr(&mut self) -> Option<(&'static str, String)> {

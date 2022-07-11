@@ -3,15 +3,45 @@ use std::fmt::Debug;
 use crate::{Node, Renderer};
 use crate::parser::internals::common::escape_html;
 
+/// Render HTML, looks like this: `<stuff>`.
+///
+/// This is considered the default rendering mode, example:
+/// ```rust
+/// let parser = &mut markdown_it::parser::new();
+/// markdown_it::syntax::cmark::add(parser);
+///
+/// let ast  = parser.parse("![hello](world)");
+/// let html = markdown_it::renderer::html(&ast);
+///
+/// assert_eq!(html.trim(), r#"<p><img src="world" alt="hello"></p>"#);
+/// ```
+///
 pub fn html(node: &Node) -> String {
-    DefaultRenderer::new(false).render(node)
+    let mut fmt = DefaultRenderer::new(false);
+    node.render(&mut fmt);
+    fmt.into()
 }
 
+/// Render XHTML, looks like this: `<stuff />`.
+///
+/// This mode exists for compatibility with CommonMark tests, example:
+/// ```rust
+/// let parser = &mut markdown_it::parser::new();
+/// markdown_it::syntax::cmark::add(parser);
+///
+/// let ast  = parser.parse("![hello](world)");
+/// let html = markdown_it::renderer::xhtml(&ast);
+///
+/// assert_eq!(html.trim(), r#"<p><img src="world" alt="hello" /></p>"#);
+/// ```
 pub fn xhtml(node: &Node) -> String {
-    DefaultRenderer::new(true).render(node)
+    let mut fmt = DefaultRenderer::new(true);
+    node.render(&mut fmt);
+    fmt.into()
 }
 
 #[derive(Debug, Default)]
+/// Default HTML/XHTML renderer.
 pub struct DefaultRenderer {
     xhtml: bool,
     result: String,
@@ -23,11 +53,6 @@ impl DefaultRenderer {
             xhtml,
             result: String::new(),
         }
-    }
-
-    pub fn render(mut self, node: &Node) -> String {
-        node.render(&mut self);
-        self.into()
     }
 
     fn make_attr(&mut self, name: &str, value: &str) {
@@ -85,6 +110,7 @@ impl Renderer for DefaultRenderer {
     }
 
     fn cr(&mut self) {
+        // only push '\n' if last character isn't it
         match self.result.as_bytes().last() {
             Some(b'\n') | None => {}
             Some(_) => self.result.push('\n')
