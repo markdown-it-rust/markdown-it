@@ -1,7 +1,7 @@
 use derivative::Derivative;
 use std::cmp::min;
 use std::collections::HashMap;
-use crate::{Node, NodeValue, Renderer};
+use crate::{Node, NodeValue};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::env;
 use crate::parser::internals::inline;
@@ -33,11 +33,7 @@ pub struct EmphMarker {
 }
 
 // this node is supposed to be replaced by actual emph or text node
-impl NodeValue for EmphMarker {
-    fn render(&self, _: &Node, _: &mut dyn Renderer) {
-        unimplemented!()
-    }
-}
+impl NodeValue for EmphMarker {}
 
 #[derive(Derivative)]
 #[derivative(Debug)]
