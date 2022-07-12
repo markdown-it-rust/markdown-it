@@ -21,6 +21,15 @@ impl NodeValue for Paragraph {
         fmt.close("p");
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "p",
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::Around,
+        })
+    }
 }
 
 fn rule(state: &mut block::State, silent: bool) -> bool {

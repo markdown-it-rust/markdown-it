@@ -35,6 +35,33 @@ impl NodeValue for CodeFence {
         fmt.close("pre");
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        let info = unescape_all(&self.info);
+        let mut split = info.split_whitespace();
+        let lang_name = split.next().unwrap_or("");
+        let mut attrs = Vec::new();
+        let class;
+
+        if !lang_name.is_empty() {
+            class = format!("{}{}", self.lang_prefix, lang_name);
+            attrs.push(("class", class));
+        }
+
+        crate::Html::Element(crate::HtmlElement {
+            tag: "pre",
+            attrs: vec![],
+            children: Some(vec![
+                crate::Html::Element(crate::HtmlElement {
+                    tag: "code",
+                    attrs,
+                    children: Some(vec![crate::Html::Text(self.content.clone())]),
+                    spacing: crate::HtmlSpacing::None,
+                })
+            ]),
+            spacing: crate::HtmlSpacing::Around,
+        })
+    }
 }
 
 #[derive(Debug, Default)]

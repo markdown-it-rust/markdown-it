@@ -23,6 +23,22 @@ impl NodeValue for Link {
         fmt.contents(&node.children);
         fmt.close("a");
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        let mut attrs : Vec<(&str, String)> = Vec::with_capacity(2);
+        attrs.push(("href", self.url.clone()));
+
+        if let Some(title) = &self.title {
+            attrs.push(("title", title.clone()));
+        }
+
+        crate::Html::Element(crate::HtmlElement {
+            tag: "a",
+            attrs,
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::None,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

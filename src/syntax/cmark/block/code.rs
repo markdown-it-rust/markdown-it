@@ -19,6 +19,22 @@ impl NodeValue for CodeBlock {
         fmt.close("pre");
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "pre",
+            attrs: vec![],
+            children: Some(vec![
+                crate::Html::Element(crate::HtmlElement {
+                    tag: "code",
+                    attrs: vec![],
+                    children: Some(vec![crate::Html::Text(self.content.clone())]),
+                    spacing: crate::HtmlSpacing::None,
+                })
+            ]),
+            spacing: crate::HtmlSpacing::Around,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

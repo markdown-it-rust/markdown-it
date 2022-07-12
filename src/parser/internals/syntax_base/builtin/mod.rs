@@ -14,6 +14,10 @@ impl NodeValue for Root {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         fmt.contents(&node.children);
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Children
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

@@ -1,6 +1,6 @@
 // Process '\n'
 //
-use crate::{Node, NodeValue, Renderer};
+use crate::{Node, NodeValue, Renderer, HtmlElement};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::inline;
 
@@ -12,6 +12,15 @@ impl NodeValue for Hardbreak {
         fmt.self_close("br", &[]);
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(HtmlElement {
+            tag: "br",
+            attrs: vec![],
+            children: None,
+            spacing: crate::HtmlSpacing::After,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -20,6 +29,10 @@ pub struct Softbreak;
 impl NodeValue for Softbreak {
     fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
         fmt.cr();
+    }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::RawText("\n".to_owned())
     }
 }
 

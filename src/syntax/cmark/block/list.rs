@@ -28,6 +28,22 @@ impl NodeValue for OrderedList {
         fmt.close("ol");
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        let mut attrs = Vec::new();
+        let start;
+        if self.start != 1 {
+            start = self.start.to_string();
+            attrs.push(("start", start));
+        }
+
+        crate::Html::Element(crate::HtmlElement {
+            tag: "ol",
+            attrs,
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::All,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -45,6 +61,15 @@ impl NodeValue for BulletList {
         fmt.close("ul");
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "ul",
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::All,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -56,6 +81,15 @@ impl NodeValue for ListItem {
         fmt.contents(&node.children);
         fmt.close("li");
         fmt.cr();
+    }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "li",
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::After,
+        })
     }
 }
 

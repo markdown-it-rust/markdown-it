@@ -18,6 +18,15 @@ impl NodeValue for Blockquote {
         fmt.close("blockquote");
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "blockquote",
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::All,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

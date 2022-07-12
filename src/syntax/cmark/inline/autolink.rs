@@ -18,6 +18,15 @@ impl NodeValue for AutoLink {
         fmt.contents(&node.children);
         fmt.close("a");
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "a",
+            attrs: vec![("href", self.url.clone())],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::None,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

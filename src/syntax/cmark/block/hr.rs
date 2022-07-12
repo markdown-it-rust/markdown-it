@@ -16,6 +16,15 @@ impl NodeValue for ThematicBreak {
         fmt.self_close("hr", &[]);
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "hr",
+            attrs: vec![],
+            children: None,
+            spacing: crate::HtmlSpacing::Around,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

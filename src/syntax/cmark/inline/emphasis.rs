@@ -1,6 +1,6 @@
 // Process *this* and _that_
 //
-use crate::{Node, NodeValue, Renderer};
+use crate::{Node, NodeValue, Renderer, HtmlElement};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::syntax_base::generics::inline::emph_pair;
 
@@ -15,6 +15,15 @@ impl NodeValue for Em {
         fmt.contents(&node.children);
         fmt.close("em");
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(HtmlElement {
+            tag: "em",
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::None,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -27,6 +36,15 @@ impl NodeValue for Strong {
         fmt.open("strong", &[]);
         fmt.contents(&node.children);
         fmt.close("strong");
+    }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(HtmlElement {
+            tag: "strong",
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::None,
+        })
     }
 }
 

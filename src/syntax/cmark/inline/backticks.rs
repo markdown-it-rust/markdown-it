@@ -16,6 +16,15 @@ impl NodeValue for CodeInline {
         fmt.contents(&node.children);
         fmt.close("code");
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Element(crate::HtmlElement {
+            tag: "code",
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::None,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

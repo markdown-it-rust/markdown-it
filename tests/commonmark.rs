@@ -6,7 +6,8 @@ fn run(input: &str, output: &str) {
     markdown_it::syntax::html::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
     node.walk(|node, _| assert!(node.srcmap.is_some()));
-    let result = markdown_it::renderer::xhtml(&node);
+    //let result = markdown_it::renderer::xhtml(&node);
+    let result = markdown_it::render2(node);
     assert_eq!(result, output);
 }
 

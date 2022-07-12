@@ -19,6 +19,10 @@ impl NodeValue for HtmlBlock {
         fmt.text_raw(&self.content);
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::RawText(self.content.clone())
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

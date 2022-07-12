@@ -14,6 +14,10 @@ impl NodeValue for Text {
     fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
         fmt.text(&self.content);
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Text(self.content.clone())
+    }
 }
 
 #[derive(Debug)]
@@ -26,6 +30,10 @@ pub struct TextSpecial {
 impl NodeValue for TextSpecial {
     fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
         fmt.text(&self.content);
+    }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::Text(self.content.clone())
     }
 }
 

@@ -32,6 +32,32 @@ impl NodeValue for Image {
 
         fmt.self_close("img", &attrs);
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        let mut attrs : Vec<(&str, String)> = Vec::new();
+        attrs.push(("src", self.url.clone()));
+
+        let mut alt = String::new();
+
+        node.walk(|node, _| {
+            if let Some(text) = node.cast::<Text>() {
+                alt.push_str(text.content.as_str());
+            }
+        });
+
+        attrs.push(("alt", alt));
+
+        if let Some(title) = &self.title {
+            attrs.push(("title", title.clone()));
+        }
+
+        crate::Html::Element(crate::HtmlElement {
+            tag: "img",
+            attrs,
+            children: None,
+            spacing: crate::HtmlSpacing::None,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

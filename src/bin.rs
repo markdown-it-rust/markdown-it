@@ -56,6 +56,9 @@ fn main() {
 
     let ast = md.parse(&source);
 
+    dbg!(markdown_it::render2(ast));
+    return;
+
     if show_tree {
         ast.walk(|node, depth| {
             print!("{}", "    ".repeat(depth as usize));

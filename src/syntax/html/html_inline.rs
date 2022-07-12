@@ -14,6 +14,10 @@ impl NodeValue for HtmlInline {
     fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
         fmt.text_raw(&self.content);
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        crate::Html::RawText(self.content.clone())
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {

@@ -22,6 +22,18 @@ impl NodeValue for SetextHeader {
         fmt.close(TAG[self.level as usize - 1]);
         fmt.cr();
     }
+
+    fn render2(&self, node: &Node) -> crate::Html {
+        static TAG : [&str; 2] = [ "h1", "h2" ];
+        debug_assert!(self.level >= 1 && self.level <= 2);
+
+        crate::Html::Element(crate::HtmlElement {
+            tag: TAG[self.level as usize - 1],
+            attrs: vec![],
+            children: Some(vec![crate::Html::Children]),
+            spacing: crate::HtmlSpacing::After,
+        })
+    }
 }
 
 pub fn add(md: &mut MarkdownIt) {
