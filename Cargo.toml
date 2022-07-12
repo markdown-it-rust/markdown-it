@@ -13,8 +13,9 @@ name = "markdown_it"
 path = "src/lib.rs"
 
 [[bin]]
-name = "mdit"
+name = "markdown-it"
 path = "src/bin.rs"
+doc = false
 
 [dependencies]
 argparse = "0.2.2"
