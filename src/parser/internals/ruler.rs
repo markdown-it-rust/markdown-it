@@ -74,6 +74,11 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
         self.deps.retain(|dep| !dep.marks.contains(&mark))
     }
 
+    /// Check if there are any rules identified by `mark`.
+    pub fn contains(&mut self, mark: M) -> bool {
+        self.deps.iter().position(|dep| !dep.marks.contains(&mark)).is_some()
+    }
+
     /// Ordered iteration through rules.
     #[inline]
     pub fn iter(&self) -> Iter<T> {

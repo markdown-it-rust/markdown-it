@@ -6,7 +6,7 @@ pub use state::State;
 use crate::Node;
 use crate::parser::MarkdownIt;
 use crate::parser::internals::env::Env;
-use crate::parser::internals::env::scope::{BlockLvl, Block};
+use crate::parser::internals::env::scope::Block;
 use crate::parser::internals::ruler::Ruler;
 
 use super::sourcemap::SourcePos;
@@ -94,7 +94,6 @@ impl Parser {
 
         let mut state = State::new(src, md, env, node);
         state.env.state_push::<Block>();
-        state.env.state_push::<BlockLvl>();
 
         self.tokenize(&mut state);
 
@@ -102,7 +101,6 @@ impl Parser {
             rule(&mut state);
         }
 
-        state.env.state_pop::<BlockLvl>();
         state.env.state_pop::<Block>();
         state.node
     }

@@ -6,7 +6,7 @@ pub use state::State;
 use crate::Node;
 use crate::parser::MarkdownIt;
 use crate::parser::internals::env::Env;
-use crate::parser::internals::env::scope::{Inline, InlineLvl};
+use crate::parser::internals::env::scope::Inline;
 use crate::parser::internals::ruler::Ruler;
 
 use super::syntax_base::builtin::Root;
@@ -77,8 +77,6 @@ impl Parser {
     // Generate tokens for input range
     //
     pub fn tokenize(&self, state: &mut State) {
-        state.env.state_push::<InlineLvl>();
-
         let end = state.pos_max;
 
         while state.pos < end {
@@ -115,8 +113,6 @@ impl Parser {
         for rule in self.ruler2.iter() {
             rule(state);
         }
-
-        state.env.state_pop::<InlineLvl>();
     }
 
     // Process input string and push inline tokens into `out_tokens`

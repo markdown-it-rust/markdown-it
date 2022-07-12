@@ -7,9 +7,7 @@ type EnvState = ErasedSet;
 #[derive(Debug)]
 pub struct Env {
     block_state:      Vec<EnvState>,
-    block_lvl_state:  Vec<EnvState>,
     inline_state:     Vec<EnvState>,
-    inline_lvl_state: Vec<EnvState>,
 }
 
 pub mod scope {
@@ -17,9 +15,7 @@ pub mod scope {
     use super::EnvState;
 
     pub struct Block;
-    pub struct BlockLvl;
     pub struct Inline;
-    pub struct InlineLvl;
 
     pub trait EnvScope {
         fn get_scope(env: &Env) -> &Vec<EnvState>;
@@ -35,15 +31,6 @@ pub mod scope {
         }
     }
 
-    impl EnvScope for BlockLvl {
-        fn get_scope(env: &Env) -> &Vec<EnvState> {
-            &env.block_lvl_state
-        }
-        fn get_scope_mut(env: &mut Env) -> &mut Vec<EnvState> {
-            &mut env.block_lvl_state
-        }
-    }
-
     impl EnvScope for Inline {
         fn get_scope(env: &Env) -> &Vec<EnvState> {
             &env.inline_state
@@ -52,24 +39,13 @@ pub mod scope {
             &mut env.inline_state
         }
     }
-
-    impl EnvScope for InlineLvl {
-        fn get_scope(env: &Env) -> &Vec<EnvState> {
-            &env.inline_lvl_state
-        }
-        fn get_scope_mut(env: &mut Env) -> &mut Vec<EnvState> {
-            &mut env.inline_lvl_state
-        }
-    }
 }
 
 impl Env {
     pub fn new() -> Self {
         Self {
             block_state:      Vec::new(),
-            block_lvl_state:  Vec::new(),
             inline_state:     Vec::new(),
-            inline_lvl_state: Vec::new(),
         }
     }
 

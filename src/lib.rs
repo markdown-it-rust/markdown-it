@@ -4,6 +4,7 @@ pub mod syntax;
 
 use crate::parser::internals::sourcemap::SourcePos;
 use downcast_rs::{Downcast, impl_downcast};
+use parser::internals::erasedset::ErasedSet;
 use std::fmt::Debug;
 
 /// Each node outputs its HTML using this API.
@@ -38,6 +39,9 @@ pub struct Node {
     /// Source mapping info.
     pub srcmap: Option<SourcePos>,
 
+    /// Custom data specific to this token.
+    pub env: ErasedSet,
+
     /// Type name, used for debugging.
     name: &'static str,
 
@@ -51,6 +55,7 @@ impl Node {
         Self {
             children:  Vec::new(),
             srcmap:    None,
+            env:       ErasedSet::new(),
             name:      std::any::type_name::<T>(),
             value:     Box::new(value),
         }
