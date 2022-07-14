@@ -4,7 +4,7 @@ use crate::parser::internals::erasedset::ErasedSet;
 
 type EnvState = ErasedSet;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Env {
     block_state:      Vec<EnvState>,
     inline_state:     Vec<EnvState>,
@@ -43,10 +43,7 @@ pub mod scope {
 
 impl Env {
     pub fn new() -> Self {
-        Self {
-            block_state:      Vec::new(),
-            inline_state:     Vec::new(),
-        }
+        Self::default()
     }
 
     pub fn get<T: 'static + EnvMember + Default + Debug>(&self) -> Option<&T> {

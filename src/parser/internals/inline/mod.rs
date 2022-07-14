@@ -9,26 +9,19 @@ use crate::parser::internals::env::Env;
 use crate::parser::internals::env::scope::Inline;
 use crate::parser::internals::ruler::Ruler;
 
-use super::syntax_base::builtin::Root;
-
-pub type Rule = fn (&mut State, silent: bool) -> bool;
+pub type Rule = fn (&mut State, bool) -> bool;
 pub type Rule2 = fn (&mut State);
 
 #[derive(Debug)]
-pub struct Parser {
+pub struct InlineParser {
     // [[Ruler]] instance. Keep configuration of inline rules.
     pub ruler: Ruler<&'static str, Rule>,
-
-    // [[Ruler]] instance. Second ruler used for post-processing
-    // (e.g. in emphasis-like rules).
-    pub ruler2: Ruler<&'static str, Rule2>,
 }
 
-impl Parser {
+impl InlineParser {
     pub fn new() -> Self {
         Self {
             ruler: Ruler::new(),
-            ruler2: Ruler::new(),
         }
     }
 
@@ -109,20 +102,15 @@ impl Parser {
             state.trailing_text_push(state.pos, state.pos + len);
             state.pos += len;
         }
-
-        for rule in self.ruler2.iter() {
-            rule(state);
-        }
     }
 
     // Process input string and push inline tokens into `out_tokens`
     //
-    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, md: &MarkdownIt, env: &mut Env) -> Node {
-        let node = Node::new(Root);
+    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, node: Node, md: &MarkdownIt, env: &mut Env) -> Node {
         let mut state = State::new(src, srcmap, md, env, node);
         state.env.state_push::<Inline>();
         self.tokenize(&mut state);
-        state.env.state_pop::<Inline>();
+        //state.env.state_pop::<Inline>();
         state.node
     }
 }

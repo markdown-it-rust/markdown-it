@@ -3,7 +3,7 @@
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
-use crate::parser::internals::syntax_base::builtin::InlineNode;
+use crate::parser::internals::syntax_base::builtin::InlineRoot;
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.ruler.add("paragraph", rule)
@@ -59,7 +59,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     let mut node = Node::new(Paragraph);
     node.srcmap = state.get_map(start_line, state.line - 1);
-    node.children.push(Node::new(InlineNode {
+    node.children.push(Node::new(InlineRoot {
         content,
         mapping,
     }));

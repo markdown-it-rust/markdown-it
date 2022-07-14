@@ -1,14 +1,17 @@
-mod block_inlines;
-mod inline_text;
+mod block_parser;
+mod inline_parser;
+mod skip_text;
 
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 
-pub use block_inlines::InlineNode;
-pub use inline_text::{Text, TextSpecial};
+pub use inline_parser::InlineRoot;
+pub use skip_text::{Text, TextSpecial};
 
 #[derive(Debug)]
-pub struct Root;
+pub struct Root {
+    pub content: String,
+}
 
 impl NodeValue for Root {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
@@ -17,6 +20,7 @@ impl NodeValue for Root {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    inline_text::add(md);
-    block_inlines::add(md);
+    skip_text::add(md);
+    block_parser::add(md);
+    inline_parser::add(md);
 }

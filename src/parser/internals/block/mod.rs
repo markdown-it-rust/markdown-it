@@ -9,24 +9,19 @@ use crate::parser::internals::env::Env;
 use crate::parser::internals::env::scope::Block;
 use crate::parser::internals::ruler::Ruler;
 
-use super::sourcemap::SourcePos;
-use super::syntax_base::builtin::Root;
-
 pub type Rule = fn (&mut State, bool) -> bool;
 pub type Rule2 = fn (&mut State);
 
 #[derive(Debug)]
-pub struct Parser {
+pub struct BlockParser {
     // [[Ruler]] instance. Keep configuration of block rules.
     pub ruler: Ruler<&'static str, Rule>,
-    pub ruler2: Ruler<&'static str, Rule2>,
 }
 
-impl Parser {
+impl BlockParser {
     pub fn new() -> Self {
         Self {
             ruler: Ruler::new(),
-            ruler2: Ruler::new(),
         }
     }
 
@@ -88,20 +83,13 @@ impl Parser {
 
     // Process input string and push block tokens into `out_tokens`
     //
-    pub fn parse(&self, src: String, md: &MarkdownIt, env: &mut Env) -> Node {
-        let mut node = Node::new(Root);
-        node.srcmap = Some(SourcePos::new(0, src.len()));
-
+    pub fn parse(&self, src: &str, node: Node, md: &MarkdownIt, env: &mut Env) -> Node {
         let mut state = State::new(src, md, env, node);
         state.env.state_push::<Block>();
 
         self.tokenize(&mut state);
 
-        for rule in self.ruler2.iter() {
-            rule(&mut state);
-        }
-
-        state.env.state_pop::<Block>();
+        //state.env.state_pop::<Block>();
         state.node
     }
 }

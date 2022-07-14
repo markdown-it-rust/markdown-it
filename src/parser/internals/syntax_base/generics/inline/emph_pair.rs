@@ -64,10 +64,10 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
         });
     }
 
-    if !md.inline.ruler2.contains("generic::emph_fragments_join") {
-        md.inline.ruler2.add("generic::emph_fragments_join", |state| {
-            state.node.walk_mut(|node, _| fragments_join(node));
-        });
+    if !md.ruler.contains("generic::emph_fragments_join") {
+        md.ruler.add("generic::emph_fragments_join", |root, _| {
+            root.walk_mut(|node, _| fragments_join(node));
+        }).before_all().after("builtin::inline_parser");
     }
 }
 

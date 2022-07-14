@@ -7,17 +7,22 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::Node;
 use crate::parser::internals::block;
-use crate::parser::internals::env;
 use crate::parser::internals::erasedset;
 use crate::parser::internals::inline;
 use crate::parser::internals::mdurl::{self, AsciiSet};
+use crate::parser::internals::ruler::Ruler;
+use crate::parser::internals::sourcemap::SourcePos;
 use crate::parser::internals::syntax_base;
+use crate::parser::syntax_base::builtin::Root;
+
+pub type Rule = fn (&mut Node, &MarkdownIt);
 
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct MarkdownIt {
-    pub block: block::Parser,
-    pub inline: inline::Parser,
+    pub ruler: Ruler<&'static str, Rule>,
+    pub block: block::BlockParser,
+    pub inline: inline::InlineParser,
     #[derivative(Debug="ignore")]
     pub validate_link: fn (&str) -> bool,
     #[derivative(Debug="ignore")]
@@ -73,16 +78,24 @@ impl MarkdownIt {
     }
 
     pub fn parse(&self, src: &str) -> Node {
-        let src = &normalize_text(src);
-        self.block.parse(src.to_string(), self, &mut env::Env::new())
+        let mut node = Node::new(Root {
+            content: normalize_text(src).to_string(),
+        });
+        node.srcmap = Some(SourcePos::new(0, src.len()));
+
+        for rule in self.ruler.iter() {
+            rule(&mut node, self);
+        }
+        node
     }
 }
 
 impl Default for MarkdownIt {
     fn default() -> Self {
         let mut md = Self {
-            block: block::Parser::new(),
-            inline: inline::Parser::new(),
+            ruler: Ruler::new(),
+            block: block::BlockParser::new(),
+            inline: inline::InlineParser::new(),
             validate_link,
             normalize_link,
             normalize_link_text,

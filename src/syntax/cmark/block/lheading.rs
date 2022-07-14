@@ -3,7 +3,7 @@
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
-use crate::parser::internals::syntax_base::builtin::InlineNode;
+use crate::parser::internals::syntax_base::builtin::InlineRoot;
 
 #[derive(Debug)]
 pub struct SetextHeader {
@@ -93,7 +93,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         marker: if level == 2 { '-' } else { '=' }
     });
     node.srcmap = state.get_map(start_line, state.line - 1);
-    node.children.push(Node::new(InlineNode {
+    node.children.push(Node::new(InlineRoot {
         content,
         mapping,
     }));

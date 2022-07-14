@@ -8,7 +8,7 @@ use crate::parser::internals::sourcemap::SourcePos;
 
 #[derive(Debug)]
 pub struct State<'a, 'b> where 'b: 'a {
-    pub src: String,
+    pub src: &'b str,
 
     // link to parser instance
     pub md: &'a MarkdownIt,
@@ -75,7 +75,7 @@ pub struct LineOffset {
 }
 
 impl<'a, 'b> State<'a, 'b> {
-    pub fn new(src: String, md: &'a MarkdownIt, env: &'b mut Env, node: Node) -> Self {
+    pub fn new(src: &'b str, md: &'a MarkdownIt, env: &'b mut Env, node: Node) -> Self {
         let mut result = Self {
             src,
             md,

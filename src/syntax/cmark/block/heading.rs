@@ -3,7 +3,7 @@
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
-use crate::parser::internals::syntax_base::builtin::InlineNode;
+use crate::parser::internals::syntax_base::builtin::InlineRoot;
 
 #[derive(Debug)]
 pub struct ATXHeading {
@@ -80,7 +80,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     let mut node = Node::new(ATXHeading { level });
     node.srcmap = state.get_map(state.line, state.line);
-    node.children.push(Node::new(InlineNode {
+    node.children.push(Node::new(InlineRoot {
         content,
         mapping,
     }));
