@@ -94,24 +94,28 @@ impl<T: Debug + Downcast> Debug for ErasedMember<T> {
     }
 }
 
-pub struct TypeKey(TypeId, &'static str);
+#[readonly::make]
+pub struct TypeKey {
+    pub id:   TypeId,
+    pub name: &'static str,
+}
 
 impl TypeKey {
     #[must_use]
     pub fn of<T: 'static>() -> Self {
-        Self(TypeId::of::<T>(), any::type_name::<T>())
+        Self { id: TypeId::of::<T>(), name: any::type_name::<T>() }
     }
 }
 
 impl Hash for TypeKey {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
+        self.id.hash(state);
     }
 }
 
 impl PartialEq for TypeKey {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        self.id == other.id
     }
 }
 
@@ -119,7 +123,7 @@ impl Eq for TypeKey {}
 
 impl Debug for TypeKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.1)
+        write!(f, "{}", self.name)
     }
 }
 
@@ -237,8 +241,10 @@ mod tests {
     fn typekey_eq() {
         struct A;
         struct B;
-        assert_eq!(TypeKey(std::any::TypeId::of::<A>(), "foo"), TypeKey(std::any::TypeId::of::<A>(), "bar"));
-        assert_ne!(TypeKey(std::any::TypeId::of::<A>(), "foo"), TypeKey(std::any::TypeId::of::<B>(), "foo"));
+        assert_eq!(TypeKey { id: std::any::TypeId::of::<A>(), name: "foo" },
+                   TypeKey { id: std::any::TypeId::of::<A>(), name: "bar" });
+        assert_ne!(TypeKey { id: std::any::TypeId::of::<A>(), name: "foo" },
+                   TypeKey { id: std::any::TypeId::of::<B>(), name: "foo" });
     }
 
     #[test]

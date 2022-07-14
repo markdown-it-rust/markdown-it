@@ -4,8 +4,8 @@ pub mod syntax;
 
 use crate::parser::internals::sourcemap::SourcePos;
 use downcast_rs::{Downcast, impl_downcast};
-use parser::internals::erasedset::ErasedSet;
-use std::fmt::Debug;
+use parser::internals::erasedset::{ErasedSet, TypeKey};
+use std::{fmt::Debug, any::TypeId};
 
 /// Each node outputs its HTML using this API.
 ///
@@ -32,6 +32,7 @@ pub trait Renderer {
 
 /// Single node in the CommonMark AST.
 #[derive(Debug)]
+#[readonly::make]
 pub struct Node {
     /// Array of child nodes.
     pub children: Vec<Node>,
@@ -43,80 +44,98 @@ pub struct Node {
     pub env: ErasedSet,
 
     /// Type name, used for debugging.
-    name: &'static str,
+    #[readonly]
+    pub node_type: TypeKey,
 
     /// Storage for arbitrary token-specific data.
-    value: Box<dyn NodeValue>,
+    #[readonly]
+    pub node_value: Box<dyn NodeValue>,
 }
 
 impl Node {
     /// Create a new [Node](Node) with a custom value.
     pub fn new<T: NodeValue>(value: T) -> Self {
         Self {
-            children:  Vec::new(),
-            srcmap:    None,
-            env:       ErasedSet::new(),
-            name:      std::any::type_name::<T>(),
-            value:     Box::new(value),
+            children:   Vec::new(),
+            srcmap:     None,
+            env:        ErasedSet::new(),
+            node_type:  TypeKey::of::<T>(),
+            node_value: Box::new(value),
         }
     }
 
     /// Return std::any::type_name() of node value.
     pub fn name(&self) -> &'static str {
-        self.name
+        self.node_type.name
     }
 
     /// Check that this node value is of given type.
     pub fn is<T: NodeValue>(&self) -> bool {
-        self.value.is::<T>()
+        self.node_type.id == TypeId::of::<T>()
     }
 
     /// Downcast node value to specific type.
     pub fn cast<T: NodeValue>(&self) -> Option<&T> {
-        self.value.downcast_ref::<T>()
+        if self.node_type.id == TypeId::of::<T>() {
+            Some(self.node_value.downcast_ref::<T>().unwrap())
+            // performance note: `node_type.id` improves walk speed by a LOT by removing indirection
+            // (~5% of overall program speed), so having type id duplicated in Node is very beneficial;
+            // we can also remove extra check with downcast_unchecked, but it doesn't do much
+            //Some(unsafe { &*(&*self.node_value as *const dyn NodeValue as *const T) })
+        } else {
+            None
+        }
     }
 
     /// Downcast node value to specific type.
     pub fn cast_mut<T: NodeValue>(&mut self) -> Option<&mut T> {
-        self.value.downcast_mut::<T>()
+        if self.node_type.id == TypeId::of::<T>() {
+            Some(self.node_value.downcast_mut::<T>().unwrap())
+            // performance note: see above
+            //Some(unsafe { &mut *(&mut *self.node_value as *mut dyn NodeValue as *mut T) })
+        } else {
+            None
+        }
     }
 
     /// Render this node to html using Renderer API.
     pub fn render(&self, fmt: &mut dyn Renderer) {
-        self.value.render(self, fmt);
+        self.node_value.render(self, fmt);
     }
 
     /// Replace custom value with another value (this is roughly equivalent
     /// to replacing the entire node and copying children and sourcemaps).
     pub fn replace<T: NodeValue>(&mut self, value: T) {
-        self.name = std::any::type_name::<T>();
-        self.value = Box::new(value);
+        self.node_type  = TypeKey::of::<T>();
+        self.node_value = Box::new(value);
     }
 
     /// Execute function `f` recursively on every member of AST tree
     /// (using preorder deep-first search).
     pub fn walk(&self, mut f: impl FnMut(&Node, u32)) {
-        let mut stack = vec![(self, 0)];
-
-        while let Some((node, depth)) = stack.pop() {
+        // performance note: this is faster than emulating recursion using vec stack
+        fn walk_recursive(node: &Node, depth: u32, f: &mut impl FnMut(&Node, u32)) {
             f(node, depth);
-            for n in node.children.iter().rev() {
-                stack.push((n, depth + 1));
+            for n in node.children.iter() {
+                walk_recursive(n, depth + 1, f);
             }
         }
+
+        walk_recursive(self, 0, &mut f);
     }
 
     /// Execute function `f` recursively on every member of AST tree
     /// (using preorder deep-first search).
     pub fn walk_mut(&mut self, mut f: impl FnMut(&mut Node, u32)) {
-        let mut stack = vec![(self, 0)];
-
-        while let Some((node, depth)) = stack.pop() {
+        // performance note: this is faster than emulating recursion using vec stack
+        fn walk_recursive(node: &mut Node, depth: u32, f: &mut impl FnMut(&mut Node, u32)) {
             f(node, depth);
-            for n in node.children.iter_mut().rev() {
-                stack.push((n, depth + 1));
+            for n in node.children.iter_mut() {
+                walk_recursive(n, depth + 1, f);
             }
         }
+
+        walk_recursive(self, 0, &mut f);
     }
 }
 

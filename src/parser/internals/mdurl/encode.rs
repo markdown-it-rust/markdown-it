@@ -40,6 +40,9 @@ pub fn encode(string: &str, exclude: AsciiSet, keep_escaped: bool) -> String {
         i += 1
     }
 
+    // performance note:
+    // all characters are in ASCII range because everything >= 0x80 is percent-encoded,
+    // so we can use from_utf8_unchecked, but it doesn't improve speed by much
     String::from_utf8(result).unwrap()
 }
 
