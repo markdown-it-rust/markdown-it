@@ -12,7 +12,7 @@ pub struct CodeInline {
 
 impl NodeValue for CodeInline {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        fmt.open("code", &[]);
+        fmt.open("code", &node.attrs);
         fmt.contents(&node.children);
         fmt.close("code");
     }

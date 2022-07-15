@@ -11,9 +11,9 @@ pub struct ThematicBreak {
 }
 
 impl NodeValue for ThematicBreak {
-    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         fmt.cr();
-        fmt.self_close("hr", &[]);
+        fmt.self_close("hr", &node.attrs);
         fmt.cr();
     }
 }

@@ -10,10 +10,10 @@ pub struct CodeBlock {
 }
 
 impl NodeValue for CodeBlock {
-    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         fmt.cr();
         fmt.open("pre", &[]);
-            fmt.open("code", &[]);
+            fmt.open("code", &node.attrs);
             fmt.text(&self.content);
             fmt.close("code");
         fmt.close("pre");

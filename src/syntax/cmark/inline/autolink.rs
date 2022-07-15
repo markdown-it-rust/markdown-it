@@ -14,7 +14,10 @@ pub struct AutoLink {
 
 impl NodeValue for AutoLink {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        fmt.open("a", &[("href", &self.url)]);
+        let mut attrs = node.attrs.clone();
+        attrs.push(("href", self.url.clone()));
+
+        fmt.open("a", &attrs);
         fmt.contents(&node.children);
         fmt.close("a");
     }

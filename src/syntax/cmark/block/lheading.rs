@@ -17,7 +17,7 @@ impl NodeValue for SetextHeader {
         debug_assert!(self.level >= 1 && self.level <= 2);
 
         fmt.cr();
-        fmt.open(TAG[self.level as usize - 1], &[]);
+        fmt.open(TAG[self.level as usize - 1], &node.attrs);
         fmt.contents(&node.children);
         fmt.close(TAG[self.level as usize - 1]);
         fmt.cr();

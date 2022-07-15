@@ -15,11 +15,11 @@ use std::{fmt::Debug, any::TypeId};
 /// [DefaultRenderer](renderer::DefaultRenderer) for an example implementation.
 pub trait Renderer {
     /// Write opening html tag with attributes, e.g. `<a href="url">`.
-    fn open(&mut self, tag: &str, attrs: &[(&str, &str)]);
+    fn open(&mut self, tag: &str, attrs: &[(&str, String)]);
     /// Write closing html tag, e.g. `</a>`.
     fn close(&mut self, tag: &str);
     /// Write self-closing html tag with attributes, e.g. `<img src="url"/>`.
-    fn self_close(&mut self, tag: &str, attrs: &[(&str, &str)]);
+    fn self_close(&mut self, tag: &str, attrs: &[(&str, String)]);
     /// Loop through child nodes and render each one.
     fn contents(&mut self, nodes: &[Node]);
     /// Write line break (`\n`). Default renderer ignores it if last char in the buffer is `\n` already.
@@ -43,6 +43,9 @@ pub struct Node {
     /// Custom data specific to this token.
     pub env: ErasedSet,
 
+    /// Additional attributes to be added to resulting html.
+    pub attrs: Vec<(&'static str, String)>,
+
     /// Type name, used for debugging.
     #[readonly]
     pub node_type: TypeKey,
@@ -58,6 +61,7 @@ impl Node {
         Self {
             children:   Vec::new(),
             srcmap:     None,
+            attrs:      Vec::new(),
             env:        ErasedSet::new(),
             node_type:  TypeKey::of::<T>(),
             node_value: Box::new(value),

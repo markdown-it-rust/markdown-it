@@ -13,8 +13,8 @@ pub struct Image {
 
 impl NodeValue for Image {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        let mut attrs : Vec<(&str, &str)> = Vec::new();
-        attrs.push(("src", &self.url));
+        let mut attrs = node.attrs.clone();
+        attrs.push(("src", self.url.clone()));
 
         let mut alt = String::new();
 
@@ -24,10 +24,10 @@ impl NodeValue for Image {
             }
         });
 
-        attrs.push(("alt", alt.as_str()));
+        attrs.push(("alt", alt));
 
         if let Some(title) = &self.title {
-            attrs.push(("title", &*title));
+            attrs.push(("title", title.clone()));
         }
 
         fmt.self_close("img", &attrs);

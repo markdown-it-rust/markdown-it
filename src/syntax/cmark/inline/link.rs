@@ -12,11 +12,11 @@ pub struct Link {
 
 impl NodeValue for Link {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        let mut attrs : Vec<(&str, &str)> = Vec::with_capacity(2);
-        attrs.push(("href", &self.url));
+        let mut attrs = node.attrs.clone();
+        attrs.push(("href", self.url.clone()));
 
         if let Some(title) = &self.title {
-            attrs.push(("title", &*title));
+            attrs.push(("title", title.clone()));
         }
 
         fmt.open("a", &attrs);

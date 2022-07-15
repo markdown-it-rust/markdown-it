@@ -64,7 +64,7 @@ impl DefaultRenderer {
         self.result.push('"');
     }
 
-    fn make_attrs(&mut self, attrs: &[(&str, &str)]) {
+    fn make_attrs(&mut self, attrs: &[(&str, String)]) {
         for (name, value) in attrs {
             self.make_attr(name, value);
         }
@@ -78,7 +78,7 @@ impl From<DefaultRenderer> for String {
 }
 
 impl Renderer for DefaultRenderer {
-    fn open(&mut self, tag: &str, attrs: &[(&str, &str)]) {
+    fn open(&mut self, tag: &str, attrs: &[(&str, String)]) {
         self.result.push('<');
         self.result.push_str(tag);
         self.make_attrs(attrs);
@@ -92,7 +92,7 @@ impl Renderer for DefaultRenderer {
         self.result.push('>');
     }
 
-    fn self_close(&mut self, tag: &str, attrs: &[(&str, &str)]) {
+    fn self_close(&mut self, tag: &str, attrs: &[(&str, String)]) {
         self.result.push('<');
         self.result.push_str(tag);
         self.make_attrs(attrs);

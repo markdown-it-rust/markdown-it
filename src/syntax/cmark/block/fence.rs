@@ -15,16 +15,16 @@ pub struct CodeFence {
 }
 
 impl NodeValue for CodeFence {
-    fn render(&self, _: &Node, fmt: &mut dyn Renderer) {
+    fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let info = unescape_all(&self.info);
         let mut split = info.split_whitespace();
         let lang_name = split.next().unwrap_or("");
-        let mut attrs = Vec::new();
+        let mut attrs = node.attrs.clone();
         let class;
 
         if !lang_name.is_empty() {
             class = format!("{}{}", self.lang_prefix, lang_name);
-            attrs.push(("class", class.as_str()));
+            attrs.push(("class", class));
         }
 
         fmt.cr();

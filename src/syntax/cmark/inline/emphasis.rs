@@ -11,7 +11,7 @@ pub struct Em {
 
 impl NodeValue for Em {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        fmt.open("em", &[]);
+        fmt.open("em", &node.attrs);
         fmt.contents(&node.children);
         fmt.close("em");
     }
@@ -24,7 +24,7 @@ pub struct Strong {
 
 impl NodeValue for Strong {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        fmt.open("strong", &[]);
+        fmt.open("strong", &node.attrs);
         fmt.contents(&node.children);
         fmt.close("strong");
     }

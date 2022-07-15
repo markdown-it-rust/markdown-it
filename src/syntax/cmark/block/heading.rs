@@ -16,7 +16,7 @@ impl NodeValue for ATXHeading {
         debug_assert!(self.level >= 1 && self.level <= 6);
 
         fmt.cr();
-        fmt.open(TAG[self.level as usize - 1], &[]);
+        fmt.open(TAG[self.level as usize - 1], &node.attrs);
         fmt.contents(&node.children);
         fmt.close(TAG[self.level as usize - 1]);
         fmt.cr();

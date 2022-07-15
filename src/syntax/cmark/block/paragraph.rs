@@ -16,7 +16,7 @@ pub struct Paragraph;
 impl NodeValue for Paragraph {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         fmt.cr();
-        fmt.open("p", &[]);
+        fmt.open("p", &node.attrs);
         fmt.contents(&node.children);
         fmt.close("p");
         fmt.cr();

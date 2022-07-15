@@ -53,6 +53,9 @@ fn main() {
     if !no_html {
         markdown_it::syntax::html::add(md);
     }
+    if sourcepos {
+        markdown_it::syntax::sourcepos::add(md);
+    }
 
     let ast = md.parse(&source);
 
@@ -71,12 +74,7 @@ fn main() {
         return;
     }
 
-    let result;
-    if sourcepos {
-        result = markdown_it::renderer::html_with_srcmap(&ast, &source);
-    } else {
-        result = markdown_it::renderer::html(&ast);
-    }
+    let result = markdown_it::renderer::html(&ast);
 
     if output == "-" {
         std::io::stdout().write(result.as_bytes()).unwrap();

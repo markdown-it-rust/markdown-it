@@ -14,11 +14,11 @@ pub struct OrderedList {
 
 impl NodeValue for OrderedList {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        let mut attrs = Vec::new();
+        let mut attrs = node.attrs.clone();
         let start;
         if self.start != 1 {
             start = self.start.to_string();
-            attrs.push(("start", start.as_str()));
+            attrs.push(("start", start));
         }
         fmt.cr();
         fmt.open("ol", &attrs);
@@ -38,7 +38,7 @@ pub struct BulletList {
 impl NodeValue for BulletList {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         fmt.cr();
-        fmt.open("ul", &[]);
+        fmt.open("ul", &node.attrs);
         fmt.cr();
         fmt.contents(&node.children);
         fmt.cr();
@@ -52,7 +52,7 @@ pub struct ListItem;
 
 impl NodeValue for ListItem {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        fmt.open("li", &[]);
+        fmt.open("li", &node.attrs);
         fmt.contents(&node.children);
         fmt.close("li");
         fmt.cr();
