@@ -5,7 +5,7 @@ fn title_example() {
     markdown_it::syntax::cmark::add(parser);
 
     let ast = parser.parse("Hello **world**!");
-    let html = markdown_it::renderer::html(&ast);
+    let html = ast.render();
 
     assert_eq!(html, "<p>Hello <strong>world</strong>!</p>\n");
 }
@@ -17,7 +17,7 @@ fn run(input: &str, output: &str) {
     markdown_it::syntax::html::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
     node.walk(|node, _| assert!(node.srcmap.is_some()));
-    let result = markdown_it::renderer::xhtml(&node);
+    let result = node.render();
     assert_eq!(result, output);
 }
 

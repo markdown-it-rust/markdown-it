@@ -1,8 +1,9 @@
-pub mod renderer;
+mod renderer;
 pub mod parser;
 pub mod syntax;
 
 use crate::parser::internals::sourcemap::SourcePos;
+use crate::renderer::HTMLRenderer;
 use downcast_rs::{Downcast, impl_downcast};
 use parser::internals::erasedset::{ErasedSet, TypeKey};
 use std::{fmt::Debug, any::TypeId};
@@ -10,9 +11,7 @@ use std::{fmt::Debug, any::TypeId};
 /// Each node outputs its HTML using this API.
 ///
 /// Renderer is a struct that walks through AST and collects HTML from each node
-/// into internal buffer. You can implement your own renderer if you want to add
-/// custom HTML attributes or change whitespacing. See
-/// [DefaultRenderer](renderer::DefaultRenderer) for an example implementation.
+/// into internal buffer.
 pub trait Renderer {
     /// Write opening html tag with attributes, e.g. `<a href="url">`.
     fn open(&mut self, tag: &str, attrs: &[(&str, String)]);
@@ -102,9 +101,20 @@ impl Node {
         }
     }
 
-    /// Render this node to html using Renderer API.
-    pub fn render(&self, fmt: &mut dyn Renderer) {
-        self.node_value.render(self, fmt);
+    /// Render this node to HTML.
+    pub fn render(&self) -> String {
+        let mut fmt = HTMLRenderer::<false>::new();
+        fmt.render(self);
+        fmt.into()
+    }
+
+    /// Render this node to XHTML, it adds slash to self-closing tags like this: `<img />`.
+    ///
+    /// This mode exists for compatibility with CommonMark tests.
+    pub fn xrender(&self) -> String {
+        let mut fmt = HTMLRenderer::<true>::new();
+        fmt.render(self);
+        fmt.into()
     }
 
     /// Replace custom value with another value (this is roughly equivalent

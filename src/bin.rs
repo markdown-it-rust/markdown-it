@@ -74,7 +74,7 @@ fn main() {
         return;
     }
 
-    let result = markdown_it::renderer::html(&ast);
+    let result = ast.render();
 
     if output == "-" {
         std::io::stdout().write(result.as_bytes()).unwrap();

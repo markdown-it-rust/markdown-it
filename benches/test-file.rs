@@ -8,8 +8,7 @@ pub fn benchmark(c: &mut Criterion) {
     markdown_it::syntax::html::add(md);
 
     c.bench_function("markdown-it", |b| b.iter(|| {
-        let ast = md.parse(&source);
-        let html = markdown_it::renderer::html(&ast);
+        let html = md.parse(&source).render();
         black_box(html);
     }));
 }

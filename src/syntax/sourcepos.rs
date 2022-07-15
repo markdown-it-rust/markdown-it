@@ -10,9 +10,7 @@ use crate::parser::internals::syntax_base::builtin::Root;
 /// markdown_it::syntax::cmark::add(md);
 /// markdown_it::syntax::sourcepos::add(md);
 ///
-/// let ast   = md.parse("# hello");
-/// let html  = markdown_it::renderer::html(&ast);
-///
+/// let html = md.parse("# hello").render();
 /// assert_eq!(html.trim(), r#"<h1 data-sourcepos="1:1-1:7">hello</h1>"#);
 /// ```
 pub fn add(md: &mut MarkdownIt) {
@@ -43,9 +41,7 @@ mod tests {
         crate::syntax::cmark::add(md);
         crate::syntax::sourcepos::add(md);
 
-        let ast   = md.parse("# hello");
-        let html  = crate::renderer::html(&ast);
-
+        let html = md.parse("# hello").render();
         assert_eq!(html.trim(), r#"<h1 data-sourcepos="1:1-1:7">hello</h1>"#);
     }
 }

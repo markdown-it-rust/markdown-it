@@ -17,7 +17,7 @@ let parser = &mut markdown_it::parser::new();
 markdown_it::syntax::cmark::add(parser);
 
 let ast  = parser.parse("Hello **world**!");
-let html = markdown_it::renderer::html(&ast);
+let html = ast.render();
 
 print!("{html}");
 // prints "<p>Hello <strong>world</strong>!</p>"

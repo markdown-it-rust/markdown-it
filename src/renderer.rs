@@ -3,56 +3,21 @@ use std::fmt::Debug;
 use crate::{Node, Renderer};
 use crate::parser::internals::common::escape_html;
 
-/// Render HTML, looks like this: `<stuff>`.
-///
-/// This is considered the default rendering mode, example:
-/// ```rust
-/// let parser = &mut markdown_it::parser::new();
-/// markdown_it::syntax::cmark::add(parser);
-///
-/// let ast  = parser.parse("![hello](world)");
-/// let html = markdown_it::renderer::html(&ast);
-///
-/// assert_eq!(html.trim(), r#"<p><img src="world" alt="hello"></p>"#);
-/// ```
-///
-pub fn html(node: &Node) -> String {
-    let mut fmt = DefaultRenderer::new(false);
-    node.render(&mut fmt);
-    fmt.into()
-}
-
-/// Render XHTML, looks like this: `<stuff />`.
-///
-/// This mode exists for compatibility with CommonMark tests, example:
-/// ```rust
-/// let parser = &mut markdown_it::parser::new();
-/// markdown_it::syntax::cmark::add(parser);
-///
-/// let ast  = parser.parse("![hello](world)");
-/// let html = markdown_it::renderer::xhtml(&ast);
-///
-/// assert_eq!(html.trim(), r#"<p><img src="world" alt="hello" /></p>"#);
-/// ```
-pub fn xhtml(node: &Node) -> String {
-    let mut fmt = DefaultRenderer::new(true);
-    node.render(&mut fmt);
-    fmt.into()
-}
-
 #[derive(Debug, Default)]
 /// Default HTML/XHTML renderer.
-pub struct DefaultRenderer {
-    xhtml: bool,
+pub(crate) struct HTMLRenderer<const XHTML: bool> {
     result: String,
 }
 
-impl DefaultRenderer {
-    pub fn new(xhtml: bool) -> Self {
+impl<const XHTML: bool> HTMLRenderer<XHTML> {
+    pub fn new() -> Self {
         Self {
-            xhtml,
             result: String::new(),
         }
+    }
+
+    pub fn render(&mut self, node: &Node) {
+        node.node_value.render(node, self);
     }
 
     fn make_attr(&mut self, name: &str, value: &str) {
@@ -71,13 +36,13 @@ impl DefaultRenderer {
     }
 }
 
-impl From<DefaultRenderer> for String {
-    fn from(f: DefaultRenderer) -> Self {
+impl<const XHTML: bool> From<HTMLRenderer<XHTML>> for String {
+    fn from(f: HTMLRenderer<XHTML>) -> Self {
         f.result
     }
 }
 
-impl Renderer for DefaultRenderer {
+impl<const XHTML: bool> Renderer for HTMLRenderer<XHTML> {
     fn open(&mut self, tag: &str, attrs: &[(&str, String)]) {
         self.result.push('<');
         self.result.push_str(tag);
@@ -96,7 +61,7 @@ impl Renderer for DefaultRenderer {
         self.result.push('<');
         self.result.push_str(tag);
         self.make_attrs(attrs);
-        if self.xhtml {
+        if XHTML {
             self.result.push(' ');
             self.result.push('/');
         }
@@ -105,7 +70,7 @@ impl Renderer for DefaultRenderer {
 
     fn contents(&mut self, nodes: &[Node]) {
         for node in nodes.iter() {
-            node.render(self);
+            self.render(node);
         }
     }
 
