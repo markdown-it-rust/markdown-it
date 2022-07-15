@@ -68,7 +68,7 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
 
     /// Remove all rules identified by `mark`.
     pub fn remove(&mut self, mark: M) {
-        self.deps.retain(|dep| !dep.marks.contains(&mark))
+        self.deps.retain(|dep| !dep.marks.contains(&mark));
     }
 
     /// Check if there are any rules identified by `mark`.
@@ -138,9 +138,10 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
                         }
                     }
                     RuleItemConstraint::Require(v) => {
-                        if !idhash.contains_key(v) {
-                            panic!("missing dependency: {:?} requires {:?}", dep.marks.get(0).unwrap(), v)
-                        }
+                        assert!(
+                            idhash.contains_key(v),
+                            "missing dependency: {:?} requires {:?}", dep.marks.get(0).unwrap(), v
+                        );
                     }
                 }
             }

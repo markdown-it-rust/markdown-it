@@ -27,7 +27,7 @@ impl ErasedSet {
     }
 
     pub fn clear(&mut self) {
-        self.0.clear()
+        self.0.clear();
     }
 
     #[must_use]

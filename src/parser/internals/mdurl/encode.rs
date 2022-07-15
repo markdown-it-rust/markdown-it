@@ -38,7 +38,7 @@ pub fn encode(string: &str, exclude: AsciiSet, keep_escaped: bool) -> String {
             result.push(byte);
         }
 
-        i += 1
+        i += 1;
     }
 
     // performance note:

@@ -37,7 +37,7 @@ impl InlineParser {
             for rule in self.ruler.iter() {
                 ok = rule(state, true);
                 if ok {
-                    if pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
+                    assert!(state.pos > pos, "inline rule didn't increment state.pos");
                     break;
                 }
             }
@@ -82,7 +82,7 @@ impl InlineParser {
                 for rule in self.ruler.iter() {
                     ok = rule(state, false);
                     if ok {
-                        if prev_pos >= state.pos { panic!("inline rule didn't increment state.pos"); }
+                        assert!(state.pos > prev_pos, "inline rule didn't increment state.pos");
                         break;
                     }
                 }

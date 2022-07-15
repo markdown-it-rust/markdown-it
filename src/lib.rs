@@ -1,3 +1,6 @@
+#![warn(clippy::manual_assert)]
+#![warn(clippy::semicolon_if_nothing_returned)]
+
 mod renderer;
 pub mod parser;
 pub mod syntax;

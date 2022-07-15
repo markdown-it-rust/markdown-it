@@ -32,7 +32,7 @@ pub fn rule(node: &mut Node, md: &MarkdownIt) {
                 root = md.inline.parse(content, mapping, root, md, env);
 
                 let len = root.children.len();
-                node.children.splice(idx..idx+1, root.children);
+                node.children.splice(idx..=idx, root.children);
                 idx += len;
             } else {
                 walk_recursive(child, md, env);

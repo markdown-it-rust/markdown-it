@@ -52,13 +52,13 @@ mod tests {
         let new = AsciiSet::new();
 
         for ch in b'a'..=b'z' {
-            set = set.add(ch)
+            set = set.add(ch);
         }
         for ch in b'A'..=b'Z' {
-            set = set.add(ch)
+            set = set.add(ch);
         }
         for ch in b'0'..=b'9' {
-            set = set.add(ch)
+            set = set.add(ch);
         }
 
         let set_str = format!("{:01$x}", set.0, 32);
@@ -77,16 +77,16 @@ mod tests {
         let from = AsciiSet::from("!@#$%^");
 
         for ch in b'a'..=b'z' {
-            set = set.add(ch)
+            set = set.add(ch);
         }
         for ch in b'A'..=b'Z' {
-            set = set.add(ch)
+            set = set.add(ch);
         }
         for ch in b'0'..=b'9' {
-            set = set.add(ch)
+            set = set.add(ch);
         }
         for ch in "!@#$%^".chars() {
-            set = set.add(ch as u8)
+            set = set.add(ch as u8);
         }
 
         let set_str  = format!("{:01$x}", set.0, 32);

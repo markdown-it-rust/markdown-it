@@ -53,13 +53,13 @@ impl BlockParser {
             for rule in self.ruler.iter() {
                 ok = rule(state, false);
                 if ok {
-                    if prev_line >= state.line { panic!("block rule didn't increment state.line"); }
+                    assert!(state.line > prev_line, "block rule didn't increment state.line");
                     break;
                 }
             }
 
             // this can only happen if user disables paragraph rule
-            if !ok { panic!("none of the block rules matched"); }
+            assert!(ok, "none of the block rules matched");
 
             // set state.tight if we had an empty line before current tag
             // i.e. latest empty line should not count
