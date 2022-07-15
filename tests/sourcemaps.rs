@@ -1,4 +1,3 @@
-use markdown_it;
 use markdown_it::Node;
 use markdown_it::parser::internals::sourcemap::CharMapping;
 
@@ -6,7 +5,7 @@ fn run(input: &str, f: fn (&Node, CharMapping)) {
     let md = &mut markdown_it::parser::new();
     markdown_it::syntax::cmark::add(md);
     markdown_it::syntax::html::add(md);
-    let node = md.parse(&input);
+    let node = md.parse(input);
     node.walk(|node, _| assert!(node.srcmap.is_some()));
     f(&node, CharMapping::new(input));
 }

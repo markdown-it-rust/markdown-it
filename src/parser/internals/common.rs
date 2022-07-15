@@ -24,6 +24,7 @@ static UNESCAPE_ALL_RE        : Lazy<Regex> = Lazy::new(||
     Regex::new(&format!("{UNESCAPE_MD_RE}|{ENTITY_RE}")).unwrap()
 );
 
+#[allow(clippy::manual_range_contains)]
 pub fn is_valid_entity_code(code: u32) -> bool {
     // broken sequence
     if code >= 0xD800 && code <= 0xDFFF { return false; }
@@ -37,9 +38,10 @@ pub fn is_valid_entity_code(code: u32) -> bool {
     if code >= 0x7F && code <= 0x9F { return false; }
     // out of range
     if code > 0x10FFFF { return false; }
-    return true;
+    true
 }
 
+#[allow(clippy::from_str_radix_10)]
 fn replace_entity_pattern(str: &str) -> Option<String> {
     if let Some(entity) = ENTITIES_HASH.get(str) {
         Some((*entity).to_owned())

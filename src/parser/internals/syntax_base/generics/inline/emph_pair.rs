@@ -185,6 +185,7 @@ fn is_odd_match(opener: &EmphMarker, closer: &EmphMarker) -> bool {
     // closing delimiters must not be a multiple of 3 unless both lengths
     // are multiples of 3.
     //
+    #[allow(clippy::collapsible_if)]
     if opener.close || closer.open {
         if (opener.length + closer.length) % 3 == 0 {
             if opener.length % 3 != 0 || closer.length % 3 != 0 {

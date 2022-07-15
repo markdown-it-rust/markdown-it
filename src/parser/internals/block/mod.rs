@@ -10,7 +10,7 @@ use crate::parser::internals::ruler::Ruler;
 
 pub type Rule = fn (&mut State, bool) -> bool;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct BlockParser {
     // [[Ruler]] instance. Keep configuration of block rules.
     pub ruler: Ruler<&'static str, Rule>,
@@ -18,9 +18,7 @@ pub struct BlockParser {
 
 impl BlockParser {
     pub fn new() -> Self {
-        Self {
-            ruler: Ruler::new(),
-        }
+        Self::default()
     }
 
     // Generate tokens for input range

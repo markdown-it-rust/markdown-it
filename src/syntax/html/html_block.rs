@@ -40,54 +40,53 @@ impl HTMLSequence {
 // An array of opening and corresponding closing sequences for html tags,
 // last argument defines whether it can terminate a paragraph or not
 //
-static HTML_SEQUENCES : Lazy<Vec<HTMLSequence>> = Lazy::new(|| {
-    let mut result = Vec::new();
-
-    result.push(HTMLSequence::new(
-        Regex::new(r#"(?i)^<(script|pre|style|textarea)(\s|>|$)"#).unwrap(),
-        Regex::new(r#"(?i)</(script|pre|style|textarea)>"#).unwrap(),
-        true
-    ));
-
-    result.push(HTMLSequence::new(
-        Regex::new(r#"^<!--"#).unwrap(),
-        Regex::new(r#"-->"#).unwrap(),
-        true
-    ));
-
-    result.push(HTMLSequence::new(
-        Regex::new(r#"^<\?"#).unwrap(),
-        Regex::new(r#"\?>"#).unwrap(),
-        true
-    ));
-
-    result.push(HTMLSequence::new(
-        Regex::new(r#"^<![A-Z]"#).unwrap(),
-        Regex::new(r#">"#).unwrap(),
-        true
-    ));
-
-    result.push(HTMLSequence::new(
-        Regex::new(r#"^<!\[CDATA\["#).unwrap(),
-        Regex::new(r#"\]\]>"#).unwrap(),
-        true
-    ));
-
+static HTML_SEQUENCES : Lazy<[HTMLSequence; 7]> = Lazy::new(|| {
     let block_names = HTML_BLOCKS.join("|");
-    result.push(HTMLSequence::new(
-        Regex::new(&format!("(?i)^</?({block_names})(\\s|/?>|$)")).unwrap(),
-        Regex::new(r#"^$"#).unwrap(),
-        true
-    ));
-
     let open_close_tag_re = HTML_OPEN_CLOSE_TAG_RE.as_str();
-    result.push(HTMLSequence::new(
-        Regex::new(&format!("{open_close_tag_re}\\s*$")).unwrap(),
-        Regex::new(r#"^$"#).unwrap(),
-        false
-    ));
 
-    result
+    [
+        HTMLSequence::new(
+            Regex::new(r#"(?i)^<(script|pre|style|textarea)(\s|>|$)"#).unwrap(),
+            Regex::new(r#"(?i)</(script|pre|style|textarea)>"#).unwrap(),
+            true
+        ),
+
+        HTMLSequence::new(
+            Regex::new(r#"^<!--"#).unwrap(),
+            Regex::new(r#"-->"#).unwrap(),
+            true
+        ),
+
+        HTMLSequence::new(
+            Regex::new(r#"^<\?"#).unwrap(),
+            Regex::new(r#"\?>"#).unwrap(),
+            true
+        ),
+
+        HTMLSequence::new(
+            Regex::new(r#"^<![A-Z]"#).unwrap(),
+            Regex::new(r#">"#).unwrap(),
+            true
+        ),
+
+        HTMLSequence::new(
+            Regex::new(r#"^<!\[CDATA\["#).unwrap(),
+            Regex::new(r#"\]\]>"#).unwrap(),
+            true
+        ),
+
+        HTMLSequence::new(
+            Regex::new(&format!("(?i)^</?({block_names})(\\s|/?>|$)")).unwrap(),
+            Regex::new(r#"^$"#).unwrap(),
+            true
+        ),
+
+        HTMLSequence::new(
+            Regex::new(&format!("{open_close_tag_re}\\s*$")).unwrap(),
+            Regex::new(r#"^$"#).unwrap(),
+            false
+        ),
+    ]
 });
 
 fn rule(state: &mut block::State, silent: bool) -> bool {

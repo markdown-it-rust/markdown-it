@@ -189,11 +189,11 @@ pub fn parse_link_destination(str: &str, start: usize, max: usize) -> Option<Par
 
         if level != 0 { return None; }
 
-        return Some(ParseLinkFragmentResult {
+        Some(ParseLinkFragmentResult {
             pos,
             lines: 0,
             str: unescape_all(&str[start..pos]),
-        });
+        })
     }
 }
 
@@ -204,14 +204,13 @@ pub fn parse_link_title(str: &str, start: usize, max: usize) -> Option<ParseLink
     let mut chars = str[start..max].chars();
     let mut pos = start + 1;
     let mut lines = 0;
-    let marker;
 
-    match chars.next() {
-        Some('"')  => marker = '"',
-        Some('\'') => marker = '\'',
-        Some('(')  => marker = ')',
+    let marker = match chars.next() {
+        Some('"')  => '"',
+        Some('\'') => '\'',
+        Some('(')  => ')',
         None | Some(_) => return None,
-    }
+    };
 
     loop {
         match chars.next() {
@@ -258,15 +257,7 @@ struct ParseLinkResult {
 // this function assumes that first character ("[") already matches
 //
 fn parse_link(state: &mut inline::State, pos: usize, enable_nested: bool) -> Option<ParseLinkResult> {
-    let label_end;
-
-    if let Some(x) = parse_link_label(state, pos, enable_nested) {
-        label_end = x;
-    } else {
-        // parser failed to find ']', so it's not a valid link
-        return None;
-    }
-
+    let label_end = parse_link_label(state, pos, enable_nested)?;
     let label_start = pos + 1;
     let mut pos = label_end + 1;
     let mut chars = state.src[pos..state.pos_max].chars();
@@ -347,7 +338,7 @@ fn parse_link(state: &mut inline::State, pos: usize, enable_nested: bool) -> Opt
     if let Some(references) = state.root_env.get::<ReferenceEnv>() {
         // covers label === '' and label === undefined
         // (collapsed reference link and shortcut reference link respectively)
-        let label = if maybe_label.is_none() || maybe_label == Some("") {
+        let label = if matches!(maybe_label, None | Some("")) {
             &state.src[label_start..label_end]
         } else {
             maybe_label.unwrap()
@@ -355,17 +346,13 @@ fn parse_link(state: &mut inline::State, pos: usize, enable_nested: bool) -> Opt
 
         let lref = references.map.get(&normalize_reference(label));
 
-        if let Some(r) = lref {
-            Some(ParseLinkResult {
-                label_start,
-                label_end,
-                href: Some(r.0.clone()),
-                title: r.1.clone(),
-                end: pos,
-            })
-        } else {
-            None
-        }
+        lref.map(|r| ParseLinkResult {
+            label_start,
+            label_end,
+            href: Some(r.0.clone()),
+            title: r.1.clone(),
+            end: pos,
+        })
     } else {
         None
     }

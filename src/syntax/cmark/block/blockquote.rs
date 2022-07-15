@@ -155,8 +155,8 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     // Restore original tShift; this might not be necessary since the parser
     // has already been here, but just to make sure we can do that.
-    for i in 0..old_line_offsets.len() {
-        std::mem::swap(&mut state.line_offsets[i + start_line], &mut old_line_offsets[i]);
+    for (idx, line_offset) in old_line_offsets.iter_mut().enumerate() {
+        std::mem::swap(&mut state.line_offsets[idx + start_line], line_offset);
     }
     state.blk_indent = old_indent;
 

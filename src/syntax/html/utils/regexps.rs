@@ -23,12 +23,14 @@ const processing    : &str = r#"<[?][\s\S]*?[?]>"#;
 const declaration   : &str = r#"<![A-Z]+\s+[^>]*>"#;
 const cdata         : &str = r#"<!\[CDATA\[[\s\S]*?\]\]>"#;
 
+#[allow(clippy::double_parens)]
 pub static HTML_TAG_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new(
         formatcp!("^(?:{open_tag}|{close_tag}|{comment}|{processing}|{declaration}|{cdata})")
     ).unwrap()
 });
 
+#[allow(clippy::double_parens)]
 pub static HTML_OPEN_CLOSE_TAG_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new(
         formatcp!("^(?:{open_tag}|{close_tag})")

@@ -47,11 +47,8 @@ fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
     let mut match_end = pos;
 
     // Nothing found in the cache, scan until the end of the line (or until marker is found)
-    loop {
-        match state.src[match_end..state.pos_max].find(MARKER) {
-            Some(x) => { match_start = match_end + x; }
-            None =>    { break; }
-        }
+    while let Some(p) = state.src[match_end..state.pos_max].find(MARKER) {
+        match_start = match_end + p;
 
         // scan marker length
         match_end = match_start + 1;

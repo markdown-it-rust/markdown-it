@@ -28,12 +28,11 @@ fn rule(state: &mut inline::State, silent: bool) -> bool {
     // Quick fail on second char
     if let Some('!' | '?' | '/' | 'A'..='Z' | 'a'..='z') = chars.next() {} else { return false; }
 
-    let capture;
-    if let Some(x) = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max]) {
-        capture = x.get(0).unwrap().as_str();
+    let capture = if let Some(x) = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max]) {
+        x.get(0).unwrap().as_str()
     } else {
         return false;
-    }
+    };
 
     let capture_len = capture.len();
 

@@ -77,7 +77,7 @@ fn main() {
     let result = ast.render();
 
     if output == "-" {
-        std::io::stdout().write(result.as_bytes()).unwrap();
+        std::io::stdout().write_all(result.as_bytes()).unwrap();
     } else {
         std::fs::write(output, &result).unwrap();
     }

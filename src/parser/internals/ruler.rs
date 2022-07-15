@@ -53,10 +53,7 @@ pub struct Ruler<M, T> {
 
 impl<M, T> Ruler<M, T> {
     pub fn new() -> Self {
-        Self {
-            deps: Vec::new(),
-            compiled: OnceCell::new(),
-        }
+        Self::default()
     }
 }
 
@@ -76,7 +73,7 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
 
     /// Check if there are any rules identified by `mark`.
     pub fn contains(&mut self, mark: M) -> bool {
-        self.deps.iter().position(|dep| dep.marks.contains(&mark)).is_some()
+        self.deps.iter().any(|dep| dep.marks.contains(&mark))
     }
 
     /// Ordered iteration through rules.
@@ -221,6 +218,15 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Debug for Ruler<M, T> {
             .field("deps", &self.deps)
             .field("compiled", &vec)
             .finish()
+    }
+}
+
+impl<M, T> Default for Ruler<M, T> {
+    fn default() -> Self {
+        Self {
+            deps: Vec::new(),
+            compiled: OnceCell::new(),
+        }
     }
 }
 

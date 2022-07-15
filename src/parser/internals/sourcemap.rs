@@ -89,7 +89,7 @@ impl SourcePos {
 
 impl std::fmt::Debug for SourcePos {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return self.byte_offset.fmt(f);
+        self.byte_offset.fmt(f)
     }
 }
 

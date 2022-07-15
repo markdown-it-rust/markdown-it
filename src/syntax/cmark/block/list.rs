@@ -165,7 +165,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     // Detect list type and position after marker
     if let Some(p) = skip_ordered_list_marker(&current_line) {
         pos_after_marker = p;
-        let int = u32::from_str_radix(&current_line[..pos_after_marker - 1], 10).unwrap();
+        let int = str::parse(&current_line[..pos_after_marker - 1]).unwrap();
         marker_value = Some(int);
 
         // If we're starting a new ordered list right after
@@ -229,6 +229,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         let reached_end_of_line = first_nonspace == offsets.line_end - offsets.line_start;
         let indent_nonspace = initial + indent_after_marker;
 
+        #[allow(clippy::if_same_then_else)]
         if reached_end_of_line {
             // trimming space in "-    \n  3" case, indent is 1 here
             indent_after_marker = 1;
@@ -319,6 +320,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         current_line = state.get_line(state.line).to_owned();
 
         // fail if list has another type
+        #[allow(clippy::collapsible_else_if)]
         if marker_value.is_some() {
             if let Some(p) = skip_ordered_list_marker(&current_line) {
                 pos_after_marker = p;

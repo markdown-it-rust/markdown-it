@@ -55,13 +55,12 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
 
     let line = state.get_line(state.line);
     let mut chars = line.chars();
-    let marker;
 
-    if let Some(ch @ ('~' | '`')) = chars.next() {
-        marker = ch;
+    let marker = if let Some(ch @ ('~' | '`')) = chars.next() {
+        ch
     } else {
         return false;
-    }
+    };
 
     // scan marker length
     let mut len = 1;

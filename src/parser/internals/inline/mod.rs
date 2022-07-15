@@ -10,7 +10,7 @@ use crate::parser::internals::ruler::Ruler;
 
 pub type Rule = fn (&mut State, bool) -> bool;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct InlineParser {
     // [[Ruler]] instance. Keep configuration of inline rules.
     pub ruler: Ruler<&'static str, Rule>,
@@ -18,9 +18,7 @@ pub struct InlineParser {
 
 impl InlineParser {
     pub fn new() -> Self {
-        Self {
-            ruler: Ruler::new(),
-        }
+        Self::default()
     }
 
     // Skip single token by running all rules in validation mode;

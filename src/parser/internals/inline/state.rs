@@ -194,6 +194,7 @@ impl<'a, 'b> State<'a, 'b> {
         let is_last_whitespace = last_char.is_whitespace();
         let is_next_whitespace = next_char.is_whitespace();
 
+        #[allow(clippy::collapsible_if)]
         if is_next_whitespace {
             left_flanking = false;
         } else if is_next_punct_char {
@@ -202,6 +203,7 @@ impl<'a, 'b> State<'a, 'b> {
             }
         }
 
+        #[allow(clippy::collapsible_if)]
         if is_last_whitespace {
             right_flanking = false;
         } else if is_last_punct_char {

@@ -136,7 +136,7 @@ mod tests {
     fn empty_set() {
         let set = ErasedSet::new();
         assert_eq!(set.len(), 0);
-        assert_eq!(set.is_empty(), true);
+        assert!(set.is_empty());
     }
 
     #[test]
@@ -144,10 +144,10 @@ mod tests {
         let mut set = ErasedSet::new();
         set.insert(42u8);
         assert_eq!(set.len(), 1);
-        assert_eq!(set.is_empty(), false);
+        assert!(!set.is_empty());
         set.insert(42u16);
         assert_eq!(set.len(), 2);
-        assert_eq!(set.is_empty(), false);
+        assert!(!set.is_empty());
     }
 
     #[test]

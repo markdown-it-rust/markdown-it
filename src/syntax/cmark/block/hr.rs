@@ -27,18 +27,17 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
     if state.line_indent(state.line) >= 4 { return false; }
 
     let mut chars = state.get_line(state.line).chars();
-    let marker;
 
     // Check hr marker
-    if let Some(ch @ ('*' | '-' | '_')) = chars.next() {
-        marker = ch;
+    let marker = if let Some(ch @ ('*' | '-' | '_')) = chars.next() {
+        ch
     } else {
         return false;
-    }
+    };
 
     // markers can be mixed with spaces, but there should be at least 3 of them
     let mut cnt = 1;
-    while let Some(ch) = chars.next() {
+    for ch in chars {
         if ch == marker {
             cnt += 1;
         } else if ch != ' ' && ch != '\t' {
