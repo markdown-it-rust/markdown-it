@@ -1,4 +1,5 @@
-use crate::parser::internals::env::Env;
+use crate::parser::internals::erasedset::ErasedSet;
+use crate::parser::internals::syntax_base::builtin::Root;
 use crate::{Node, NodeValue};
 use crate::parser::MarkdownIt;
 
@@ -18,7 +19,7 @@ pub fn add(md: &mut MarkdownIt) {
 }
 
 pub fn rule(node: &mut Node, md: &MarkdownIt) {
-    fn walk_recursive(node: &mut Node, md: &MarkdownIt, env: &mut Env) {
+    fn walk_recursive(node: &mut Node, md: &MarkdownIt, env: &mut ErasedSet) {
         let mut idx = 0;
         while idx < node.children.len() {
             let child = &mut node.children[idx];
@@ -40,7 +41,11 @@ pub fn rule(node: &mut Node, md: &MarkdownIt) {
         }
     }
 
-    let mut env = node.env.remove::<Env>().unwrap_or_default();
+    let data = node.cast_mut::<Root>().expect("expecting root node to always be Root");
+    let mut env = std::mem::take(&mut data.env);
+
     walk_recursive(node, md, &mut env);
-    node.env.insert(env);
+
+    let data = node.cast_mut::<Root>().unwrap();
+    data.env = env;
 }

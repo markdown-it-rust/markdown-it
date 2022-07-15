@@ -7,13 +7,13 @@ use std::collections::HashMap;
 use std::fmt::{self, Debug};
 use std::hash::{Hash, Hasher};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ErasedSet(HashMap<TypeKey, Box<dyn AnyDebug>>);
 
 impl ErasedSet {
     #[must_use]
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self::default()
     }
 
     #[must_use]

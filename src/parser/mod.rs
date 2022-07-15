@@ -15,6 +15,8 @@ use crate::parser::internals::sourcemap::SourcePos;
 use crate::parser::internals::syntax_base;
 use crate::parser::syntax_base::builtin::Root;
 
+use self::internals::erasedset::ErasedSet;
+
 pub type Rule = fn (&mut Node, &MarkdownIt);
 
 #[derive(Derivative)]
@@ -80,6 +82,7 @@ impl MarkdownIt {
     pub fn parse(&self, src: &str) -> Node {
         let mut node = Node::new(Root {
             content: normalize_text(src).to_string(),
+            env: ErasedSet::new(),
         });
         node.srcmap = Some(SourcePos::new(0, src.len()));
 

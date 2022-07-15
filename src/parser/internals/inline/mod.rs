@@ -5,12 +5,10 @@ pub use state::State;
 
 use crate::Node;
 use crate::parser::MarkdownIt;
-use crate::parser::internals::env::Env;
-use crate::parser::internals::env::scope::Inline;
+use crate::parser::internals::erasedset::ErasedSet;
 use crate::parser::internals::ruler::Ruler;
 
 pub type Rule = fn (&mut State, bool) -> bool;
-pub type Rule2 = fn (&mut State);
 
 #[derive(Debug)]
 pub struct InlineParser {
@@ -106,11 +104,9 @@ impl InlineParser {
 
     // Process input string and push inline tokens into `out_tokens`
     //
-    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, node: Node, md: &MarkdownIt, env: &mut Env) -> Node {
+    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, node: Node, md: &MarkdownIt, env: &mut ErasedSet) -> Node {
         let mut state = State::new(src, srcmap, md, env, node);
-        state.env.state_push::<Inline>();
         self.tokenize(&mut state);
-        //state.env.state_pop::<Inline>();
         state.node
     }
 }

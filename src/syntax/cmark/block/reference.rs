@@ -4,16 +4,11 @@ use std::collections::HashMap;
 use crate::parser::MarkdownIt;
 use crate::parser::internals::block;
 use crate::parser::internals::common::normalize_reference;
-use crate::parser::internals::env;
 use crate::parser::internals::syntax_base::generics::inline::full_link;
 
 #[derive(Debug, Default)]
 pub struct ReferenceEnv {
     pub map: HashMap<String, (String, Option<String>)>,
-}
-
-impl env::EnvMember for ReferenceEnv {
-    type Scope = env::scope::Block;
 }
 
 pub fn add(md: &mut MarkdownIt) {
@@ -177,7 +172,7 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         return false;
     }
 
-    let references = &mut state.env.get_or_insert::<ReferenceEnv>().map;
+    let references = &mut state.root_env.get_or_insert_default::<ReferenceEnv>().map;
 
     references.entry(label).or_insert_with(|| (href, title));
 

@@ -3,7 +3,7 @@
 use crate::Node;
 use crate::parser::MarkdownIt;
 use crate::parser::internals::common::calc_right_whitespace_with_tabstops;
-use crate::parser::internals::env::Env;
+use crate::parser::internals::erasedset::ErasedSet;
 use crate::parser::internals::sourcemap::SourcePos;
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub struct State<'a, 'b> where 'b: 'a {
     // link to parser instance
     pub md: &'a MarkdownIt,
 
-    pub env: &'b mut Env,
+    pub root_env: &'b mut ErasedSet,
 
     //
     // Internal state vartiables
@@ -75,11 +75,11 @@ pub struct LineOffset {
 }
 
 impl<'a, 'b> State<'a, 'b> {
-    pub fn new(src: &'b str, md: &'a MarkdownIt, env: &'b mut Env, node: Node) -> Self {
+    pub fn new(src: &'b str, md: &'a MarkdownIt, env: &'b mut ErasedSet, node: Node) -> Self {
         let mut result = Self {
             src,
             md,
-            env,
+            root_env: env,
             node,
             line_offsets: Vec::new(),
             blk_indent: 0,

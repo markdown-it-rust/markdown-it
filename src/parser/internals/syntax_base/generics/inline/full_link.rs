@@ -344,7 +344,7 @@ fn parse_link(state: &mut inline::State, pos: usize, enable_nested: bool) -> Opt
         _ => pos = label_end + 1,
     }
 
-    if let Some(references) = state.env.get::<ReferenceEnv>() {
+    if let Some(references) = state.root_env.get::<ReferenceEnv>() {
         // covers label === '' and label === undefined
         // (collapsed reference link and shortcut reference link respectively)
         let label = if maybe_label.is_none() || maybe_label == Some("") {

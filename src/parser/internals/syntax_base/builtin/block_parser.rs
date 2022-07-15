@@ -1,6 +1,5 @@
 use crate::Node;
 use crate::parser::MarkdownIt;
-use crate::parser::internals::env::Env;
 use super::Root;
 
 pub fn add(md: &mut MarkdownIt) {
@@ -10,12 +9,13 @@ pub fn add(md: &mut MarkdownIt) {
 
 pub fn rule(node: &mut Node, md: &MarkdownIt) {
     let mut root = std::mem::take(node);
-    let mut env = root.env.remove::<Env>().unwrap_or_default();
     let data = root.cast_mut::<Root>().expect("expecting root node to always be Root");
     let source = std::mem::take(&mut data.content);
+    let mut env = std::mem::take(&mut data.env);
 
     root = md.block.parse(source.as_str(), root, md, &mut env);
-    root.env.insert(env);
-    root.cast_mut::<Root>().unwrap().content = source;
+    let data = root.cast_mut::<Root>().unwrap();
+    data.content = source;
+    data.env = env;
     *node = root;
 }

@@ -5,12 +5,10 @@ pub use state::State;
 
 use crate::Node;
 use crate::parser::MarkdownIt;
-use crate::parser::internals::env::Env;
-use crate::parser::internals::env::scope::Block;
+use crate::parser::internals::erasedset::ErasedSet;
 use crate::parser::internals::ruler::Ruler;
 
 pub type Rule = fn (&mut State, bool) -> bool;
-pub type Rule2 = fn (&mut State);
 
 #[derive(Debug)]
 pub struct BlockParser {
@@ -83,13 +81,9 @@ impl BlockParser {
 
     // Process input string and push block tokens into `out_tokens`
     //
-    pub fn parse(&self, src: &str, node: Node, md: &MarkdownIt, env: &mut Env) -> Node {
+    pub fn parse(&self, src: &str, node: Node, md: &MarkdownIt, env: &mut ErasedSet) -> Node {
         let mut state = State::new(src, md, env, node);
-        state.env.state_push::<Block>();
-
         self.tokenize(&mut state);
-
-        //state.env.state_pop::<Block>();
         state.node
     }
 }

@@ -2,7 +2,7 @@
 //
 use crate::Node;
 use crate::parser::MarkdownIt;
-use crate::parser::internals::env::Env;
+use crate::parser::internals::erasedset::ErasedSet;
 use crate::parser::internals::sourcemap::SourcePos;
 use crate::parser::internals::syntax_base::builtin::Text;
 use std::collections::HashMap;
@@ -49,7 +49,8 @@ fn is_punct_char(ch: char) -> bool {
 pub struct State<'a, 'b> where 'b: 'a {
     pub src: String,
     pub srcmap: Vec<(usize, usize)>,
-    pub env: &'b mut Env,
+    pub root_env: &'b mut ErasedSet,
+    pub inline_env: ErasedSet,
     pub md: &'a MarkdownIt,
     pub node: Node,
 
@@ -73,7 +74,7 @@ impl<'a, 'b> State<'a, 'b> {
         src: String,
         srcmap: Vec<(usize, usize)>,
         md: &'a MarkdownIt,
-        env: &'b mut Env,
+        env: &'b mut ErasedSet,
         node: Node,
     ) -> Self {
         let mut result = Self {
@@ -81,7 +82,8 @@ impl<'a, 'b> State<'a, 'b> {
             pos_max:    src.len(),
             src,
             srcmap,
-            env,
+            root_env:   env,
+            inline_env: ErasedSet::new(),
             md,
             node,
             cache:      HashMap::new(),

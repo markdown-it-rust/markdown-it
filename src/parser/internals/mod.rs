@@ -1,6 +1,5 @@
 pub mod block;
 pub mod common;
-pub mod env;
 pub mod erasedset;
 pub mod inline;
 pub mod mdurl;

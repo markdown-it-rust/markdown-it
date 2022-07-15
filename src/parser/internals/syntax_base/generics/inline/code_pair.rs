@@ -2,7 +2,6 @@
 //
 use crate::Node;
 use crate::parser::MarkdownIt;
-use crate::parser::internals::env;
 use crate::parser::internals::inline;
 use crate::parser::internals::syntax_base::builtin::Text;
 
@@ -10,10 +9,6 @@ use crate::parser::internals::syntax_base::builtin::Text;
 struct BacktickCache<const MARKER: char> {
     scanned: bool,
     max: Vec<usize>,
-}
-
-impl<const MARKER: char> env::EnvMember for BacktickCache<MARKER> {
-    type Scope = env::scope::Inline;
 }
 
 #[derive(Debug)]
@@ -38,7 +33,7 @@ fn rule<const MARKER: char>(state: &mut inline::State, silent: bool) -> bool {
     }
 
     // backtick length => last seen position
-    let backticks = state.env.get_or_insert::<BacktickCache<MARKER>>();
+    let backticks = state.inline_env.get_or_insert_default::<BacktickCache<MARKER>>();
     let opener_len = pos - state.pos;
 
     if backticks.scanned && backticks.max[opener_len] <= state.pos {
