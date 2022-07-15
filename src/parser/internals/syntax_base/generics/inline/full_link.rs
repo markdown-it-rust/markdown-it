@@ -5,6 +5,7 @@ use crate::parser::MarkdownIt;
 use crate::parser::internals::common::normalize_reference;
 use crate::parser::internals::common::unescape_all;
 use crate::parser::internals::inline;
+use crate::parser::internals::inline::InlineRule;
 use crate::syntax::cmark::block::reference::ReferenceEnv;
 
 #[derive(Debug)]
@@ -15,13 +16,7 @@ pub fn add<const ENABLE_NESTED: bool>(
     f: fn (Option<String>, Option<String>) -> Node
 ) {
     md.env.insert(LinkCfg::<'\0'>(f));
-
-    md.inline.ruler.add("generic::full_link", |state: &mut inline::State, silent: bool| -> bool {
-        let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != '[' { return false; }
-        let f = state.md.env.get::<LinkCfg<'\0'>>().unwrap().0;
-        rule(state, silent, ENABLE_NESTED, 0, f)
-    });
+    md.inline.add_rule::<LinkScanner<ENABLE_NESTED>>();
 }
 
 pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
@@ -29,14 +24,32 @@ pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
     f: fn (Option<String>, Option<String>
 ) -> Node) {
     md.env.insert(LinkCfg::<PREFIX>(f));
+    md.inline.add_rule::<LinkPrefixScanner<PREFIX, ENABLE_NESTED>>();
+}
 
-    md.inline.ruler.add("generic::full_link", |state: &mut inline::State, silent: bool| -> bool {
+pub struct LinkScanner<const ENABLE_NESTED: bool>;
+impl<const ENABLE_NESTED: bool> InlineRule for LinkScanner<ENABLE_NESTED> {
+    const MARKER: char = '[';
+
+    fn run(state: &mut inline::State, silent: bool) -> bool {
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != '[' { return false; }
+        let f = state.md.env.get::<LinkCfg<'\0'>>().unwrap().0;
+        rule(state, silent, ENABLE_NESTED, 0, f)
+    }
+}
+
+pub struct LinkPrefixScanner<const PREFIX: char, const ENABLE_NESTED: bool>;
+impl<const PREFIX: char, const ENABLE_NESTED: bool> InlineRule for LinkPrefixScanner<PREFIX, ENABLE_NESTED> {
+    const MARKER: char = PREFIX;
+
+    fn run(state: &mut inline::State, silent: bool) -> bool {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next() != Some(PREFIX) { return false; }
         if chars.next() != Some('[') { return false; }
         let f = state.md.env.get::<LinkCfg<PREFIX>>().unwrap().0;
         rule(state, silent, ENABLE_NESTED, 1, f)
-    });
+    }
 }
 
 fn rule(

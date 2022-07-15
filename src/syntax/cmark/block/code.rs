@@ -2,7 +2,7 @@
 //
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
-use crate::parser::internals::block;
+use crate::parser::internals::block::{self, BlockRule};
 
 #[derive(Debug)]
 pub struct CodeBlock {
@@ -22,40 +22,43 @@ impl NodeValue for CodeBlock {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.add("code", rule);
+    md.block.add_rule::<CodeScanner>();
 }
 
-fn rule(state: &mut block::State, silent: bool) -> bool {
-    if silent { return false; }
-    if state.line_indent(state.line) < 4 { return false; }
+pub struct CodeScanner;
+impl BlockRule for CodeScanner {
+    fn run(state: &mut block::State, silent: bool) -> bool {
+        if silent { return false; }
+        if state.line_indent(state.line) < 4 { return false; }
 
-    let mut next_line = state.line + 1;
-    let mut last = next_line;
+        let mut next_line = state.line + 1;
+        let mut last = next_line;
 
-    while next_line < state.line_max {
-        if state.is_empty(next_line) {
-            next_line += 1;
-            continue;
+        while next_line < state.line_max {
+            if state.is_empty(next_line) {
+                next_line += 1;
+                continue;
+            }
+
+            if state.line_indent(next_line) >= 4 {
+                next_line += 1;
+                last = next_line;
+                continue;
+            }
+
+            break;
         }
 
-        if state.line_indent(next_line) >= 4 {
-            next_line += 1;
-            last = next_line;
-            continue;
-        }
+        let start_line = state.line;
+        state.line = last;
 
-        break;
+        let (mut content, mapping) = state.get_lines(start_line, last, 4 + state.blk_indent, false);
+        content += "\n";
+
+        let mut node = Node::new(CodeBlock { content });
+        node.srcmap = state.get_map_from_offsets(mapping[0].1, state.line_offsets[state.line - 1].line_end);
+        state.push(node);
+
+        true
     }
-
-    let start_line = state.line;
-    state.line = last;
-
-    let (mut content, mapping) = state.get_lines(start_line, last, 4 + state.blk_indent, false);
-    content += "\n";
-
-    let mut node = Node::new(CodeBlock { content });
-    node.srcmap = state.get_map_from_offsets(mapping[0].1, state.line_offsets[state.line - 1].line_end);
-    state.push(node);
-
-    true
 }

@@ -6,10 +6,11 @@ use crate::Node;
 use crate::parser::MarkdownIt;
 use crate::parser::internals::common;
 use crate::parser::internals::inline;
+use crate::parser::internals::inline::InlineRule;
 use crate::parser::internals::syntax_base::builtin::TextSpecial;
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.add("entity", rule);
+    md.inline.add_rule::<EntityScanner>();
 }
 
 static DIGITAL_RE : Lazy<Regex> = Lazy::new(|| {
@@ -19,6 +20,22 @@ static DIGITAL_RE : Lazy<Regex> = Lazy::new(|| {
 static NAMED_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new("(?i)^&([a-z][a-z0-9]{1,31});").unwrap()
 });
+
+pub struct EntityScanner;
+impl InlineRule for EntityScanner {
+    const MARKER: char = '&';
+
+    fn run(state: &mut inline::State, silent: bool) -> bool {
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != '&' { return false; }
+
+        if let Some('#') = chars.next() {
+            parse_digital_entity(state, silent)
+        } else {
+            parse_named_entity(state, silent)
+        }
+    }
+}
 
 fn parse_digital_entity(state: &mut inline::State, silent: bool) -> bool {
     if let Some(capture) = DIGITAL_RE.captures(&state.src[state.pos..]) {
@@ -78,16 +95,5 @@ fn parse_named_entity(state: &mut inline::State, silent: bool) -> bool {
         }
     } else {
         false
-    }
-}
-
-fn rule(state: &mut inline::State, silent: bool) -> bool {
-    let mut chars = state.src[state.pos..state.pos_max].chars();
-    if chars.next().unwrap() != '&' { return false; }
-
-    if let Some('#') = chars.next() {
-        parse_digital_entity(state, silent)
-    } else {
-        parse_named_entity(state, silent)
     }
 }

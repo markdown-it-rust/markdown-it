@@ -4,7 +4,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
-use crate::parser::internals::block;
+use crate::parser::internals::block::{self, BlockRule};
 use super::utils::blocks::*;
 use super::utils::regexps::*;
 
@@ -22,7 +22,7 @@ impl NodeValue for HtmlBlock {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.add("html_block", rule);
+    md.block.add_rule::<HtmlBlockScanner>();
 }
 
 struct HTMLSequence {
@@ -89,56 +89,59 @@ static HTML_SEQUENCES : Lazy<[HTMLSequence; 7]> = Lazy::new(|| {
     ]
 });
 
-fn rule(state: &mut block::State, silent: bool) -> bool {
-    // if it's indented more than 3 spaces, it should be a code block
-    if state.line_indent(state.line) >= 4 { return false; }
+pub struct HtmlBlockScanner;
+impl BlockRule for HtmlBlockScanner {
+    fn run(state: &mut block::State, silent: bool) -> bool {
+        // if it's indented more than 3 spaces, it should be a code block
+        if state.line_indent(state.line) >= 4 { return false; }
 
-    let line_text = state.get_line(state.line);
+        let line_text = state.get_line(state.line);
 
-    if let Some('<') = line_text.chars().next() {} else { return false; }
+        if let Some('<') = line_text.chars().next() {} else { return false; }
 
-    let mut sequence = None;
-    for seq in HTML_SEQUENCES.iter() {
-        if seq.open.is_match(line_text) {
-            sequence = Some(seq);
-            break;
-        }
-    }
-
-    if sequence.is_none() { return false; }
-    let sequence = sequence.unwrap();
-
-    if silent {
-        // true if this sequence can be a terminator, false otherwise
-        return sequence.can_terminate_paragraph;
-    }
-
-    let start_line = state.line;
-    let mut next_line = state.line + 1;
-
-    // If we are here - we detected HTML block.
-    // Let's roll down till block end.
-    if !sequence.close.is_match(line_text) {
-        while next_line < state.line_max {
-            if state.line_indent(next_line) < 0 { break; }
-
-            let line_text = state.get_line(next_line);
-
-            if sequence.close.is_match(line_text) {
-                if !line_text.is_empty() { next_line += 1; }
+        let mut sequence = None;
+        for seq in HTML_SEQUENCES.iter() {
+            if seq.open.is_match(line_text) {
+                sequence = Some(seq);
                 break;
             }
-
-            next_line += 1;
         }
+
+        if sequence.is_none() { return false; }
+        let sequence = sequence.unwrap();
+
+        if silent {
+            // true if this sequence can be a terminator, false otherwise
+            return sequence.can_terminate_paragraph;
+        }
+
+        let start_line = state.line;
+        let mut next_line = state.line + 1;
+
+        // If we are here - we detected HTML block.
+        // Let's roll down till block end.
+        if !sequence.close.is_match(line_text) {
+            while next_line < state.line_max {
+                if state.line_indent(next_line) < 0 { break; }
+
+                let line_text = state.get_line(next_line);
+
+                if sequence.close.is_match(line_text) {
+                    if !line_text.is_empty() { next_line += 1; }
+                    break;
+                }
+
+                next_line += 1;
+            }
+        }
+
+        state.line = next_line;
+
+        let (content, _) = state.get_lines(start_line, next_line, state.blk_indent, true);
+        let mut node = Node::new(HtmlBlock { content });
+        node.srcmap = state.get_map(start_line, next_line - 1);
+        state.push(node);
+
+        true
     }
-
-    state.line = next_line;
-
-    let (content, _) = state.get_lines(start_line, next_line, state.blk_indent, true);
-    let mut node = Node::new(HtmlBlock { content });
-    node.srcmap = state.get_map(start_line, next_line - 1);
-    state.push(node);
-
-    true
 }

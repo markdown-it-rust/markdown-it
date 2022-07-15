@@ -1,13 +1,13 @@
 /// This part of API is not documented and not stable.
 pub mod internals;
 
-use std::borrow::Cow;
 use derivative::Derivative;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use std::borrow::Cow;
 use crate::Node;
 use crate::parser::internals::block;
-use crate::parser::internals::erasedset;
+use crate::parser::internals::erasedset::{ErasedSet, TypeKey};
 use crate::parser::internals::inline;
 use crate::parser::internals::mdurl::{self, AsciiSet};
 use crate::parser::internals::ruler::Ruler;
@@ -15,14 +15,11 @@ use crate::parser::internals::sourcemap::SourcePos;
 use crate::parser::internals::syntax_base;
 use crate::parser::syntax_base::builtin::Root;
 
-use self::internals::erasedset::ErasedSet;
-
-pub type Rule = fn (&mut Node, &MarkdownIt);
+type RuleFn = fn (&mut Node, &MarkdownIt);
 
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct MarkdownIt {
-    pub ruler: Ruler<&'static str, Rule>,
     pub block: block::BlockParser,
     pub inline: inline::InlineParser,
     #[derivative(Debug="ignore")]
@@ -31,8 +28,9 @@ pub struct MarkdownIt {
     pub normalize_link: fn (&str) -> String,
     #[derivative(Debug="ignore")]
     pub normalize_link_text: fn (&str) -> String,
-    pub env: erasedset::ErasedSet,
+    pub env: ErasedSet,
     pub max_nesting: u32,
+    ruler: Ruler<TypeKey, RuleFn>,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -91,19 +89,32 @@ impl MarkdownIt {
         }
         node
     }
+
+    pub fn add_rule<T: CoreRule>(&mut self) -> RuleBuilder<RuleFn> {
+        let item = self.ruler.add(TypeKey::of::<T>(), T::run);
+        RuleBuilder::new(item)
+    }
+
+    pub fn has_rule<T: CoreRule>(&mut self) -> bool {
+        self.ruler.contains(TypeKey::of::<T>())
+    }
+
+    pub fn remove_rule<T: CoreRule>(&mut self) {
+        self.ruler.remove(TypeKey::of::<T>());
+    }
 }
 
 impl Default for MarkdownIt {
     fn default() -> Self {
         let mut md = Self {
-            ruler: Ruler::new(),
             block: block::BlockParser::new(),
             inline: inline::InlineParser::new(),
             validate_link,
             normalize_link,
             normalize_link_text,
-            env: erasedset::ErasedSet::new(),
+            env: ErasedSet::new(),
             max_nesting: 100,
+            ruler: Ruler::new(),
         };
         syntax_base::builtin::add(&mut md);
         md
@@ -113,3 +124,55 @@ impl Default for MarkdownIt {
 pub fn new() -> MarkdownIt {
     MarkdownIt::default()
 }
+
+pub trait CoreRule : 'static {
+    fn run(root: &mut Node, md: &MarkdownIt);
+}
+
+macro_rules! rule_builder {
+    ($var: ident) => {
+        pub struct RuleBuilder<'a, T> {
+            item: &'a mut crate::parser::internals::ruler::RuleItem<TypeKey, T>
+        }
+
+        impl<'a, T> RuleBuilder<'a, T> {
+            fn new(item: &'a mut crate::parser::internals::ruler::RuleItem<TypeKey, T>) -> Self {
+                Self { item }
+            }
+
+            pub fn before<U: $var>(self) -> Self {
+                self.item.before(crate::parser::internals::erasedset::TypeKey::of::<U>());
+                self
+            }
+
+            pub fn after<U: $var>(self) -> Self {
+                self.item.after(crate::parser::internals::erasedset::TypeKey::of::<U>());
+                self
+            }
+
+            pub fn before_all(self) -> Self {
+                self.item.before_all();
+                self
+            }
+
+            pub fn after_all(self) -> Self {
+                self.item.after_all();
+                self
+            }
+
+            pub fn alias<U: $var>(self) -> Self {
+                self.item.alias(crate::parser::internals::erasedset::TypeKey::of::<U>());
+                self
+            }
+
+            pub fn require<U: $var>(self) -> Self {
+                self.item.require(crate::parser::internals::erasedset::TypeKey::of::<U>());
+                self
+            }
+        }
+    };
+}
+
+rule_builder!(CoreRule);
+
+pub(crate) use rule_builder;

@@ -154,6 +154,15 @@ impl<'a, 'b> State<'a, 'b> {
         self.node.children.push(node);
     }
 
+    pub fn test_rules_at_line(&mut self) -> bool {
+        for rule in self.md.block.ruler.iter() {
+            if rule(self, true) {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn is_empty(&self, line: usize) -> bool {
         self.line_offsets[line].first_nonspace >= self.line_offsets[line].line_end
     }

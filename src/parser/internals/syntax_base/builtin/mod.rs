@@ -1,6 +1,6 @@
-mod block_parser;
-mod inline_parser;
-mod skip_text;
+pub mod block_parser;
+pub mod inline_parser;
+pub mod skip_text;
 
 use crate::parser::internals::erasedset::ErasedSet;
 use crate::{Node, NodeValue, Renderer};

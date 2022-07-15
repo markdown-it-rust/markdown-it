@@ -2,9 +2,10 @@
 //
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
-use crate::parser::internals::block;
+use crate::parser::internals::block::{self, BlockRule};
 use crate::parser::internals::common::find_indent_of;
 use crate::syntax::cmark::block::paragraph::Paragraph;
+use crate::syntax::cmark::block::hr::HrScanner;
 
 #[derive(Debug)]
 pub struct OrderedList {
@@ -60,8 +61,15 @@ impl NodeValue for ListItem {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.ruler.add("list", rule)
-        .after("hr");
+    md.block.add_rule::<ListScanner>()
+        .after::<HrScanner>();
+}
+
+pub struct ListScanner;
+impl BlockRule for ListScanner {
+    fn run(state: &mut block::State, silent: bool) -> bool {
+        rule(state, silent)
+    }
 }
 
 // Search `[-+*][\n ]`, returns next pos after marker on success
@@ -311,10 +319,8 @@ fn rule(state: &mut block::State, silent: bool) -> bool {
         if state.line_indent(next_line) >= 4 { break; }
 
         // fail if terminating block found
-        for rule in state.md.block.ruler.iter() {
-            if rule(state, true) {
-                break 'outer;
-            }
+        if state.test_rules_at_line() {
+            break 'outer;
         }
 
         current_line = state.get_line(state.line).to_owned();

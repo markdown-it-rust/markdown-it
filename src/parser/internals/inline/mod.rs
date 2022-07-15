@@ -4,16 +4,16 @@ pub mod state;
 pub use state::State;
 
 use crate::Node;
-use crate::parser::MarkdownIt;
-use crate::parser::internals::erasedset::ErasedSet;
+use crate::parser::{MarkdownIt, rule_builder};
+use crate::parser::internals::erasedset::{ErasedSet, TypeKey};
 use crate::parser::internals::ruler::Ruler;
 
-pub type Rule = fn (&mut State, bool) -> bool;
+type RuleFn = fn (&mut State, bool) -> bool;
 
 #[derive(Debug, Default)]
 pub struct InlineParser {
     // [[Ruler]] instance. Keep configuration of inline rules.
-    pub ruler: Ruler<&'static str, Rule>,
+    ruler: Ruler<TypeKey, RuleFn>,
 }
 
 impl InlineParser {
@@ -107,4 +107,24 @@ impl InlineParser {
         self.tokenize(&mut state);
         state.node
     }
+
+    pub fn add_rule<T: InlineRule>(&mut self) -> RuleBuilder<RuleFn> {
+        let item = self.ruler.add(TypeKey::of::<T>(), T::run);
+        RuleBuilder::new(item)
+    }
+
+    pub fn has_rule<T: InlineRule>(&mut self) -> bool {
+        self.ruler.contains(TypeKey::of::<T>())
+    }
+
+    pub fn remove_rule<T: InlineRule>(&mut self) {
+        self.ruler.remove(TypeKey::of::<T>());
+    }
 }
+
+pub trait InlineRule : 'static {
+    const MARKER: char;
+    fn run(state: &mut State, silent: bool) -> bool;
+}
+
+rule_builder!(InlineRule);

@@ -1,9 +1,10 @@
 use std::cmp::min;
 use crate::{Node, NodeValue};
-use crate::parser::MarkdownIt;
-use crate::parser::internals::inline;
+use crate::parser::{MarkdownIt, CoreRule};
+use crate::parser::internals::inline::{self, InlineRule};
 use crate::parser::internals::sourcemap::SourcePos;
 use crate::parser::internals::syntax_base::builtin::Text;
+use crate::parser::internals::syntax_base::builtin::inline_parser::InlineParserRule;
 
 #[derive(Debug, Default)]
 struct PairConfig<const MARKER: char> {
@@ -40,37 +41,43 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
 
     if !pair_config.inserted {
         pair_config.inserted = true;
-        md.inline.ruler.add("generic::emph_pair_find", |state: &mut inline::State, silent: bool| -> bool {
-            if silent { return false; }
-
-            let mut chars = state.src[state.pos..state.pos_max].chars();
-            if chars.next().unwrap() != MARKER { return false; }
-
-            let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
-            let mut token = Node::new(EmphMarker {
-                marker:    MARKER,
-                length:    scanned.length,
-                remaining: scanned.length,
-                open:      scanned.can_open,
-                close:     scanned.can_close,
-            });
-            token.srcmap = state.get_map(state.pos, state.pos + scanned.length);
-            state.push(token);
-            state.pos += scanned.length;
-            if scanned.can_close {
-                scan_and_match_delimiters::<MARKER>(state);
-            }
-            true
-        });
+        md.inline.add_rule::<EmphPairScanner<MARKER, CAN_SPLIT_WORD>>();
     }
 
-    if !md.ruler.contains("generic::emph_fragments_join") {
-        md.ruler.add("generic::emph_fragments_join", |root, _| {
-            root.walk_mut(|node, _| fragments_join(node));
-        }).before_all().after("builtin::inline_parser");
+    if !md.has_rule::<FragmentsJoin>() {
+        md.add_rule::<FragmentsJoin>()
+            .before_all()
+            .after::<InlineParserRule>();
     }
 }
 
+pub struct EmphPairScanner<const MARKER: char, const CAN_SPLIT_WORD: bool>;
+impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScanner<MARKER, CAN_SPLIT_WORD> {
+    const MARKER: char = MARKER;
+
+    fn run(state: &mut inline::State, silent: bool) -> bool {
+        if silent { return false; }
+
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != MARKER { return false; }
+
+        let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
+        let mut token = Node::new(EmphMarker {
+            marker:    MARKER,
+            length:    scanned.length,
+            remaining: scanned.length,
+            open:      scanned.can_open,
+            close:     scanned.can_close,
+        });
+        token.srcmap = state.get_map(state.pos, state.pos + scanned.length);
+        state.push(token);
+        state.pos += scanned.length;
+        if scanned.can_close {
+            scan_and_match_delimiters::<MARKER>(state);
+        }
+        true
+    }
+}
 
 // Assuming last token is a closing delimiter we just inserted,
 // try to find opener(s). If any are found, move stuff to nested emph node.
@@ -195,6 +202,14 @@ fn is_odd_match(opener: &EmphMarker, closer: &EmphMarker) -> bool {
     }
 
     false
+}
+
+
+struct FragmentsJoin;
+impl CoreRule for FragmentsJoin {
+    fn run(node: &mut Node, _: &MarkdownIt) {
+        node.walk_mut(|node, _| fragments_join(node));
+    }
 }
 
 

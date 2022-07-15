@@ -95,6 +95,7 @@ impl<T: Debug + Downcast> Debug for ErasedMember<T> {
 }
 
 #[readonly::make]
+#[derive(Clone, Copy)]
 pub struct TypeKey {
     pub id:   TypeId,
     pub name: &'static str,

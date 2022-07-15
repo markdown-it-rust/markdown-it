@@ -2,7 +2,7 @@
 //
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
-use crate::parser::internals::inline;
+use crate::parser::internals::inline::{self, InlineRule};
 use super::utils::regexps::*;
 
 #[derive(Debug)]
@@ -17,40 +17,45 @@ impl NodeValue for HtmlInline {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.add("html_inline", rule);
+    md.inline.add_rule::<HtmlInlineScanner>();
 }
 
-fn rule(state: &mut inline::State, silent: bool) -> bool {
-    // Check start
-    let mut chars = state.src[state.pos..state.pos_max].chars();
-    if chars.next().unwrap() != '<' { return false; }
+pub struct HtmlInlineScanner;
+impl InlineRule for HtmlInlineScanner {
+    const MARKER: char = '<';
 
-    // Quick fail on second char
-    if let Some('!' | '?' | '/' | 'A'..='Z' | 'a'..='z') = chars.next() {} else { return false; }
+    fn run(state: &mut inline::State, silent: bool) -> bool {
+        // Check start
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != '<' { return false; }
 
-    let capture = if let Some(x) = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max]) {
-        x.get(0).unwrap().as_str()
-    } else {
-        return false;
-    };
+        // Quick fail on second char
+        if let Some('!' | '?' | '/' | 'A'..='Z' | 'a'..='z') = chars.next() {} else { return false; }
 
-    let capture_len = capture.len();
+        let capture = if let Some(x) = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max]) {
+            x.get(0).unwrap().as_str()
+        } else {
+            return false;
+        };
 
-    if !silent {
-        let content = capture.to_owned();
+        let capture_len = capture.len();
 
-        if HTML_LINK_OPEN.is_match(&content) {
-            state.link_level += 1;
-        } else if HTML_LINK_CLOSE.is_match(&content) {
-            state.link_level -= 1;
+        if !silent {
+            let content = capture.to_owned();
+
+            if HTML_LINK_OPEN.is_match(&content) {
+                state.link_level += 1;
+            } else if HTML_LINK_CLOSE.is_match(&content) {
+                state.link_level -= 1;
+            }
+
+            let mut node = Node::new(HtmlInline { content });
+            node.srcmap = state.get_map(state.pos, state.pos + capture_len);
+            state.push(node);
         }
 
-        let mut node = Node::new(HtmlInline { content });
-        node.srcmap = state.get_map(state.pos, state.pos + capture_len);
-        state.push(node);
+        state.pos += capture_len;
+
+        true
     }
-
-    state.pos += capture_len;
-
-    true
 }

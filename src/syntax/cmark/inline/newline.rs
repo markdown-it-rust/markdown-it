@@ -2,7 +2,7 @@
 //
 use crate::{Node, NodeValue, Renderer};
 use crate::parser::MarkdownIt;
-use crate::parser::internals::inline;
+use crate::parser::internals::inline::{self, InlineRule};
 
 #[derive(Debug)]
 pub struct Hardbreak;
@@ -24,47 +24,52 @@ impl NodeValue for Softbreak {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.ruler.add("newline", rule);
+    md.inline.add_rule::<NewlineScanner>();
 }
 
-fn rule(state: &mut inline::State, silent: bool) -> bool {
-    let mut chars = state.src[state.pos..state.pos_max].chars();
+pub struct NewlineScanner;
+impl InlineRule for NewlineScanner {
+    const MARKER: char = '\n';
 
-    if chars.next().unwrap() != '\n' { return false; }
+    fn run(state: &mut inline::State, silent: bool) -> bool {
+        let mut chars = state.src[state.pos..state.pos_max].chars();
 
-    let mut pos = state.pos;
-    pos += 1;
+        if chars.next().unwrap() != '\n' { return false; }
 
-    // skip leading whitespaces from next line
-    while let Some(' ' | '\t') = chars.next() {
+        let mut pos = state.pos;
         pos += 1;
-    }
 
-    // '  \n' -> hardbreak
-    if !silent {
-        let mut tail_size = 0;
-        let trailing_text = state.trailing_text_get();
-
-        for ch in trailing_text.chars().rev() {
-            if ch == ' ' {
-                tail_size += 1;
-            } else {
-                break;
-            }
+        // skip leading whitespaces from next line
+        while let Some(' ' | '\t') = chars.next() {
+            pos += 1;
         }
 
-        state.trailing_text_pop(tail_size);
+        // '  \n' -> hardbreak
+        if !silent {
+            let mut tail_size = 0;
+            let trailing_text = state.trailing_text_get();
 
-        let mut node = if tail_size >= 2 {
-            Node::new(Hardbreak)
-        } else {
-            Node::new(Softbreak)
-        };
+            for ch in trailing_text.chars().rev() {
+                if ch == ' ' {
+                    tail_size += 1;
+                } else {
+                    break;
+                }
+            }
 
-        node.srcmap = state.get_map(state.pos - tail_size, pos);
-        state.push(node);
+            state.trailing_text_pop(tail_size);
+
+            let mut node = if tail_size >= 2 {
+                Node::new(Hardbreak)
+            } else {
+                Node::new(Softbreak)
+            };
+
+            node.srcmap = state.get_map(state.pos - tail_size, pos);
+            state.push(node);
+        }
+
+        state.pos = pos;
+        true
     }
-
-    state.pos = pos;
-    true
 }
