@@ -1,4 +1,4 @@
-use crate::common::erasedset::ErasedSet;
+use crate::common::ErasedSet;
 use crate::{Node, NodeValue, Renderer};
 
 #[derive(Debug)]

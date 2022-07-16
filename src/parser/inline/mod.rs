@@ -12,9 +12,8 @@ pub use builtin::inline_parser::InlineRoot;
 pub use builtin::skip_text::{Text, TextSpecial};
 
 use crate::{MarkdownIt, Node};
-use crate::common::erasedset::ErasedSet;
+use crate::common::{ErasedSet, TypeKey};
 use crate::common::ruler::Ruler;
-use crate::common::typekey::TypeKey;
 
 type RuleFn = fn (&mut InlineState, bool) -> bool;
 

@@ -1,9 +1,8 @@
 use downcast_rs::{Downcast, impl_downcast};
 use std::{fmt::Debug, any::TypeId};
 use crate::Renderer;
-use crate::common::erasedset::ErasedSet;
+use crate::common::{ErasedSet, TypeKey};
 use crate::common::sourcemap::SourcePos;
-use crate::common::typekey::TypeKey;
 use crate::parser::renderer::HTMLRenderer;
 
 /// Single node in the CommonMark AST.

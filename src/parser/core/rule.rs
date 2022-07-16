@@ -7,21 +7,21 @@ pub trait CoreRule : 'static {
 macro_rules! rule_builder {
     ($var: ident) => {
         pub struct RuleBuilder<'a, T> {
-            item: &'a mut crate::common::ruler::RuleItem<crate::common::typekey::TypeKey, T>
+            item: &'a mut crate::common::ruler::RuleItem<crate::common::TypeKey, T>
         }
 
         impl<'a, T> RuleBuilder<'a, T> {
-            pub(crate) fn new(item: &'a mut crate::common::ruler::RuleItem<crate::common::typekey::TypeKey, T>) -> Self {
+            pub(crate) fn new(item: &'a mut crate::common::ruler::RuleItem<crate::common::TypeKey, T>) -> Self {
                 Self { item }
             }
 
             pub fn before<U: $var>(self) -> Self {
-                self.item.before(crate::common::typekey::TypeKey::of::<U>());
+                self.item.before(crate::common::TypeKey::of::<U>());
                 self
             }
 
             pub fn after<U: $var>(self) -> Self {
-                self.item.after(crate::common::typekey::TypeKey::of::<U>());
+                self.item.after(crate::common::TypeKey::of::<U>());
                 self
             }
 
@@ -36,12 +36,12 @@ macro_rules! rule_builder {
             }
 
             pub fn alias<U: $var>(self) -> Self {
-                self.item.alias(crate::common::typekey::TypeKey::of::<U>());
+                self.item.alias(crate::common::TypeKey::of::<U>());
                 self
             }
 
             pub fn require<U: $var>(self) -> Self {
-                self.item.require(crate::common::typekey::TypeKey::of::<U>());
+                self.item.require(crate::common::TypeKey::of::<U>());
                 self
             }
         }

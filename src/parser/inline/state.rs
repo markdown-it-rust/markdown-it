@@ -1,7 +1,7 @@
 // Inline parser state
 //
 use crate::{MarkdownIt, Node};
-use crate::common::erasedset::ErasedSet;
+use crate::common::ErasedSet;
 use crate::common::sourcemap::SourcePos;
 use crate::parser::inline::Text;
 use std::collections::HashMap;

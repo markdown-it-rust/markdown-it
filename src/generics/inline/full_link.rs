@@ -156,7 +156,7 @@ pub fn parse_link_destination(str: &str, start: usize, max: usize) -> Option<Par
                     return Some(ParseLinkFragmentResult {
                         pos: pos + 1,
                         lines: 0,
-                        str: unescape_all(&str[start + 1..pos]),
+                        str: unescape_all(&str[start + 1..pos]).into_owned(),
                     });
                 }
                 Some('\\') => {
@@ -203,7 +203,7 @@ pub fn parse_link_destination(str: &str, start: usize, max: usize) -> Option<Par
         Some(ParseLinkFragmentResult {
             pos,
             lines: 0,
-            str: unescape_all(&str[start..pos]),
+            str: unescape_all(&str[start..pos]).into_owned(),
         })
     }
 }
@@ -229,7 +229,7 @@ pub fn parse_link_title(str: &str, start: usize, max: usize) -> Option<ParseLink
                 return Some(ParseLinkFragmentResult {
                     pos: pos + 1,
                     lines,
-                    str: unescape_all(&str[start + 1..pos]),
+                    str: unescape_all(&str[start + 1..pos]).into_owned(),
                 });
             }
             Some('(') if marker == ')' => {

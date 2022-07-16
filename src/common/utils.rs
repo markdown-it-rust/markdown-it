@@ -1,3 +1,5 @@
+//! Random assortment of functions that's used internally to write plugins.
+
 use entities;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -15,6 +17,16 @@ static UNESCAPE_ALL_RE        : Lazy<Regex> = Lazy::new(||
 );
 
 #[allow(clippy::manual_range_contains)]
+/// Return true if a `code` you got from `&#xHHHH;` entity is a valid charcode.
+///
+/// It returns false for surrogates and non-printables, so it's a subset of `char::from_u32`.
+/// For example, it returns false for 0xFDD0, which is a valid character, but not safe to
+/// render on the screen due to turning you into stone, as per <https://xkcd.com/380/>
+/// ```
+/// # use markdown_it::common::utils::is_valid_entity_code;
+/// assert_eq!(is_valid_entity_code(1), false);
+/// assert_eq!(is_valid_entity_code(32), true);
+/// ```
 pub fn is_valid_entity_code(code: u32) -> bool {
     // broken sequence
     if code >= 0xD800 && code <= 0xDFFF { return false; }
@@ -31,6 +43,12 @@ pub fn is_valid_entity_code(code: u32) -> bool {
     true
 }
 
+/// Check if "&xxxx;" string is a valid HTML entity, return character it represents.
+/// ```
+/// # use markdown_it::common::utils::get_entity_from_str;
+/// assert_eq!(get_entity_from_str("&amp;"), Some("&"));
+/// assert_eq!(get_entity_from_str("&xxx;"), None);
+/// ```
 pub fn get_entity_from_str(str: &str) -> Option<&'static str> {
     pub static ENTITIES_HASH : Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
         let mut mapping = HashMap::new();
@@ -66,9 +84,14 @@ fn replace_entity_pattern(str: &str) -> Option<String> {
     }
 }
 
-pub fn unescape_all(str: &str) -> String {
-    // TODO: cow
-    if !str.contains('\\') && !str.contains('&') { return str.to_owned(); }
+/// Unescape both entities (`&quot; -> "`) and backslash escapes (`\" -> "`).
+/// ```
+/// # use markdown_it::common::utils::unescape_all;
+/// assert_eq!(unescape_all("&amp;"), "&");
+/// assert_eq!(unescape_all("\\&"), "&");
+/// ```
+pub fn unescape_all(str: &str) -> Cow<str> {
+    if !str.contains('\\') && !str.contains('&') { return Cow::Borrowed(str); }
 
     UNESCAPE_ALL_RE.replace_all(str, |captures: &regex::Captures| {
         let s = captures.get(0).unwrap().as_str();
@@ -81,17 +104,27 @@ pub fn unescape_all(str: &str) -> String {
         } else {
             s.to_owned()
         }
-    }).to_string()
+    })
 }
 
+/// Escape `" < > &` with corresponding HTML entities;
+/// ```
+/// # use markdown_it::common::utils::escape_html;
+/// assert_eq!(escape_html("&\""), "&amp;&quot;");
+/// ```
 pub fn escape_html(str: &str) -> Cow<str> {
-    // this should escape following characters: " < > &
     html_escape::encode_double_quoted_attribute(str)
 }
 
-
-// Helper to unify [reference labels].
-//
+/// Unicode case folding + space normalization, used for for reference labels.
+///
+/// So that strings equal according to commonmark standard are converted to
+/// the same string (lowercase/uppercase differences and spacing go away).
+/// ```
+/// # use markdown_it::common::utils::normalize_reference;
+/// assert_eq!(normalize_reference("hello"), normalize_reference("HELLO"));
+/// assert_eq!(normalize_reference("a   b"), normalize_reference("a b"));
+/// ```
 pub fn normalize_reference(str: &str) -> String {
     static SPACE_RE : Lazy<Regex> = Lazy::new(|| Regex::new(r"\s+").unwrap());
 
@@ -134,14 +167,16 @@ pub fn normalize_reference(str: &str) -> String {
     str.to_lowercase().to_uppercase()
 }
 
-// Finds last occurrence of `char` in `source`, returns number of characters from
-// that last occurrence. If char is not found, return number of characters total.
-//
-// Examples:
-// "abcde", 'e' -> 0
-// "abcde", 'b' -> 3
-// "abcde", 'z' -> 5
-//
+/// Count number of characters since last occurrence of `char`.
+///
+/// Finds last occurrence of `char` in `source`, returns number of characters from
+/// that last occurrence. If char is not found, return number of characters total.
+/// ```
+/// # use markdown_it::common::utils::rfind_and_count;
+/// assert_eq!(rfind_and_count("abcde", 'e'), 0);
+/// assert_eq!(rfind_and_count("abcde", 'b'), 3);
+/// assert_eq!(rfind_and_count("abcde", 'z'), 5);
+/// ```
 pub fn rfind_and_count(source: &str, char: char) -> usize {
     let mut result = 0;
     for c in source.chars().rev() {
@@ -151,9 +186,14 @@ pub fn rfind_and_count(source: &str, char: char) -> usize {
     result
 }
 
-// Calculate number of spaces from `pos` to first non-space character
-// or EOL. Tabs are expanded to variable number of spaces with tabstop = 4.
-// Returns relative indent and offset of first non-space character.
+/// Calculate number of spaces from `pos` to first non-space character or EOL.
+///
+/// Tabs are expanded to variable number of spaces with tabstop = 4.
+/// Returns relative indent and offset of first non-space character.
+/// ```
+/// # use markdown_it::common::utils::find_indent_of;
+/// assert_eq!(find_indent_of("\tfoo", 0), (4, 1));
+/// ```
 pub fn find_indent_of(line: &str, mut pos: usize) -> (usize, usize) {
     let mut chars = line[pos..].chars();
     let mut indent = 0;
@@ -174,16 +214,19 @@ pub fn find_indent_of(line: &str, mut pos: usize) -> (usize, usize) {
     }
 }
 
-// Input: a string of characters (presumed whitespaces, can be anything), where each one of
-// them contributes 1 to indent (except for tabs, whose width may vary with tabstop = 4).
-//
-// This function returns any trailing whitespace with total length of `indent`.
-//
-// If an indent would split a tab, that tab is replaced with 4 spaces.
-//
-// Example: cut_right_whitespace_with_tabstops("\t\t", 6) would return "  \t" (two preceding
-// spaces) because first tab gets expanded to 6 spaces.
-//
+/// Returns trailing whitespace with total length of `indent`.
+///
+/// Input: a string of characters (presumed whitespaces, can be anything), where each one of
+/// them contributes 1 to indent (except for tabs, whose width may vary with tabstop = 4).
+///
+/// If an indent would split a tab, that tab is replaced with 4 spaces.
+///
+/// Example: cut_right_whitespace_with_tabstops("\t\t", 6) would return "  \t" (two preceding
+/// spaces) because first tab gets expanded to 6 spaces.
+/// ```
+/// # use markdown_it::common::utils::cut_right_whitespace_with_tabstops;
+/// assert_eq!(cut_right_whitespace_with_tabstops("\t\t", 6), "  \t");
+/// ```
 pub fn cut_right_whitespace_with_tabstops(source: &str, indent: i32) -> Cow<str> {
     let (num_spaces, start) = calc_right_whitespace_with_tabstops(source, indent);
 
@@ -196,6 +239,16 @@ pub fn cut_right_whitespace_with_tabstops(source: &str, indent: i32) -> Cow<str>
     }
 }
 
+/// Calculate trailing whitespace with total length of `indent`.
+///
+/// See [cut_right_whitespace_with_tabstops](cut_right_whitespace_with_tabstops)
+/// for algorithm and details.
+///
+/// Returns number of spaces + number of bytes to cut from the end.
+/// ```
+/// # use markdown_it::common::utils::calc_right_whitespace_with_tabstops;
+/// assert_eq!(calc_right_whitespace_with_tabstops("\t\t", 6), (2, 1));
+/// ```
 pub fn calc_right_whitespace_with_tabstops(source: &str, mut indent: i32) -> (usize, usize) {
     let mut start = source.len();
     let mut chars = source.char_indices().rev();

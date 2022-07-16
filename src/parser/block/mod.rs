@@ -9,9 +9,8 @@ pub use rule::*;
 pub mod builtin;
 
 use crate::{MarkdownIt, Node};
-use crate::common::erasedset::ErasedSet;
+use crate::common::{ErasedSet, TypeKey};
 use crate::common::ruler::Ruler;
-use crate::common::typekey::TypeKey;
 
 type RuleFn = fn (&mut BlockState, bool) -> bool;
 

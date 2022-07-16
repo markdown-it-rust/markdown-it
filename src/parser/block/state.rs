@@ -1,7 +1,7 @@
 // Parser state class
 //
 use crate::{MarkdownIt, Node};
-use crate::common::erasedset::ErasedSet;
+use crate::common::ErasedSet;
 use crate::common::sourcemap::SourcePos;
 use crate::common::utils::calc_right_whitespace_with_tabstops;
 

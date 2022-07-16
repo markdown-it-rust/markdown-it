@@ -1,5 +1,5 @@
 use crate::{MarkdownIt, Node, NodeValue};
-use crate::common::erasedset::ErasedSet;
+use crate::common::ErasedSet;
 use crate::parser::core::{CoreRule, Root};
 use crate::parser::block::builtin::BlockParserRule;
 

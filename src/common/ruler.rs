@@ -1,3 +1,5 @@
+//! Plugin manager with dependency resolution.
+
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
