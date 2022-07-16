@@ -1,5 +1,4 @@
-use markdown_it::parser::internals::syntax_base::builtin::Text;
-use markdown_it::parser::internals::syntax_base::builtin::TextSpecial;
+use markdown_it::parser::inline::{Text, TextSpecial};
 use std::io::Read;
 use std::io::Write;
 
@@ -48,13 +47,13 @@ fn main() {
     };
 
     let source = String::from_utf8_lossy(&vec);
-    let md = &mut markdown_it::parser::new();
-    markdown_it::syntax::cmark::add(md);
+    let md = &mut markdown_it::MarkdownIt::new();
+    markdown_it::plugins::cmark::add(md);
     if !no_html {
-        markdown_it::syntax::html::add(md);
+        markdown_it::plugins::html::add(md);
     }
     if sourcepos {
-        markdown_it::syntax::sourcepos::add(md);
+        markdown_it::plugins::sourcepos::add(md);
     }
 
     let ast = md.parse(&source);

@@ -13,8 +13,8 @@ Rust port of [markdown-it](https://github.com/markdown-it/markdown-it) javascrip
 ### Usage
 
 ```rust
-let parser = &mut markdown_it::parser::new();
-markdown_it::syntax::cmark::add(parser);
+let parser = &mut markdown_it::MarkdownIt::new();
+markdown_it::plugins::cmark::add(parser);
 
 let ast  = parser.parse("Hello **world**!");
 let html = ast.render();
