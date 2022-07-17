@@ -46,6 +46,18 @@ impl CoreRule for InlineParserRule {
         let data = root.cast_mut::<Root>().expect("expecting root node to always be Root");
         let mut env = std::mem::take(&mut data.env);
 
+        // this is invalid if input only contains reference;
+        // so if user disables block parser, he must insert smth like this instead
+        /*if root.children.is_empty() {
+            // block parser disabled, parse as if input was one big inline block
+            let data = root.cast_mut::<Root>().unwrap();
+            let node = Node::new(InlineRoot {
+                content: data.content.clone(),
+                mapping: vec![(0, 0)],
+            });
+            root.children.push(node);
+        }*/
+
         walk_recursive(root, md, &mut env);
 
         let data = root.cast_mut::<Root>().unwrap();

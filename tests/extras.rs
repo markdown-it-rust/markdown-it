@@ -10,6 +10,24 @@ fn title_example() {
     assert_eq!(html, "<p>Hello <strong>world</strong>!</p>\n");
 }
 
+#[test]
+fn no_plugins() {
+    let md = &mut markdown_it::MarkdownIt::new();
+    let node = md.parse("hello\nworld");
+    let result = node.render();
+    assert_eq!(result, "hello\nworld\n");
+}
+
+/*#[test]
+fn no_block_parser() {
+    let md = &mut markdown_it::MarkdownIt::new();
+    markdown_it::plugins::cmark::add(md);
+    md.remove_rule::<markdown_it::parser::block::builtin::BlockParserRule>();
+    let node = md.parse("hello *world*");
+    let result = node.render();
+    assert_eq!(result, "hello <em>world</em>");
+}*/
+
 fn run(input: &str, output: &str) {
     let output = if output.is_empty() { "".to_owned() } else { output.to_owned() + "\n" };
     let md = &mut markdown_it::MarkdownIt::new();

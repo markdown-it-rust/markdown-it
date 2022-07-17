@@ -11,6 +11,7 @@ pub mod builtin;
 use crate::{MarkdownIt, Node};
 use crate::common::{ErasedSet, TypeKey};
 use crate::common::ruler::Ruler;
+use crate::parser::inline::InlineRoot;
 
 type RuleFn = fn (&mut BlockState, bool) -> bool;
 
@@ -63,7 +64,18 @@ impl BlockParser {
             }
 
             // this can only happen if user disables paragraph rule
-            assert!(ok, "none of the block rules matched");
+            if !ok {
+                // push text as is, this behavior can change in the future;
+                // users should always have some kind of default block rule
+                let mut content = state.get_line(state.line).to_owned();
+                content.push('\n');
+                let node = Node::new(InlineRoot {
+                    content,
+                    mapping: vec![(0, state.line_offsets[state.line].first_nonspace)],
+                });
+                state.push(node);
+                state.line += 1;
+            }
 
             // set state.tight if we had an empty line before current tag
             // i.e. latest empty line should not count
