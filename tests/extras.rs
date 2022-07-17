@@ -49,4 +49,22 @@ r#"<blockquote>
 </ul>
 </blockquote>"#);
     }
+
+    #[test]
+    fn null_char_replacement() {
+        run("&#0;", "<p>\u{FFFD}</p>");
+        run("\0", "<p>\u{FFFD}</p>");
+    }
+
+    #[test]
+    fn cr_only_newlines() {
+        run("foo\rbar", "<p>foo\nbar</p>");
+        run("    foo\r    bar", "<pre><code>foo\nbar\n</code></pre>");
+    }
+
+    #[test]
+    fn cr_lf_newlines() {
+        run("foo\r\nbar", "<p>foo\nbar</p>");
+        run("    foo\r\n    bar", "<pre><code>foo\nbar\n</code></pre>");
+    }
 }

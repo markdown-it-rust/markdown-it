@@ -5,9 +5,15 @@ fn run(input: &str, output: &str) {
     markdown_it::plugins::cmark::add(md);
     markdown_it::plugins::html::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
+
+    // make sure we have sourcemaps for everything
     node.walk(|node, _| assert!(node.srcmap.is_some()));
+
     let result = node.xrender();
     assert_eq!(result, output);
+
+    // make sure it doesn't crash without trailing \n
+    let _ = md.parse(input.trim_end());
 }
 
 ///////////////////////////////////////////////////////////////////////////

@@ -1,7 +1,6 @@
 use derivative::Derivative;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::borrow::Cow;
 use crate::Node;
 use crate::common::{ErasedSet, TypeKey};
 use crate::common::mdurl::{self, AsciiSet};
@@ -58,17 +57,6 @@ fn normalize_link_text(str: &str) -> String {
     str.to_owned()
 }
 
-fn normalize_text(src: &str) -> Cow<str> {
-    if src.contains([ '\r', '\0' ]) {
-        Cow::Owned(src.to_owned()
-                      .replace("\r\n", "\n")
-                      .replace('\r', "\n")
-                      .replace('\0', "\u{FFFD}"))
-    } else {
-        Cow::Borrowed(src)
-    }
-}
-
 impl MarkdownIt {
     pub fn new() -> Self {
         Self::default()
@@ -76,7 +64,7 @@ impl MarkdownIt {
 
     pub fn parse(&self, src: &str) -> Node {
         let mut node = Node::new(Root {
-            content: normalize_text(src).to_string(),
+            content: src.to_owned(),
             env: ErasedSet::new(),
         });
         node.srcmap = Some(SourcePos::new(0, src.len()));

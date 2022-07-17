@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-
 use crate::Node;
 use crate::common::utils::escape_html;
 
@@ -59,7 +58,19 @@ impl<const XHTML: bool> HTMLRenderer<XHTML> {
 
 impl<const XHTML: bool> From<HTMLRenderer<XHTML>> for String {
     fn from(f: HTMLRenderer<XHTML>) -> Self {
-        f.result
+        #[cold]
+        fn replace_null(input: String) -> String {
+            input.replace('\0', "\u{FFFD}")
+        }
+
+        if f.result.contains('\0') {
+            // U+0000 must be replaced with U+FFFD as per commonmark spec,
+            // we do it at the very end in order to avoid messing with byte offsets
+            // for source maps (since "\0".len() != "\u{FFFD}".len())
+            replace_null(f.result)
+        } else {
+            f.result
+        }
     }
 }
 

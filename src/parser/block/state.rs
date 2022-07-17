@@ -102,7 +102,6 @@ impl<'a, 'b> BlockState<'a, 'b> {
         let mut offset = 0;
         let mut start = 0;
         let mut pos = 0;
-        let len = self.src.len();
 
         loop {
             match chars.next() {
@@ -111,13 +110,19 @@ impl<'a, 'b> BlockState<'a, 'b> {
                     offset += if ch == '\t' { 4 - offset % 4 } else { 1 };
                     pos += 1;
                 }
-                ch @ (Some('\n') | None) => {
+                ch @ (Some('\n' | '\r') | None) => {
                     self.line_offsets.push(LineOffset {
                         line_start: start,
                         line_end: pos,
                         first_nonspace: start + indent,
                         indent_nonspace: offset,
                     });
+
+                    if ch == Some('\r') && chars.peek() == Some(&'\n') {
+                        // treat CR+LF as one linebreak
+                        chars.next();
+                        pos += 1;
+                    }
 
                     indent_found = false;
                     indent = 0;
@@ -137,14 +142,6 @@ impl<'a, 'b> BlockState<'a, 'b> {
         }
 
         self.line_max = self.line_offsets.len();
-
-        // Push fake entry to simplify cache bounds checks
-        self.line_offsets.push(LineOffset {
-            line_start: len,
-            line_end: len,
-            first_nonspace: len,
-            indent_nonspace: 0,
-        });
     }
 
     // Push new token to "stream".
@@ -163,7 +160,11 @@ impl<'a, 'b> BlockState<'a, 'b> {
     }
 
     pub fn is_empty(&self, line: usize) -> bool {
-        self.line_offsets[line].first_nonspace >= self.line_offsets[line].line_end
+        if let Some(offsets) = self.line_offsets.get(line) {
+            offsets.first_nonspace >= offsets.line_end
+        } else {
+            false
+        }
     }
 
     pub fn skip_empty_lines(&self, from: usize) -> usize {
@@ -198,15 +199,8 @@ impl<'a, 'b> BlockState<'a, 'b> {
 
         while line < end {
             let offsets = &self.line_offsets[line];
-
-            let mut last = if line + 1 < end || keep_last_lf {
-                // No need for bounds check because we have fake entry on tail.
-                offsets.line_end + 1
-            } else {
-                offsets.line_end
-            };
-
-            if last > self.src.len() { last = self.src.len(); }
+            let last = offsets.line_end;
+            let add_last_lf = line + 1 < end || keep_last_lf;
 
             let (num_spaces, first) = calc_right_whitespace_with_tabstops(
                 &self.src[offsets.line_start..offsets.first_nonspace],
@@ -216,6 +210,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
             mapping.push(( result.len(), offsets.line_start+first ));
             result += &" ".repeat(num_spaces as usize);
             result += &self.src[offsets.line_start+first..last];
+            if add_last_lf { result.push('\n'); }
             line += 1;
         }
 
