@@ -1,5 +1,8 @@
-// fences (``` lang, ~~~ lang)
-//
+//! Code fence
+//!
+//! ` ```lang ` or `~~~lang`
+//!
+//! <https://spec.commonmark.org/0.30/#code-fence>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::common::utils::unescape_all;
@@ -48,6 +51,7 @@ pub fn add_with_lang_prefix(md: &mut MarkdownIt, lang_prefix: &'static str) {
     md.env.get_or_insert_default::<FenceSettings>().0.set(lang_prefix);
 }
 
+#[doc(hidden)]
 pub struct FenceScanner;
 impl BlockRule for FenceScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

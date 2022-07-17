@@ -1,5 +1,6 @@
-// Process escaped chars and hardbreaks
-//
+//! HTML inline syntax from CommonMark
+//!
+//! <https://spec.commonmark.org/0.30/#raw-html>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::inline::{InlineRule, InlineState};
 use super::utils::regexps::*;
@@ -19,6 +20,7 @@ pub fn add(md: &mut MarkdownIt) {
     md.inline.add_rule::<HtmlInlineScanner>();
 }
 
+#[doc(hidden)]
 pub struct HtmlInlineScanner;
 impl InlineRule for HtmlInlineScanner {
     const MARKER: char = '<';

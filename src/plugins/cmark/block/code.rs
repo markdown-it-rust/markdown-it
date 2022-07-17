@@ -1,5 +1,8 @@
-// Code block (4 spaces padded)
-//
+//! Indented code block
+//!
+//! Parses anything indented with 4 spaces.
+//!
+//! <https://spec.commonmark.org/0.30/#indented-code-block>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 
@@ -24,6 +27,7 @@ pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<CodeScanner>();
 }
 
+#[doc(hidden)]
 pub struct CodeScanner;
 impl BlockRule for CodeScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

@@ -1,5 +1,6 @@
-// HTML block
-//
+//! HTML block syntax from CommonMark
+//!
+//! <https://spec.commonmark.org/0.30/#html-blocks>
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
@@ -88,6 +89,7 @@ static HTML_SEQUENCES : Lazy<[HTMLSequence; 7]> = Lazy::new(|| {
     ]
 });
 
+#[doc(hidden)]
 pub struct HtmlBlockScanner;
 impl BlockRule for HtmlBlockScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

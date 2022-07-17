@@ -1,5 +1,8 @@
-// Process [link](<to> "stuff")
-//
+//! Links
+//!
+//! `![link](<to> "stuff")`
+//!
+//! <https://spec.commonmark.org/0.30/#links>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::generics::inline::full_link;
 

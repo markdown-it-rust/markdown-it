@@ -1,5 +1,8 @@
-// heading (#, ##, ...)
-//
+//! ATX heading
+//!
+//! `# h1`, `## h2`, etc.
+//!
+//! <https://spec.commonmark.org/0.30/#atx-heading>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::inline::InlineRoot;
@@ -26,6 +29,7 @@ pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<HeadingScanner>();
 }
 
+#[doc(hidden)]
 pub struct HeadingScanner;
 impl BlockRule for HeadingScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

@@ -1,5 +1,11 @@
-// Lists
-//
+//! Ordered and bullet lists
+//!
+//! This plugin parses both kinds of lists (bullet and ordered) as well as list items.
+//!
+//! looks like `1. this` or `- this`
+//!
+//!  - <https://spec.commonmark.org/0.30/#lists>
+//!  - <https://spec.commonmark.org/0.30/#list-items>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::common::utils::find_indent_of;
@@ -64,6 +70,7 @@ pub fn add(md: &mut MarkdownIt) {
         .after::<HrScanner>();
 }
 
+#[doc(hidden)]
 pub struct ListScanner;
 impl BlockRule for ListScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

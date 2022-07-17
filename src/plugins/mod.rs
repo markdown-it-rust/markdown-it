@@ -5,6 +5,15 @@
 //! CommonMark syntax itself is made into a plugin (`cmark`), which you can use
 //! as an example of how to write your own.
 //!
+//! Add each plugin you need by invoking `add` function like this:
+//! ```rust
+//! let md = &mut markdown_it::MarkdownIt::new();
+//! markdown_it::plugins::cmark::add(md);
+//! markdown_it::plugins::extra::add(md);
+//! markdown_it::plugins::html::add(md);
+//! markdown_it::plugins::sourcepos::add(md);
+//! // ...
+//! ```
 pub mod cmark;
 pub mod html;
 pub mod extra;

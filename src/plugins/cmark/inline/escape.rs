@@ -1,5 +1,9 @@
-// Process escaped chars and hardbreaks
-//
+//! Backslash escapes
+//!
+//! Allows escapes like `\*hello*`, also processes hard breaks at the end
+//! of the line.
+//!
+//! <https://spec.commonmark.org/0.30/#backslash-escapes>
 use crate::{MarkdownIt, Node};
 use crate::parser::inline::{InlineRule, InlineState, TextSpecial};
 use crate::plugins::cmark::inline::newline::Hardbreak;
@@ -8,6 +12,7 @@ pub fn add(md: &mut MarkdownIt) {
     md.inline.add_rule::<EscapeScanner>();
 }
 
+#[doc(hidden)]
 pub struct EscapeScanner;
 impl InlineRule for EscapeScanner {
     const MARKER: char = '\\';

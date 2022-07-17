@@ -1,5 +1,8 @@
-// References
-//
+//! Link reference definition
+//!
+//! `[label]: /url "title"`
+//!
+//! <https://spec.commonmark.org/0.30/#link-reference-definition>
 use std::collections::HashMap;
 use crate::MarkdownIt;
 use crate::common::utils::normalize_reference;
@@ -15,6 +18,7 @@ pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<ReferenceScanner>();
 }
 
+#[doc(hidden)]
 pub struct ReferenceScanner;
 impl BlockRule for ReferenceScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

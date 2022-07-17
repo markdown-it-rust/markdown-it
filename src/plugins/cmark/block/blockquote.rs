@@ -1,5 +1,8 @@
-// Block quotes
-//
+//! Block quotes
+//!
+//! `> looks like this`
+//!
+//! <https://spec.commonmark.org/0.30/#block-quotes>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::common::utils::find_indent_of;
@@ -23,6 +26,7 @@ pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<BlockquoteScanner>();
 }
 
+#[doc(hidden)]
 pub struct BlockquoteScanner;
 impl BlockRule for BlockquoteScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

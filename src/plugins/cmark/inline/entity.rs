@@ -1,5 +1,8 @@
-// Process html entity - &#123;, &#xAF;, &quot;, ...
-//
+//! Entity and numeric character references
+//!
+//! `&#123;`, `&#xAF;`, `&quot;`
+//!
+//! <https://spec.commonmark.org/0.30/#entity-and-numeric-character-references>
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::{MarkdownIt, Node};
@@ -18,6 +21,7 @@ static NAMED_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new("(?i)^&([a-z][a-z0-9]{1,31});").unwrap()
 });
 
+#[doc(hidden)]
 pub struct EntityScanner;
 impl InlineRule for EntityScanner {
     const MARKER: char = '&';

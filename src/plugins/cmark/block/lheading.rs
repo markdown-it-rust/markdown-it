@@ -1,5 +1,8 @@
-// lheading (---, ===)
-//
+//! Setext headings
+//!
+//! Paragraph underlined with `===` or `---`.
+//!
+//! <https://spec.commonmark.org/0.30/#setext-headings>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::inline::InlineRoot;
@@ -30,6 +33,7 @@ pub fn add(md: &mut MarkdownIt) {
         .after_all();
 }
 
+#[doc(hidden)]
 pub struct LHeadingScanner;
 impl BlockRule for LHeadingScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

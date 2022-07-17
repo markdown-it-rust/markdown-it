@@ -1,16 +1,19 @@
-// Process autolinks '<protocol:...>'
-//
+//! Autolinks
+//!
+//! `<https://example.org>`
+//!
+//! <https://spec.commonmark.org/0.30/#autolinks>
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::inline::{InlineRule, InlineState, Text};
 
 #[derive(Debug)]
-pub struct AutoLink {
+pub struct Autolink {
     pub url: String,
 }
 
-impl NodeValue for AutoLink {
+impl NodeValue for Autolink {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let mut attrs = node.attrs.clone();
         attrs.push(("href", self.url.clone()));
@@ -22,7 +25,7 @@ impl NodeValue for AutoLink {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.inline.add_rule::<AutoLinkScanner>();
+    md.inline.add_rule::<AutolinkScanner>();
 }
 
 static AUTOLINK_RE : Lazy<Regex> = Lazy::new(|| {
@@ -33,8 +36,9 @@ static EMAIL_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$").unwrap()
 });
 
-pub struct AutoLinkScanner;
-impl InlineRule for AutoLinkScanner {
+#[doc(hidden)]
+pub struct AutolinkScanner;
+impl InlineRule for AutolinkScanner {
     const MARKER: char = '&';
 
     fn run(state: &mut InlineState, silent: bool) -> bool {
@@ -68,7 +72,7 @@ impl InlineRule for AutoLinkScanner {
         if !silent {
             let content = (state.md.normalize_link_text)(url);
 
-            let mut node = Node::new(AutoLink { url: full_url });
+            let mut node = Node::new(Autolink { url: full_url });
             node.srcmap = state.get_map(state.pos, pos);
 
             let mut inner_node = Node::new(Text { content });

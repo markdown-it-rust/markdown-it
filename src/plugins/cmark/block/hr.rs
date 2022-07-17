@@ -1,5 +1,8 @@
-// Horizontal rule
-//
+//! Thematic breaks
+//!
+//! `***`, `---`, `___`
+//!
+//! <https://spec.commonmark.org/0.30/#thematic-breaks>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 
@@ -21,6 +24,7 @@ pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<HrScanner>();
 }
 
+#[doc(hidden)]
 pub struct HrScanner;
 impl BlockRule for HrScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {

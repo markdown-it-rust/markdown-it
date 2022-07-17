@@ -1,5 +1,8 @@
-// Paragraph
-//
+//! Paragraph
+//!
+//! This is the default rule if nothing else matches.
+//!
+//! <https://spec.commonmark.org/0.30/#paragraph>
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::inline::InlineRoot;
@@ -22,6 +25,7 @@ impl NodeValue for Paragraph {
     }
 }
 
+#[doc(hidden)]
 pub struct ParagraphScanner;
 impl BlockRule for ParagraphScanner {
     fn run(state: &mut BlockState, silent: bool) -> bool {
