@@ -1,5 +1,18 @@
-// Process [link](<to> "stuff")
-//
+//! Structure similar to `[link](<to> "stuff")` with configurable prefix.
+//!
+//! There are two structures in CommonMark that match this syntax:
+//!  - links - `[text](<href> "title")`
+//!  - images - `![alt](<src> "title")`
+//!
+//! You can add custom rules like `~[foo](<bar> "baz")`. Let us know if
+//! you come up with fun use case to add as an example!
+//!
+//! Add a custom structure by using [add_prefix] function, which takes following arguments:
+//!  - `PREFIX` - marker character before label (`!` in case of images)
+//!  - `ENABLE_NESTED` - allow nested links inside
+//!  - `md` - parser instance
+//!  - `f` - function that should return your custom [Node] given href and title
+//!
 use crate::{MarkdownIt, Node};
 use crate::common::utils::normalize_reference;
 use crate::common::utils::unescape_all;
@@ -9,22 +22,25 @@ use crate::plugins::cmark::block::reference::ReferenceEnv;
 #[derive(Debug)]
 struct LinkCfg<const PREFIX: char>(fn (Option<String>, Option<String>) -> Node);
 
+/// adds custom rule with no prefix
 pub fn add<const ENABLE_NESTED: bool>(
     md: &mut MarkdownIt,
-    f: fn (Option<String>, Option<String>) -> Node
+    f: fn (url: Option<String>, title: Option<String>) -> Node
 ) {
     md.env.insert(LinkCfg::<'\0'>(f));
     md.inline.add_rule::<LinkScanner<ENABLE_NESTED>>();
 }
 
+/// adds custom rule with given `PREFIX` character
 pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
     md: &mut MarkdownIt,
-    f: fn (Option<String>, Option<String>
-) -> Node) {
+    f: fn (url: Option<String>, title: Option<String>) -> Node
+) {
     md.env.insert(LinkCfg::<PREFIX>(f));
     md.inline.add_rule::<LinkPrefixScanner<PREFIX, ENABLE_NESTED>>();
 }
 
+#[doc(hidden)]
 pub struct LinkScanner<const ENABLE_NESTED: bool>;
 impl<const ENABLE_NESTED: bool> InlineRule for LinkScanner<ENABLE_NESTED> {
     const MARKER: char = '[';
@@ -37,6 +53,7 @@ impl<const ENABLE_NESTED: bool> InlineRule for LinkScanner<ENABLE_NESTED> {
     }
 }
 
+#[doc(hidden)]
 pub struct LinkPrefixScanner<const PREFIX: char, const ENABLE_NESTED: bool>;
 impl<const PREFIX: char, const ENABLE_NESTED: bool> InlineRule for LinkPrefixScanner<PREFIX, ENABLE_NESTED> {
     const MARKER: char = PREFIX;
@@ -91,8 +108,7 @@ fn rule(
 //
 // this function assumes that first character ("[") already matches;
 // returns the end of the label
-//
-pub fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) -> Option<usize> {
+fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) -> Option<usize> {
     let old_pos = state.pos;
     let mut found = false;
     let mut label_end = None;
@@ -134,14 +150,16 @@ pub fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bo
 
 
 pub struct ParseLinkFragmentResult {
+    /// end position
     pub pos:   usize,
+    /// number of linebreaks inside
     pub lines: usize,
+    /// parsed result
     pub str:   String,
 }
 
 
-// Parse link destination
-//
+/// Helper function used to parse `<href>` part of the links with optional brackets.
 pub fn parse_link_destination(str: &str, start: usize, max: usize) -> Option<ParseLinkFragmentResult> {
     let mut chars = str[start..max].chars().peekable();
     let mut pos = start;
@@ -209,8 +227,7 @@ pub fn parse_link_destination(str: &str, start: usize, max: usize) -> Option<Par
 }
 
 
-// Parse link title
-//
+/// Helper function used to parse `"title"` part of the links (with `'title'` or `(title)` alternative syntax).
 pub fn parse_link_title(str: &str, start: usize, max: usize) -> Option<ParseLinkFragmentResult> {
     let mut chars = str[start..max].chars();
     let mut pos = start + 1;

@@ -6,6 +6,7 @@ pub use state::*;
 mod rule;
 pub use rule::*;
 
+#[doc(hidden)]
 pub mod builtin;
 
 use crate::{MarkdownIt, Node};

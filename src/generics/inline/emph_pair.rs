@@ -1,3 +1,66 @@
+//! Structure similar to `*emphasis*` with configurable markers of fixed length.
+//!
+//! There are many structures in various markdown flavors that
+//! can be implemented with this, namely:
+//!
+//!  - `*emphasis*` or `_emphasis_` -> `<em>emphasis</em>`
+//!  - `**strong**` or `__strong__` -> `<strong>strong</strong>`
+//!  - `~~strikethrough~~` -> `<s>strikethrough</s>`
+//!  - `==marked==` -> `<mark>marked</mark>`
+//!  - `++inserted++` -> `<ins>inserted</ins>`
+//!  - `~subscript~` -> `<sub>subscript</sub>`
+//!  - `^superscript^` -> `<sup>superscript</sup>`
+//!
+//! You add a custom structure by using [add_with] function, which takes following arguments:
+//!  - `MARKER` - marker character
+//!  - `LENGTH` - length of the opening/closing marker (can be 1, 2 or 3)
+//!  - `CAN_SPLIT_WORD` - whether this structure can be found in the middle of the word
+//!    (for example, note the difference between `foo*bar*baz` and `foo_bar_baz`
+//!    in CommonMark - first one is an emphasis, second one isn't)
+//!  - `md` - parser instance
+//!  - `f` - function that should return your custom [Node]
+//!
+//! Here is an example of implementing subscript and superscript in your custom code:
+//!
+//! ```rust
+//! use markdown_it::generics::inline::emph_pair;
+//! use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
+//!
+//! #[derive(Debug)]
+//! struct Subscript;
+//! impl NodeValue for Subscript {
+//!     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+//!         fmt.open("sub", &node.attrs);
+//!         fmt.contents(&node.children);
+//!         fmt.close("sub");
+//!     }
+//! }
+//!
+//! #[derive(Debug)]
+//! struct Superscript;
+//! impl NodeValue for Superscript {
+//!     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+//!         fmt.open("sup", &node.attrs);
+//!         fmt.contents(&node.children);
+//!         fmt.close("sup");
+//!     }
+//! }
+//!
+//! let md = &mut MarkdownIt::new();
+//!
+//! emph_pair::add_with::<'~', 1, true>(md, || Node::new(Subscript));
+//! emph_pair::add_with::<'^', 1, true>(md, || Node::new(Superscript));
+//!
+//! let html = md.parse("e^iπ^+1=0").render();
+//! assert_eq!(html.trim(), "e<sup>iπ</sup>+1=0");
+//!
+//! let html = md.parse("C~2~H~5~OH").render();
+//! assert_eq!(html.trim(), "C<sub>2</sub>H<sub>5</sub>OH");
+//! ```
+//!
+//! Note that these structures have lower priority than the rest of the rules,
+//! e.g. `` *foo`bar*baz` `` is parsed as `*foo<code>bar*baz</code>`.
+//!
 use std::cmp::min;
 use crate::{MarkdownIt, Node, NodeValue};
 use crate::common::sourcemap::SourcePos;
@@ -15,6 +78,7 @@ struct PairConfig<const MARKER: char> {
 struct OpenersBottom<const MARKER: char>([ usize; 6 ]);
 
 #[derive(Debug, Clone)]
+#[doc(hidden)]
 pub struct EmphMarker {
     // Starting marker
     pub marker:    char,
@@ -50,6 +114,7 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
     }
 }
 
+#[doc(hidden)]
 pub struct EmphPairScanner<const MARKER: char, const CAN_SPLIT_WORD: bool>;
 impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScanner<MARKER, CAN_SPLIT_WORD> {
     const MARKER: char = MARKER;
@@ -204,7 +269,8 @@ fn is_odd_match(opener: &EmphMarker, closer: &EmphMarker) -> bool {
 }
 
 
-struct FragmentsJoin;
+#[doc(hidden)]
+pub struct FragmentsJoin;
 impl CoreRule for FragmentsJoin {
     fn run(node: &mut Node, _: &MarkdownIt) {
         node.walk_mut(|node, _| fragments_join(node));

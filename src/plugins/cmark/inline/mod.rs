@@ -1,3 +1,4 @@
+//! Inline-level CommonMark structures.
 pub mod autolink;
 pub mod backticks;
 pub mod emphasis;

@@ -6,6 +6,7 @@ pub use state::*;
 mod rule;
 pub use rule::*;
 
+#[doc(hidden)]
 pub mod builtin;
 
 pub use builtin::inline_parser::InlineRoot;

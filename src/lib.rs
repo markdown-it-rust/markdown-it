@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 #![warn(clippy::manual_assert)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 

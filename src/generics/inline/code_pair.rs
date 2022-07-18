@@ -1,5 +1,50 @@
-// Parse backticks
-//
+//! Structure similar to `` `code span` `` with configurable markers of variable length.
+//!
+//! It allows you to define a custom structure with variable number of markers
+//! (e.g. with `%` defined as a marker, user can write `%foo%` or `%%%foo%%%`
+//! resulting in the same node).
+//!
+//! You add a custom structure by using [add_with] function, which takes following arguments:
+//!  - `MARKER` - marker character
+//!  - `TOKENIZE`
+//!    - if `true`, inside of this tag will be parsed further as inline markdown
+//!    - if `false`, inside of this tag will be left as a single [Text] node
+//!  - `md` - parser instance
+//!  - `f` - function that should return your custom [Node]
+//!
+//! Here is an example of a rule turning `%foo%` into `🦀foo🦀`:
+//!
+//! ```rust
+//! use markdown_it::generics::inline::code_pair;
+//! use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
+//!
+//! #[derive(Debug)]
+//! struct Ferris;
+//! impl NodeValue for Ferris {
+//!     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
+//!         fmt.text("🦀");
+//!         fmt.contents(&node.children);
+//!         fmt.text("🦀");
+//!     }
+//! }
+//!
+//! let md = &mut MarkdownIt::new();
+//! code_pair::add_with::<'%', true>(md, |_| Node::new(Ferris));
+//! let html = md.parse("hello %world%").render();
+//! assert_eq!(html.trim(), "hello 🦀world🦀");
+//! ```
+//!
+//! This generic structure follows exact rules of code span in CommonMark:
+//!
+//! 1. Literal marker character sequence can be used inside of structure if its length
+//! doesn't match length of the opening/closing sequence (e.g. with `%` defined
+//! as a marker, `%%foo%bar%%` gets parsed as `Node("foo%bar")`).
+//!
+//! 2. Single space inside is trimmed to allow you to write `% %%foo %` to be parsed as
+//! `Node("%%foo")`.
+//!
+//! If you define two structures with the same marker, only the first one will work.
+//!
 use crate::{MarkdownIt, Node};
 use crate::parser::inline::{InlineRule, InlineState, Text};
 
@@ -12,14 +57,15 @@ struct CodePairCache<const MARKER: char> {
 #[derive(Debug)]
 struct CodePairConfig<const MARKER: char>(fn (usize) -> Node);
 
-pub fn add_with<const MARKER: char>(md: &mut MarkdownIt, f: fn (usize) -> Node) {
+pub fn add_with<const MARKER: char, const TOKENIZE: bool>(md: &mut MarkdownIt, f: fn (length: usize) -> Node) {
     md.env.insert(CodePairConfig::<MARKER>(f));
 
-    md.inline.add_rule::<CodePairScanner<MARKER>>();
+    md.inline.add_rule::<CodePairScanner<MARKER, TOKENIZE>>();
 }
 
-pub struct CodePairScanner<const MARKER: char>;
-impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
+#[doc(hidden)]
+pub struct CodePairScanner<const MARKER: char, const TOKENIZE: bool>;
+impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MARKER, TOKENIZE> {
     const MARKER: char = MARKER;
 
     fn run(state: &mut InlineState, silent: bool) -> bool {
@@ -76,11 +122,23 @@ impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
                     let mut node = f(opener_len);
                     node.srcmap = state.get_map(state.pos, match_end);
 
-                    let mut inner_node = Node::new(Text { content });
-                    inner_node.srcmap = state.get_map(pos, match_start);
+                    if TOKENIZE {
+                        let old_node = std::mem::replace(&mut state.node, node);
+                        let max = state.pos_max;
 
-                    node.children.push(inner_node);
-                    state.push(node);
+                        state.pos = pos;
+                        state.pos_max = match_start;
+                        state.md.inline.tokenize(state);
+                        state.pos_max = max;
+
+                        let node = std::mem::replace(&mut state.node, old_node);
+                        state.push(node);
+                    } else {
+                        let mut inner_node = Node::new(Text { content });
+                        inner_node.srcmap = state.get_map(pos, match_start);
+                        node.children.push(inner_node);
+                        state.push(node);
+                    }
                 }
                 state.pos = match_end;
                 return true;

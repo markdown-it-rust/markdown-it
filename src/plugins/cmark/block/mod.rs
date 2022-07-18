@@ -1,3 +1,4 @@
+//! Block-level CommonMark structures.
 pub mod blockquote;
 pub mod code;
 pub mod fence;
