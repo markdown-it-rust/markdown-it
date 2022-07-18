@@ -7,16 +7,18 @@ use crate::parser::inline::Text;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy)]
-pub struct DelimRun {
-    // Starting marker
+/// Information about emphasis delimiter run returned from [InlineState::scan_delims].
+pub struct DelimiterRun {
+    /// Starting marker character.
     pub marker: char,
 
-    // Boolean flags that determine if this delimiter could open or close
-    // an emphasis.
+    /// Boolean flag that determines if this delimiter could open an emphasis.
     pub can_open: bool,
+
+    /// Boolean flag that determines if this delimiter could open an emphasis.
     pub can_close: bool,
 
-    // Total length of these series of delimiters
+    /// Total length of scanned delimiters.
     pub length: usize,
 }
 
@@ -45,6 +47,7 @@ fn is_punct_char(ch: char) -> bool {
 }
 
 #[derive(Debug)]
+/// Sandbox object containing data required to parse inline structures.
 pub struct InlineState<'a, 'b> where 'b: 'a {
     pub src: String,
     pub srcmap: Vec<(usize, usize)>,
@@ -154,7 +157,7 @@ impl<'a, 'b> InlineState<'a, 'b> {
     //  - start - position to scan from (it should point at a valid marker);
     //  - can_split_word - determine if these markers can be found inside a word
     //
-    pub fn scan_delims(&self, start: usize, can_split_word: bool) -> DelimRun {
+    pub fn scan_delims(&self, start: usize, can_split_word: bool) -> DelimiterRun {
         let mut left_flanking = true;
         let mut right_flanking = true;
 
@@ -222,7 +225,7 @@ impl<'a, 'b> InlineState<'a, 'b> {
             can_close = right_flanking;
         }
 
-        DelimRun {
+        DelimiterRun {
             marker,
             can_open,
             can_close,

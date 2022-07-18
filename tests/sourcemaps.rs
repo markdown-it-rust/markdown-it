@@ -1,16 +1,16 @@
 use markdown_it::Node;
-use markdown_it::common::sourcemap::CharMapping;
+use markdown_it::common::sourcemap::SourceWithLineStarts;
 
-fn run(input: &str, f: fn (&Node, CharMapping)) {
+fn run(input: &str, f: fn (&Node, SourceWithLineStarts)) {
     let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::plugins::cmark::add(md);
     markdown_it::plugins::html::add(md);
     let node = md.parse(input);
     node.walk(|node, _| assert!(node.srcmap.is_some()));
-    f(&node, CharMapping::new(input));
+    f(&node, SourceWithLineStarts::new(input));
 }
 
-fn getmap(node: &Node, map: &CharMapping) -> ((u32, u32), (u32, u32)) {
+fn getmap(node: &Node, map: &SourceWithLineStarts) -> ((u32, u32), (u32, u32)) {
     node.srcmap.unwrap().get_positions(map)
 }
 

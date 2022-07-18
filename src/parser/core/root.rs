@@ -2,6 +2,7 @@ use crate::common::ErasedSet;
 use crate::{Node, NodeValue, Renderer};
 
 #[derive(Debug)]
+/// Root node of the AST.
 pub struct Root {
     pub content: String,
     pub env: ErasedSet,

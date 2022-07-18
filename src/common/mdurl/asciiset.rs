@@ -1,6 +1,6 @@
-// Represents a set of characters or bytes in the ASCII range.
-// Similar to https://github.com/servo/rust-url/blob/master/percent_encoding/src/lib.rs
-//
+/// Represents a set of characters or bytes in the ASCII range.
+///
+/// Similar to <https://github.com/servo/rust-url/blob/master/percent_encoding/src/lib.rs>
 #[derive(Debug)]
 pub struct AsciiSet(u128);
 

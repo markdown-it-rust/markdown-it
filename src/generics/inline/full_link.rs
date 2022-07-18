@@ -14,10 +14,9 @@
 //!  - `f` - function that should return your custom [Node] given href and title
 //!
 use crate::{MarkdownIt, Node};
-use crate::common::utils::normalize_reference;
 use crate::common::utils::unescape_all;
 use crate::parser::inline::{InlineRule, InlineState};
-use crate::plugins::cmark::block::reference::ReferenceEnv;
+use crate::plugins::cmark::block::reference::{ReferenceMap, ReferenceMapKey};
 
 #[derive(Debug)]
 struct LinkCfg<const PREFIX: char>(fn (Option<String>, Option<String>) -> Node);
@@ -363,7 +362,7 @@ fn parse_link(state: &mut InlineState, pos: usize, enable_nested: bool) -> Optio
         _ => pos = label_end + 1,
     }
 
-    if let Some(references) = state.root_env.get::<ReferenceEnv>() {
+    if let Some(references) = state.root_env.get::<ReferenceMap>() {
         // covers label === '' and label === undefined
         // (collapsed reference link and shortcut reference link respectively)
         let label = if matches!(maybe_label, None | Some("")) {
@@ -372,13 +371,13 @@ fn parse_link(state: &mut InlineState, pos: usize, enable_nested: bool) -> Optio
             maybe_label.unwrap()
         };
 
-        let lref = references.map.get(&normalize_reference(label));
+        let lref = references.get(&ReferenceMapKey::new(label.to_owned()));
 
         lref.map(|r| ParseLinkResult {
             label_start,
             label_end,
-            href: Some(r.0.clone()),
-            title: r.1.clone(),
+            href: Some(r.destination.clone()),
+            title: r.title.clone(),
             end: pos,
         })
     } else {

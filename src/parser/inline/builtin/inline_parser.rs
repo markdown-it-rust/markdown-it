@@ -4,6 +4,8 @@ use crate::parser::core::{CoreRule, Root};
 use crate::parser::block::builtin::BlockParserRule;
 
 #[derive(Debug)]
+/// Temporary node which gets replaced with inline nodes when
+/// [InlineParser](crate::parser::inline::InlineParser) is called.
 pub struct InlineRoot {
     pub content: String,
     pub mapping: Vec<(usize, usize)>,
@@ -43,7 +45,7 @@ impl CoreRule for InlineParserRule {
             }
         }
 
-        let data = root.cast_mut::<Root>().expect("expecting root node to always be Root");
+        let data = root.cast_mut::<Root>().unwrap();
         let mut env = std::mem::take(&mut data.env);
 
         // this is invalid if input only contains reference;

@@ -1,5 +1,4 @@
-// Block-level tokenizer
-//
+//! Block rule chain
 mod state;
 pub use state::*;
 
@@ -17,8 +16,8 @@ use crate::parser::inline::InlineRoot;
 type RuleFn = fn (&mut BlockState, bool) -> bool;
 
 #[derive(Debug, Default)]
+/// Block-level tokenizer.
 pub struct BlockParser {
-    // [[Ruler]] instance. Keep configuration of block rules.
     ruler: Ruler<TypeKey, RuleFn>,
 }
 

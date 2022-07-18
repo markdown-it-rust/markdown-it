@@ -2,13 +2,19 @@ use super::AsciiSet;
 
 const DIGITS : &[ u8; 16 ] = b"0123456789ABCDEF";
 
-// Encode unsafe characters with percent-encoding, skipping already
-// encoded sequences.
-//
-//  - string        - string to encode
-//  - exclude       - list of characters to ignore (in addition to a-zA-Z0-9)
-//  - keep_escaped  - don't encode '%' in a correct escape sequence
-//
+/// Encode unsafe characters with percent-encoding, skipping already
+/// encoded sequences.
+///
+///  - string        - string to encode
+///  - exclude       - list of characters to ignore (in addition to a-zA-Z0-9)
+///  - keep_escaped  - don't encode '%' in a correct escape sequence
+///
+/// ```rust
+/// use markdown_it::common::mdurl::{AsciiSet, encode};
+///
+/// const SAFE_SET : AsciiSet = AsciiSet::from(";/?:@&=+$,-_.!~*'()#");
+/// assert_eq!(encode("[hello]", SAFE_SET, true), "%5Bhello%5D");
+/// ```
 pub fn encode(string: &str, exclude: AsciiSet, keep_escaped: bool) -> String {
     let mut result = Vec::new();
     let bytes = string.as_bytes();

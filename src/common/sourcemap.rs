@@ -1,11 +1,13 @@
+//! Tools to work with source positions and mapping.
 
 #[derive(Debug)]
-pub struct CharMapping {
+/// Holds source code, allows to calculate `line:column` from byte offset.
+pub struct SourceWithLineStarts {
     src: String,
     marks: Vec<CharMappingMark>,
 }
 
-impl CharMapping {
+impl SourceWithLineStarts {
     pub fn new(src: &str) -> Self {
         let mut iterator = src.char_indices().peekable();
         let mut line = 1;
@@ -38,7 +40,7 @@ impl CharMapping {
         Self { src: src.to_owned(), marks }
     }
 
-    pub(super) fn get_position(&self, byte_offset: usize) -> (u32, u32) {
+    fn get_position(&self, byte_offset: usize) -> (u32, u32) {
         let byte_offset = byte_offset + 1; // include current char
         let found = match self.marks.binary_search_by(|mark| mark.offset.cmp(&byte_offset)) {
             Ok(x) => x,
@@ -63,11 +65,15 @@ struct CharMappingMark {
 }
 
 #[derive(Default, Clone, Copy)]
+/// Positions of the start and the end of an AST node.
 pub struct SourcePos {
     byte_offset: (usize, usize),
 }
 
 impl SourcePos {
+    /// Create positions from byte offsets:
+    ///  - start - offset of the first char of the node
+    ///  - end - offset of the first char after the node
     pub fn new(start: usize, end: usize) -> Self {
         SourcePos {
             byte_offset: (start, end),
@@ -78,8 +84,8 @@ impl SourcePos {
         self.byte_offset
     }
 
-    /// Returns (line_start, column_start, line_end, column_end)
-    pub fn get_positions(&self, map: &CharMapping) -> ((u32, u32), (u32, u32)) {
+    /// Returns (line_start, column_start, line_end, column_end) from given positions
+    pub fn get_positions(&self, map: &SourceWithLineStarts) -> ((u32, u32), (u32, u32)) {
         let start = map.get_position(self.byte_offset.0);
         let end_off = if self.byte_offset.1 > 0 { self.byte_offset.1 - 1 } else { self.byte_offset.1 };
         let end = map.get_position(end_off);
@@ -95,12 +101,12 @@ impl std::fmt::Debug for SourcePos {
 
 #[cfg(test)]
 mod tests {
-    use super::CharMapping;
+    use super::SourceWithLineStarts;
     use super::SourcePos;
 
     #[test]
     fn no_linebreaks() {
-        let map = CharMapping::new("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM");
+        let map = SourceWithLineStarts::new("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM");
         for i in 0..20 {
             assert_eq!(SourcePos::new(i, 0).get_positions(&map).0, (1, i as u32 + 1));
         }
@@ -108,7 +114,7 @@ mod tests {
 
     #[test]
     fn unicode() {
-        let map = CharMapping::new("!ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω");
+        let map = SourceWithLineStarts::new("!ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω");
         assert_eq!(SourcePos::new(0, 0).get_positions(&map).0, (1, 1));
         for i in 1..20 {
             assert_eq!(SourcePos::new(i, 0).get_positions(&map).0, (1, ((i - 1) / 2) as u32 + 2));
@@ -117,7 +123,7 @@ mod tests {
 
     #[test]
     fn many_linebreaks() {
-        let map = CharMapping::new("\n\n\n\n\n\n123");
+        let map = SourceWithLineStarts::new("\n\n\n\n\n\n123");
         for i in 0..6 {
             assert_eq!(SourcePos::new(i, 0).get_positions(&map).0, (i as u32 + 2, 0));
         }
@@ -127,11 +133,11 @@ mod tests {
 
     #[test]
     fn after_end() {
-        let map = CharMapping::new("123");
+        let map = SourceWithLineStarts::new("123");
         assert_eq!(SourcePos::new(100, 0).get_positions(&map).0, (1, 3));
-        let map = CharMapping::new("123\n");
+        let map = SourceWithLineStarts::new("123\n");
         assert_eq!(SourcePos::new(100, 0).get_positions(&map).0, (2, 0));
-        let map = CharMapping::new("123\n456");
+        let map = SourceWithLineStarts::new("123\n456");
         assert_eq!(SourcePos::new(100, 0).get_positions(&map).0, (2, 3));
     }
 }

@@ -8,7 +8,7 @@
 //! assert_eq!(html.trim(), r#"<h1 data-sourcepos="1:1-1:7">hello</h1>"#);
 //! ```
 use crate::{MarkdownIt, Node};
-use crate::common::sourcemap::CharMapping;
+use crate::common::sourcemap::SourceWithLineStarts;
 use crate::parser::block::builtin::BlockParserRule;
 use crate::parser::core::{CoreRule, Root};
 
@@ -22,7 +22,7 @@ pub struct SyntaxPosRule;
 impl CoreRule for SyntaxPosRule {
     fn run(root: &mut Node, _: &MarkdownIt) {
         let source = root.cast::<Root>().unwrap().content.as_str();
-        let mapping = CharMapping::new(source);
+        let mapping = SourceWithLineStarts::new(source);
 
         root.walk_mut(|node, _| {
             if let Some(map) = node.srcmap {

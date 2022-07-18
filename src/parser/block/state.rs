@@ -6,6 +6,7 @@ use crate::common::sourcemap::SourcePos;
 use crate::common::utils::calc_right_whitespace_with_tabstops;
 
 #[derive(Debug)]
+/// Sandbox object containing data required to parse block structures.
 pub struct BlockState<'a, 'b> where 'b: 'a {
     pub src: &'b str,
 
@@ -32,44 +33,57 @@ pub struct BlockState<'a, 'b> where 'b: 'a {
     pub level: u32,
 }
 
+/// Holds start/end/etc. positions for a specific source text line.
 #[derive(Debug, Clone)]
 pub struct LineOffset {
-    // "line_start" is the actual start of the line.
-    // "  >  blockquote\r\n"
-    //  ^-- it will always point here (must not be modified by rules)
+    /// `line_start` is the actual start of the line.
+    ///
+    ///     # const IGNORE : &str = stringify! {
+    ///     "  >  blockquote\r\n"
+    ///      ^-- it will always point here (must not be modified by rules)
+    ///     # };
     pub line_start: usize,
 
-    // "line_end" is first newline character after the line,
-    // or position after string length if there aren't any newlines left.
-    // "  >  blockquote\r\n"
-    //                 ^-- it will point here
+    /// `line_end` is first newline character after the line,
+    /// or position after string length if there aren't any newlines left.
+    ///
+    ///     # const IGNORE : &str = stringify! {
+    ///     "  >  blockquote\r\n"
+    ///                     ^-- it will point here
+    ///     # };
     pub line_end: usize,
 
-    // "first_nonspace" is the byte offset of the first non-space character in
-    // the current line.
-    // "   >  blockquote\r\n"
-    //        ^-- it will point here when paragraph is parsed
-    //     ^----- it is initially pointed here
-    // It will be modified by rules (list and blockquote), chars before it
-    // must be treated as whitespaces.
+    /// `first_nonspace` is the byte offset of the first non-space character in
+    /// the current line.
+    ///
+    ///     # const IGNORE : &str = stringify! {
+    ///     "   >  blockquote\r\n"
+    ///            ^-- it will point here when paragraph is parsed
+    ///         ^----- it is initially pointed here
+    ///     # };
+    ///
+    /// It will be modified by rules (list and blockquote), chars before it
+    /// must be treated as whitespaces.
+    ///
     pub first_nonspace: usize,
 
-    // "indent_nonspace" is the indent (amount of virtual spaces from start)
-    // of first non-space character in the current line, taking into account
-    // tab expansion.
-    //
-    // For example, in case of " \t foo", indent is 5 (tab ends at multiple of 4,
-    // then one space after it). Only tabs and spaces are counted for it,
-    // so no funny unicode business (if cmark supported unicode spaces, they'd
-    // be counted as 1 each regardless of utf8 width).
-    //
-    // You should compare "indent_nonspace" with "state.blkindent" when determining
-    // real indent after taking into account lists.
-    //
-    // Most block rules in commonmark are indented 0..=3, and >=4 is code block.
-    // Special value of ident_nonspace=-1 is used by this library as a sign
-    // that this rule can only be a paragraph continuation (used in blockquotes),
-    // so you must take into account that any math can end up negative.
+    /// `indent_nonspace` is the indent (amount of virtual spaces from start)
+    /// of first non-space character in the current line, taking into account
+    /// tab expansion.
+    ///
+    /// For example, in case of ` \t foo`, indent is 5 (tab ends at multiple of 4,
+    /// then one space after it). Only tabs and spaces are counted for it,
+    /// so no funny unicode business (if cmark supported unicode spaces, they'd
+    /// be counted as 1 each regardless of utf8 width).
+    ///
+    /// You should compare `indent_nonspace` with `state.blkindent` when determining
+    /// real indent after taking into account lists.
+    ///
+    /// Most block rules in commonmark are indented 0..=3, and >=4 is code block.
+    /// Special value of ident_nonspace=-1 is used by this library as a sign
+    /// that this rule can only be a paragraph continuation (used in blockquotes),
+    /// so you must take into account that any math can end up negative.
+    ///
     pub indent_nonspace: i32,
 }
 

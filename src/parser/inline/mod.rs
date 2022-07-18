@@ -1,5 +1,4 @@
-// Tokenizes paragraph content.
-//
+//! Inline rule chain
 mod state;
 pub use state::*;
 
@@ -19,8 +18,8 @@ use crate::common::ruler::Ruler;
 type RuleFn = fn (&mut InlineState, bool) -> bool;
 
 #[derive(Debug, Default)]
+/// Inline-level tokenizer.
 pub struct InlineParser {
-    // [[Ruler]] instance. Keep configuration of inline rules.
     ruler: Ruler<TypeKey, RuleFn>,
 }
 

@@ -15,17 +15,37 @@ type RuleFn = fn (&mut Node, &MarkdownIt);
 
 #[derive(Derivative)]
 #[derivative(Debug)]
+/// Main parser struct, created once and reused for parsing multiple documents.
 pub struct MarkdownIt {
+    /// Block-level tokenizer.
     pub block: BlockParser,
+
+    /// Inline-level tokenizer.
     pub inline: InlineParser,
+
+    #[doc(hidden)]
     #[derivative(Debug="ignore")]
+    // TODO: move this somewhere
     pub validate_link: fn (&str) -> bool,
+
+    #[doc(hidden)]
     #[derivative(Debug="ignore")]
+    // TODO: move this somewhere
     pub normalize_link: fn (&str) -> String,
+
+    #[doc(hidden)]
     #[derivative(Debug="ignore")]
+    // TODO: move this somewhere
     pub normalize_link_text: fn (&str) -> String,
+
+    /// Storage for custom data used in plugins.
     pub env: ErasedSet,
+
+    /// Maximum depth of the generated AST, exists to prevent recursion
+    /// (if markdown source reaches this depth, deeply nested structures
+    /// will be parsed as plain text).
     pub max_nesting: u32,
+
     ruler: Ruler<TypeKey, RuleFn>,
 }
 
@@ -71,6 +91,7 @@ impl MarkdownIt {
 
         for rule in self.ruler.iter() {
             rule(&mut node, self);
+            debug_assert!(node.is::<Root>(), "root node of the AST must always be Root");
         }
         node
     }

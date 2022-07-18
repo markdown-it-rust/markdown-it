@@ -10,7 +10,7 @@ pub struct BlockParserRule;
 impl CoreRule for BlockParserRule {
     fn run(root: &mut Node, md: &MarkdownIt) {
         let mut node = std::mem::take(root);
-        let data = node.cast_mut::<Root>().expect("expecting root node to always be Root");
+        let data = node.cast_mut::<Root>().unwrap();
         let source = std::mem::take(&mut data.content);
         let mut env = std::mem::take(&mut data.env);
 

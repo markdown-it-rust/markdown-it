@@ -5,6 +5,7 @@ use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::inline::{InlineRule, InlineState};
 
 #[derive(Debug)]
+/// Plain text AST node.
 pub struct Text {
     pub content: String
 }
@@ -16,6 +17,7 @@ impl NodeValue for Text {
 }
 
 #[derive(Debug)]
+/// Escaped text AST node (backslash escapes and entities).
 pub struct TextSpecial {
     pub content: String,
     pub markup: String,

@@ -3,17 +3,94 @@
 //! `[label]: /url "title"`
 //!
 //! <https://spec.commonmark.org/0.30/#link-reference-definition>
+//!
+//! This plugin parses markdown link references. Check documentation on [ReferenceMap]
+//! to see how you can use and/or extend it if you have external source for references.
+//!
 use std::collections::HashMap;
+use derivative::Derivative;
+
 use crate::MarkdownIt;
 use crate::common::utils::normalize_reference;
 use crate::generics::inline::full_link;
 use crate::parser::block::{BlockRule, BlockState};
 
-#[derive(Debug, Default)]
-pub struct ReferenceEnv {
-    pub map: HashMap<String, (String, Option<String>)>,
+/// Storage for parsed references
+///
+/// if you have some external source for your link references, you can add them like this:
+///
+/// ```rust
+/// use markdown_it::parser::block::builtin::BlockParserRule;
+/// use markdown_it::parser::core::{CoreRule, Root};
+/// use markdown_it::plugins::cmark::block::reference::{
+///     ReferenceMap, ReferenceMapEntry, ReferenceMapKey
+/// };
+/// use markdown_it::{MarkdownIt, Node};
+///
+/// let md = &mut MarkdownIt::new();
+/// markdown_it::plugins::cmark::add(md);
+///
+/// struct ReferencePatcher;
+/// impl CoreRule for ReferencePatcher {
+///     fn run(root: &mut Node, _: &MarkdownIt) {
+///         let data = root.cast_mut::<Root>().unwrap();
+///         let references = data.env.get_or_insert_default::<ReferenceMap>();
+///         references.insert(
+///             ReferenceMapKey::new("rust".into()),
+///             ReferenceMapEntry::new(
+///                 "https://www.rust-lang.org/".into(),
+///                 Some("The Rust Language".into())
+///             )
+///         );
+///     }
+/// }
+///
+/// md.add_rule::<ReferencePatcher>()
+///     .before::<BlockParserRule>();
+///
+/// let html = md.parse("[rust]").render();
+/// assert_eq!(
+///     html.trim(),
+///     r#"<p><a href="https://www.rust-lang.org/" title="The Rust Language">rust</a></p>"#
+/// );
+/// ```
+///
+/// It is possible to support callback for external link references in the future,
+/// please tell us whether that's useful for you.
+///
+pub type ReferenceMap = HashMap<ReferenceMapKey, ReferenceMapEntry>;
+
+#[derive(Derivative)]
+#[derivative(Debug, Default, Hash, PartialEq, Eq)]
+/// Reference label
+pub struct ReferenceMapKey {
+    #[derivative(PartialEq = "ignore")]
+    #[derivative(Hash = "ignore")]
+    pub label: String,
+    normalized: String,
 }
 
+impl ReferenceMapKey {
+    pub fn new(label: String) -> Self {
+        let normalized = normalize_reference(&label);
+        Self { label, normalized }
+    }
+}
+
+#[derive(Debug, Default)]
+/// Reference value
+pub struct ReferenceMapEntry {
+    pub destination: String,
+    pub title: Option<String>,
+}
+
+impl ReferenceMapEntry {
+    pub fn new(destination: String, title: Option<String>) -> Self {
+        Self { destination, title }
+    }
+}
+
+/// Add plugin that parses markdown link references
 pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<ReferenceScanner>();
 }
@@ -176,9 +253,9 @@ impl BlockRule for ReferenceScanner {
             return false;
         }
 
-        let references = &mut state.root_env.get_or_insert_default::<ReferenceEnv>().map;
+        let references = &mut state.root_env.get_or_insert_default::<ReferenceMap>();
 
-        references.entry(label).or_insert_with(|| (href, title));
+        references.entry(ReferenceMapKey::new(label)).or_insert_with(|| ReferenceMapEntry::new(href, title));
 
         state.line = start_line + lines + 1;
         true

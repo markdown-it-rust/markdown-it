@@ -20,21 +20,11 @@
 //!  - `md` - parser instance
 //!  - `f` - function that should return your custom [Node]
 //!
-//! Here is an example of implementing subscript and superscript in your custom code:
+//! Here is an example of implementing superscript in your custom code:
 //!
 //! ```rust
 //! use markdown_it::generics::inline::emph_pair;
 //! use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
-//!
-//! #[derive(Debug)]
-//! struct Subscript;
-//! impl NodeValue for Subscript {
-//!     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-//!         fmt.open("sub", &node.attrs);
-//!         fmt.contents(&node.children);
-//!         fmt.close("sub");
-//!     }
-//! }
 //!
 //! #[derive(Debug)]
 //! struct Superscript;
@@ -47,15 +37,10 @@
 //! }
 //!
 //! let md = &mut MarkdownIt::new();
-//!
-//! emph_pair::add_with::<'~', 1, true>(md, || Node::new(Subscript));
 //! emph_pair::add_with::<'^', 1, true>(md, || Node::new(Superscript));
 //!
 //! let html = md.parse("e^iπ^+1=0").render();
 //! assert_eq!(html.trim(), "e<sup>iπ</sup>+1=0");
-//!
-//! let html = md.parse("C~2~H~5~OH").render();
-//! assert_eq!(html.trim(), "C<sub>2</sub>H<sub>5</sub>OH");
 //! ```
 //!
 //! Note that these structures have lower priority than the rest of the rules,
