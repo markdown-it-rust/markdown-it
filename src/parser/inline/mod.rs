@@ -1,4 +1,7 @@
 //! Inline rule chain
+use std::collections::HashMap;
+use once_cell::unsync::OnceCell;
+
 mod state;
 pub use state::*;
 
@@ -10,6 +13,7 @@ pub mod builtin;
 
 pub use builtin::inline_parser::InlineRoot;
 pub use builtin::skip_text::{Text, TextSpecial};
+use builtin::skip_text::TextScannerImpl;
 
 use crate::{MarkdownIt, Node};
 use crate::common::{ErasedSet, TypeKey};
@@ -21,6 +25,8 @@ type RuleFn = fn (&mut InlineState, bool) -> bool;
 /// Inline-level tokenizer.
 pub struct InlineParser {
     ruler: Ruler<TypeKey, RuleFn>,
+    text_charmap: HashMap<char, Vec<TypeKey>>,
+    text_impl: OnceCell<TextScannerImpl>,
 }
 
 impl InlineParser {
@@ -116,6 +122,11 @@ impl InlineParser {
     }
 
     pub fn add_rule<T: InlineRule>(&mut self) -> RuleBuilder<RuleFn> {
+        if T::MARKER != '\0' {
+            let charvec = self.text_charmap.entry(T::MARKER).or_insert(vec![]);
+            charvec.push(TypeKey::of::<T>());
+        }
+
         let item = self.ruler.add(TypeKey::of::<T>(), T::run);
         RuleBuilder::new(item)
     }
@@ -125,6 +136,12 @@ impl InlineParser {
     }
 
     pub fn remove_rule<T: InlineRule>(&mut self) {
+        if T::MARKER != '\0' {
+            let mut charvec = self.text_charmap.remove(&T::MARKER).unwrap_or_default();
+            charvec.retain(|x| *x != TypeKey::of::<T>());
+            self.text_charmap.insert(T::MARKER, charvec);
+        }
+
         self.ruler.remove(TypeKey::of::<T>());
     }
 }

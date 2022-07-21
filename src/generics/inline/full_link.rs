@@ -28,6 +28,9 @@ pub fn add<const ENABLE_NESTED: bool>(
 ) {
     md.env.insert(LinkCfg::<'\0'>(f));
     md.inline.add_rule::<LinkScanner<ENABLE_NESTED>>();
+    if !md.inline.has_rule::<LinkScannerEnd>() {
+        md.inline.add_rule::<LinkScannerEnd>();
+    }
 }
 
 /// adds custom rule with given `PREFIX` character
@@ -37,6 +40,9 @@ pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
 ) {
     md.env.insert(LinkCfg::<PREFIX>(f));
     md.inline.add_rule::<LinkPrefixScanner<PREFIX, ENABLE_NESTED>>();
+    if !md.inline.has_rule::<LinkScannerEnd>() {
+        md.inline.add_rule::<LinkScannerEnd>();
+    }
 }
 
 #[doc(hidden)]
@@ -63,6 +69,16 @@ impl<const PREFIX: char, const ENABLE_NESTED: bool> InlineRule for LinkPrefixSca
         if chars.next() != Some('[') { return false; }
         let f = state.md.env.get::<LinkCfg<PREFIX>>().unwrap().0;
         rule(state, silent, ENABLE_NESTED, 1, f)
+    }
+}
+
+#[doc(hidden)]
+pub struct LinkScannerEnd;
+impl InlineRule for LinkScannerEnd {
+    const MARKER: char = ']';
+
+    fn run(_: &mut InlineState, _: bool) -> bool {
+        false
     }
 }
 

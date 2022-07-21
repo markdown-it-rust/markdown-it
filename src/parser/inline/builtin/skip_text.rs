@@ -1,6 +1,7 @@
 // Skip text characters for text token, place those to pending buffer
 // and increment current pos
 //
+use regex::{self, Regex};
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::inline::{InlineRule, InlineState};
 
@@ -35,6 +36,12 @@ pub fn add(md: &mut MarkdownIt) {
         .before_all();
 }
 
+#[derive(Debug)]
+pub(crate) enum TextScannerImpl {
+    SkipPunct,
+    SkipRegex(Regex),
+}
+
 // Rule to skip pure text
 // '{}$%@~+=:' reserved for extentions
 //
@@ -48,22 +55,36 @@ impl InlineRule for TextScanner {
     const MARKER: char = '\0';
 
     fn run(state: &mut InlineState, silent: bool) -> bool {
-        let mut pos = state.pos;
-        let mut chars = state.src[pos..state.pos_max].chars();
+        let text_impl = state.md.inline.text_impl.get_or_init(
+            || choose_text_impl(state.md.inline.text_charmap.keys().copied().collect())
+        );
 
-        loop {
-            match chars.next() {
-                Some(
-                    '\n' | '!' | '#' | '$' | '%' | '&' | '*' | '+' | '-' |
-                    ':' | '<' | '=' | '>' | '@' | '[' | '\\' | ']' | '^' |
-                    '_' | '`' | '{' | '}' | '~'
-                ) => {
-                    break;
+        let mut pos = state.pos;
+
+        match text_impl {
+            TextScannerImpl::SkipPunct => {
+                let mut chars = state.src[pos..state.pos_max].chars();
+
+                loop {
+                    match chars.next() {
+                        Some(
+                            '\n' | '!' | '#' | '$' | '%' | '&' | '*' | '+' | '-' |
+                            ':' | '<' | '=' | '>' | '@' | '[' | '\\' | ']' | '^' |
+                            '_' | '`' | '{' | '}' | '~'
+                        ) => {
+                            break;
+                        }
+                        Some(chr) => {
+                            pos += chr.len_utf8();
+                        }
+                        None => { break; }
+                    }
                 }
-                Some(chr) => {
-                    pos += chr.len_utf8();
+            }
+            TextScannerImpl::SkipRegex(re) => {
+                if let Some(capture) = re.find(&state.src[pos..state.pos_max]) {
+                    pos += capture.end();
                 }
-                None => { break; }
             }
         }
 
@@ -73,5 +94,34 @@ impl InlineRule for TextScanner {
         state.pos = pos;
 
         true
+    }
+}
+
+fn choose_text_impl(charmap: Vec<char>) -> TextScannerImpl {
+    let mut can_use_punct = true;
+    for ch in charmap.iter() {
+        match ch {
+            '\n' | '!' | '#' | '$' | '%' | '&' | '*' | '+' | '-' |
+            ':' | '<' | '=' | '>' | '@' | '[' | '\\' | ']' | '^' |
+            '_' | '`' | '{' | '}' | '~' => {},
+            _ => {
+                can_use_punct = false;
+                break;
+            }
+        }
+    }
+
+    if can_use_punct {
+        TextScannerImpl::SkipPunct
+    } else {
+        TextScannerImpl::SkipRegex(
+            Regex::new(
+                // [] panics on "unclosed character class", but it cannot happen here
+                // (we'd use punct rule instead)
+                &format!("^[^{}]+", charmap.into_iter().map(
+                    |c| regex::escape(&c.to_string())
+                ).collect::<String>())
+            ).unwrap()
+        )
     }
 }
