@@ -2,10 +2,14 @@
 name = "markdown-it"
 version = "0.1.0"
 authors = ["Alex Kocharin <alex@kocharin.ru>"]
-description = "Port of markdown-it.js to rust (WIP)"
+description = "Rust port of popular markdown-it.js library."
+documentation = "https://docs.rs/markdown-it"
+homepage = "https://github.com/rlidwka/markdown-it.rs"
+repository = "https://github.com/rlidwka/markdown-it.rs"
+readme = "README.md"
 keywords = ["markdown", "commonmark"]
 license = "MIT"
-categories = ["text-processing", "parsing", "command-line-utilities"]
+categories = ["text-processing", "parsing"]
 edition = "2021"
 
 [lib]
