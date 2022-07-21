@@ -49,25 +49,36 @@ fn is_punct_char(ch: char) -> bool {
 #[derive(Debug)]
 /// Sandbox object containing data required to parse inline structures.
 pub struct InlineState<'a, 'b> where 'b: 'a {
+    /// Markdown source.
     pub src: String,
+
+    /// Link to parser instance.
+    pub md: &'a MarkdownIt,
+
+    /// Current node, your rule is supposed to add children to it.
+    pub node: Node,
+
+    /// For each line, it holds offset of the start of the line in original
+    /// markdown source and offset of the start of the line in `src`.
     pub srcmap: Vec<(usize, usize)>,
     pub root_env: &'b mut ErasedSet,
     pub inline_env: ErasedSet,
-    pub md: &'a MarkdownIt,
-    pub node: Node,
 
+    /// Current byte offset in `src`, it must respect char boundaries.
     pub pos: usize,
+
+    /// Maximum allowed byte offset in `src`, it must respect char boundaries.
     pub pos_max: usize,
 
-    // Stores { start: end } pairs. Useful for backtrack
-    // optimization of pairs parse (emphasis, strikes).
+    /// Stores `{ start: end }` pairs. Useful for backtrack
+    /// optimization of pairs parse (emphasis, strikes).
     pub cache: HashMap<usize, usize>,
 
-    // Counter used to disable inline linkify-it execution
-    // inside <a> and markdown links
+    /// Counter used to disable inline linkifier execution
+    /// inside raw html and markdown links.
     pub link_level: i32,
 
-    // Counter used to prevent recursion by image and link rules
+    /// Counter used to prevent recursion by image and link rules.
     pub level: u32,
 }
 

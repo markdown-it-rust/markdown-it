@@ -8,27 +8,35 @@ use crate::common::utils::calc_right_whitespace_with_tabstops;
 #[derive(Debug)]
 /// Sandbox object containing data required to parse block structures.
 pub struct BlockState<'a, 'b> where 'b: 'a {
+    /// Markdown source.
     pub src: &'b str,
 
-    // link to parser instance
+    /// Link to parser instance.
     pub md: &'a MarkdownIt,
 
     pub root_env: &'b mut ErasedSet,
 
-    //
-    // Internal state vartiables
-    //
+    /// Current node, your rule is supposed to add children to it.
     pub node: Node,
 
     pub line_offsets: Vec<LineOffset>,
 
-    // block parser variables
-    pub blk_indent: usize,        // required block content indent (for example, if we are
-                                  // inside a list, it would be positioned after list marker)
-    pub line: usize,              // line index in src
-    pub line_max: usize,          // lines count
-    pub tight: bool,              // loose/tight mode for lists
-    pub list_indent: Option<u32>, // indent of the current list block
+    /// Current block content indent (for example, if we are
+    /// inside a list, it would be positioned after list marker).
+    pub blk_indent: usize,
+
+    /// Current line in src.
+    pub line: usize,
+
+    /// Maximum allowed line in src.
+    pub line_max: usize,
+
+    /// True if there are no empty lines between paragraphs, used to
+    /// toggle loose/tight mode for lists.
+    pub tight: bool,
+
+    /// indent of the current list block.
+    pub list_indent: Option<u32>,
 
     pub level: u32,
 }
