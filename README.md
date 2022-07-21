@@ -8,8 +8,6 @@
 
 Rust port of [markdown-it](https://github.com/markdown-it/markdown-it) javascript library.
 
-**Work In Progress**
-
 ### Usage
 
 ```rust
@@ -22,5 +20,3 @@ let html = ast.render();
 print!("{html}");
 // prints "<p>Hello <strong>world</strong>!</p>"
 ```
-
-The rest of the API is very experimental and will likely change tomorrow.

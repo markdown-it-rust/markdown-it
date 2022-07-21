@@ -6,6 +6,7 @@ pub mod common;
 pub mod generics;
 pub mod parser;
 pub mod plugins;
+pub mod examples;
 
 pub use parser::node::{Node, NodeValue};
 pub use parser::main::MarkdownIt;

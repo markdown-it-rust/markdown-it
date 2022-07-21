@@ -13,5 +13,3 @@ pub use erasedset::ErasedSet;
 
 mod typekey;
 pub use typekey::TypeKey;
-
-mod testreadme;

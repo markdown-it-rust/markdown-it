@@ -86,3 +86,12 @@ r#"<blockquote>
         run("    foo\r\n    bar", "<pre><code>foo\nbar\n</code></pre>");
     }
 }
+
+mod examples {
+    include!("../examples/ferris/main.rs");
+
+    #[test]
+    fn test_examples() {
+        main();
+    }
+}
