@@ -70,7 +70,7 @@ impl InlineRule for NewlineScanner {
             };
 
             node.srcmap = state.get_map(state.pos - tail_size, pos);
-            state.push(node);
+            state.node.children.push(node);
         }
 
         state.pos = pos;

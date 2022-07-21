@@ -160,7 +160,7 @@ impl BlockRule for BlockquoteScanner {
 
         let mut node = std::mem::replace(&mut state.node, old_node);
         node.srcmap = state.get_map(start_line, next_line - 1);
-        state.push(node);
+        state.node.children.push(node);
 
         true
     }

@@ -108,7 +108,7 @@ fn rule(
 
             let mut node = std::mem::replace(&mut state.node, old_node);
             node.srcmap = state.get_map(start, result.end);
-            state.push(node);
+            state.node.children.push(node);
             state.link_level -= 1;
         }
 

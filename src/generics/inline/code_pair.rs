@@ -132,12 +132,12 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
                         state.pos_max = max;
 
                         let node = std::mem::replace(&mut state.node, old_node);
-                        state.push(node);
+                        state.node.children.push(node);
                     } else {
                         let mut inner_node = Node::new(Text { content });
                         inner_node.srcmap = state.get_map(pos, match_start);
                         node.children.push(inner_node);
-                        state.push(node);
+                        state.node.children.push(node);
                     }
                 }
                 state.pos = match_end;

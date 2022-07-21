@@ -166,12 +166,6 @@ impl<'a, 'b> BlockState<'a, 'b> {
         self.line_max = self.line_offsets.len();
     }
 
-    // Push new token to "stream".
-    //
-    pub fn push(&mut self, node: Node) {
-        self.node.children.push(node);
-    }
-
     pub fn test_rules_at_line(&mut self) -> bool {
         for rule in self.md.block.ruler.iter() {
             if rule(self, true) {

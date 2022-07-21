@@ -60,7 +60,7 @@ impl BlockRule for CodeScanner {
 
         let mut node = Node::new(CodeBlock { content });
         node.srcmap = state.get_map_from_offsets(mapping[0].1, state.line_offsets[state.line - 1].line_end);
-        state.push(node);
+        state.node.children.push(node);
 
         true
     }

@@ -35,7 +35,7 @@ impl InlineRule for EscapeScanner {
                 if !silent {
                     let mut node = Node::new(Hardbreak);
                     node.srcmap = state.get_map(map_start, map_end);
-                    state.push(node);
+                    state.node.children.push(node);
                 }
 
                 true
@@ -58,7 +58,7 @@ impl InlineRule for EscapeScanner {
                         info: "escape",
                     });
                     node.srcmap = state.get_map(state.pos, state.pos + 1 + chr.len_utf8());
-                    state.push(node);
+                    state.node.children.push(node);
                 }
                 state.pos += 1 + chr.len_utf8();
                 true

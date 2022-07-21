@@ -141,7 +141,7 @@ impl BlockRule for HtmlBlockScanner {
         let (content, _) = state.get_lines(start_line, next_line, state.blk_indent, true);
         let mut node = Node::new(HtmlBlock { content });
         node.srcmap = state.get_map(start_line, next_line - 1);
-        state.push(node);
+        state.node.children.push(node);
 
         true
     }

@@ -101,7 +101,7 @@ impl BlockRule for LHeadingScanner {
             content,
             mapping,
         }));
-        state.push(node);
+        state.node.children.push(node);
 
         true
     }

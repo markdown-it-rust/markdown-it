@@ -164,10 +164,6 @@ impl<'a, 'b> InlineState<'a, 'b> {
         }
     }
 
-    pub fn push(&mut self, node: Node) {
-        self.node.children.push(node);
-    }
-
     // Scan a sequence of emphasis-like markers, and determine whether
     // it can start an emphasis sequence or end an emphasis sequence.
     //

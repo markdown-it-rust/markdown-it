@@ -52,7 +52,7 @@ impl InlineRule for HtmlInlineScanner {
 
             let mut node = Node::new(HtmlInline { content });
             node.srcmap = state.get_map(state.pos, state.pos + capture_len);
-            state.push(node);
+            state.node.children.push(node);
         }
 
         state.pos += capture_len;

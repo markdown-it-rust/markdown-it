@@ -148,7 +148,7 @@ impl BlockRule for FenceScanner {
             lang_prefix,
         });
         node.srcmap = state.get_map(start_line, next_line - if have_end_marker { 0 } else { 1 });
-        state.push(node);
+        state.node.children.push(node);
 
         state.line = next_line + if have_end_marker { 1 } else { 0 };
 

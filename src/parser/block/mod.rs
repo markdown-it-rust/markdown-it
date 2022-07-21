@@ -73,7 +73,7 @@ impl BlockParser {
                     content,
                     mapping: vec![(0, state.line_offsets[state.line].first_nonspace)],
                 });
-                state.push(node);
+                state.node.children.push(node);
                 state.line += 1;
             }
 

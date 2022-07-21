@@ -79,7 +79,7 @@ impl InlineRule for AutolinkScanner {
             inner_node.srcmap = state.get_map(state.pos + 1, pos - 1);
 
             node.children.push(inner_node);
-            state.push(node);
+            state.node.children.push(node);
         }
 
         state.pos = pos;

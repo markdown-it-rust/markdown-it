@@ -55,7 +55,7 @@ impl BlockRule for HrScanner {
 
         let mut node = Node::new(ThematicBreak { marker, marker_len: cnt });
         node.srcmap = state.get_map(state.line, state.line);
-        state.push(node);
+        state.node.children.push(node);
         state.line += 1;
 
         true

@@ -66,7 +66,7 @@ impl BlockRule for ParagraphScanner {
             content,
             mapping,
         }));
-        state.push(node);
+        state.node.children.push(node);
 
         true
     }

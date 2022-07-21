@@ -89,7 +89,7 @@ impl BlockRule for HeadingScanner {
             content,
             mapping,
         }));
-        state.push(node);
+        state.node.children.push(node);
 
         state.line += 1;
 

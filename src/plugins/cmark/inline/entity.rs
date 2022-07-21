@@ -64,7 +64,7 @@ fn parse_digital_entity(state: &mut InlineState, silent: bool) -> bool {
                 info: "entity",
             });
             node.srcmap = state.get_map(state.pos, state.pos + entity_len);
-            state.push(node);
+            state.node.children.push(node);
         }
         state.pos += entity_len;
         true
@@ -87,7 +87,7 @@ fn parse_named_entity(state: &mut InlineState, silent: bool) -> bool {
                     info: "entity",
                 });
                 node.srcmap = state.get_map(state.pos, state.pos + entity_len);
-                state.push(node);
+                state.node.children.push(node);
             }
             state.pos += entity_len;
             true

@@ -111,15 +111,15 @@ impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScan
         if chars.next().unwrap() != MARKER { return false; }
 
         let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
-        let mut token = Node::new(EmphMarker {
+        let mut node = Node::new(EmphMarker {
             marker:    MARKER,
             length:    scanned.length,
             remaining: scanned.length,
             open:      scanned.can_open,
             close:     scanned.can_close,
         });
-        token.srcmap = state.get_map(state.pos, state.pos + scanned.length);
-        state.push(token);
+        node.srcmap = state.get_map(state.pos, state.pos + scanned.length);
+        state.node.children.push(node);
         state.pos += scanned.length;
         if scanned.can_close {
             scan_and_match_delimiters::<MARKER>(state);

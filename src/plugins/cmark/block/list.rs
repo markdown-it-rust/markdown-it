@@ -311,7 +311,7 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
         let end_line = state.line;
         let mut node = std::mem::replace(&mut state.node, old_node);
         node.srcmap = state.get_map(next_line, end_line - 1);
-        state.push(node);
+        state.node.children.push(node);
         next_line = state.line;
 
         if next_line >= state.line_max { break; }
@@ -362,7 +362,7 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
     // Finalize list
     let mut node = std::mem::replace(&mut state.node, old_node);
     node.srcmap = state.get_map(start_line, next_line - 1);
-    state.push(node);
+    state.node.children.push(node);
 
     true
 }
