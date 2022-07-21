@@ -122,6 +122,12 @@ impl<'a, 'b> InlineState<'a, 'b> {
         if let Some(text) = self.node.children.last_mut()
                                        .and_then(|t| t.cast_mut::<Text>()) {
             text.content.push_str(&self.src[start..end]);
+
+            if let Some(map) = self.node.children.last_mut().unwrap().srcmap {
+                let (map_start, _) = map.get_byte_offsets();
+                let map_end = self.get_source_pos_for(end);
+                self.node.children.last_mut().unwrap().srcmap = Some(SourcePos::new(map_start, map_end));
+            }
         } else {
             let mut node = Node::new(Text { content: self.src[start..end].to_owned() });
             node.srcmap = self.get_map(start, end);
@@ -141,9 +147,9 @@ impl<'a, 'b> InlineState<'a, 'b> {
             // modify the token and reinsert it later
             text.content.truncate(text.content.len() - count);
             if let Some(map) = node.srcmap {
-                let (start, end) = map.get_byte_offsets();
-                let new_end = self.get_source_pos_for(end - count);
-                node.srcmap = Some(SourcePos::new(start, new_end));
+                let (map_start, map_end) = map.get_byte_offsets();
+                let map_end = self.get_source_pos_for(map_end - count);
+                node.srcmap = Some(SourcePos::new(map_start, map_end));
             }
             self.node.children.push(node);
         }
