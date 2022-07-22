@@ -41,15 +41,15 @@ pub struct AutolinkScanner;
 impl InlineRule for AutolinkScanner {
     const MARKER: char = '<';
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != '<' { return false; }
+        if chars.next().unwrap() != '<' { return None; }
 
         let mut pos = state.pos + 2;
 
         loop {
             match chars.next() {
-                Some('<') | None => return false,
+                Some('<') | None => return None,
                 Some('>') => break,
                 Some(x) => pos += x.len_utf8(),
             }
@@ -59,7 +59,7 @@ impl InlineRule for AutolinkScanner {
         let is_autolink = AUTOLINK_RE.is_match(url);
         let is_email = EMAIL_RE.is_match(url);
 
-        if !is_autolink && !is_email { return false; }
+        if !is_autolink && !is_email { return None; }
 
         let full_url = if is_autolink {
             (state.md.normalize_link)(url)
@@ -67,7 +67,7 @@ impl InlineRule for AutolinkScanner {
             (state.md.normalize_link)(&("mailto:".to_owned() + url))
         };
 
-        if !(state.md.validate_link)(&full_url) { return false; }
+        if !(state.md.validate_link)(&full_url) { return None; }
 
         if !silent {
             let content = (state.md.normalize_link_text)(url);
@@ -82,7 +82,6 @@ impl InlineRule for AutolinkScanner {
             state.node.children.push(node);
         }
 
-        state.pos = pos;
-        true
+        Some(pos - state.pos)
     }
 }

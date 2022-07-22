@@ -26,9 +26,9 @@ pub struct EntityScanner;
 impl InlineRule for EntityScanner {
     const MARKER: char = '&';
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != '&' { return false; }
+        if chars.next().unwrap() != '&' { return None; }
 
         if let Some('#') = chars.next() {
             parse_digital_entity(state, silent)
@@ -38,63 +38,52 @@ impl InlineRule for EntityScanner {
     }
 }
 
-fn parse_digital_entity(state: &mut InlineState, silent: bool) -> bool {
-    if let Some(capture) = DIGITAL_RE.captures(&state.src[state.pos..]) {
-        let entity_len = &capture[0].len();
-        if !silent {
-            let entity = &capture[1];
-            #[allow(clippy::from_str_radix_10)]
-            let code = if entity.starts_with('x') || entity.starts_with('X') {
-                u32::from_str_radix(&entity[1..], 16).unwrap()
-            } else {
-                u32::from_str_radix(entity, 10).unwrap()
-            };
+fn parse_digital_entity(state: &mut InlineState, silent: bool) -> Option<usize> {
+    let capture = DIGITAL_RE.captures(&state.src[state.pos..])?;
+    let entity_len = capture[0].len();
+    if !silent {
+        let entity = &capture[1];
+        #[allow(clippy::from_str_radix_10)]
+        let code = if entity.starts_with('x') || entity.starts_with('X') {
+            u32::from_str_radix(&entity[1..], 16).unwrap()
+        } else {
+            u32::from_str_radix(entity, 10).unwrap()
+        };
 
-            let content_str = if is_valid_entity_code(code) {
-                char::from_u32(code).unwrap().into()
-            } else {
-                '\u{FFFD}'.into()
-            };
+        let content_str = if is_valid_entity_code(code) {
+            char::from_u32(code).unwrap().into()
+        } else {
+            '\u{FFFD}'.into()
+        };
 
-            let markup_str = capture[0].to_owned();
+        let markup_str = capture[0].to_owned();
 
-            let mut node = Node::new(TextSpecial {
-                content: content_str,
-                markup: markup_str,
-                info: "entity",
-            });
-            node.srcmap = state.get_map(state.pos, state.pos + entity_len);
-            state.node.children.push(node);
-        }
-        state.pos += entity_len;
-        true
-    } else {
-        false
+        let mut node = Node::new(TextSpecial {
+            content: content_str,
+            markup: markup_str,
+            info: "entity",
+        });
+        node.srcmap = state.get_map(state.pos, state.pos + entity_len);
+        state.node.children.push(node);
     }
+    Some(entity_len)
 }
 
-fn parse_named_entity(state: &mut InlineState, silent: bool) -> bool {
-    if let Some(capture) = NAMED_RE.captures(&state.src[state.pos..]) {
-        if let Some(str) = get_entity_from_str(&capture[0]) {
-            let entity_len = &capture[0].len();
-            if !silent {
-                let markup_str = capture[0].to_owned();
-                let content_str = (*str).to_owned();
+fn parse_named_entity(state: &mut InlineState, silent: bool) -> Option<usize> {
+    let capture = NAMED_RE.captures(&state.src[state.pos..])?;
+    let str = get_entity_from_str(&capture[0])?;
+    let entity_len = capture[0].len();
+    if !silent {
+        let markup_str = capture[0].to_owned();
+        let content_str = (*str).to_owned();
 
-                let mut node = Node::new(TextSpecial {
-                    content: content_str,
-                    markup: markup_str,
-                    info: "entity",
-                });
-                node.srcmap = state.get_map(state.pos, state.pos + entity_len);
-                state.node.children.push(node);
-            }
-            state.pos += entity_len;
-            true
-        } else {
-            false
-        }
-    } else {
-        false
+        let mut node = Node::new(TextSpecial {
+            content: content_str,
+            markup: markup_str,
+            info: "entity",
+        });
+        node.srcmap = state.get_map(state.pos, state.pos + entity_len);
+        state.node.children.push(node);
     }
+    Some(entity_len)
 }

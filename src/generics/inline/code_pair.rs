@@ -68,10 +68,10 @@ pub struct CodePairScanner<const MARKER: char, const TOKENIZE: bool>;
 impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MARKER, TOKENIZE> {
     const MARKER: char = MARKER;
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != MARKER { return false; }
-        if state.trailing_text_get().ends_with(MARKER) { return false; }
+        if chars.next().unwrap() != MARKER { return None; }
+        if state.trailing_text_get().ends_with(MARKER) { return None; }
 
         let mut pos = state.pos + 1;
 
@@ -88,7 +88,7 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
             // performance note: adding entire sequence into pending is 5x faster,
             // but it will interfere with other rules working on the same char;
             // and it is extremely rare that user would put a thousand "`" in text
-            return false;
+            return None;
         }
 
         let mut match_start;
@@ -140,8 +140,7 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
                         state.node.children.push(node);
                     }
                 }
-                state.pos = match_end;
-                return true;
+                return Some(match_end - state.pos);
             }
 
             // Some different length found, put it in cache as upper limit of where closer can be found
@@ -152,6 +151,6 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
         // Scanned through the end, didn't find anything
         backticks.scanned = true;
 
-        false
+        None
     }
 }

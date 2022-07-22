@@ -104,11 +104,11 @@ pub struct EmphPairScanner<const MARKER: char, const CAN_SPLIT_WORD: bool>;
 impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScanner<MARKER, CAN_SPLIT_WORD> {
     const MARKER: char = MARKER;
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
-        if silent { return false; }
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+        if silent { return None; }
 
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != MARKER { return false; }
+        if chars.next().unwrap() != MARKER { return None; }
 
         let scanned = state.scan_delims(state.pos, CAN_SPLIT_WORD);
         let mut node = Node::new(EmphMarker {
@@ -120,11 +120,10 @@ impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScan
         });
         node.srcmap = state.get_map(state.pos, state.pos + scanned.length);
         state.node.children.push(node);
-        state.pos += scanned.length;
         if scanned.can_close {
             scan_and_match_delimiters::<MARKER>(state);
         }
-        true
+        Some(scanned.length)
     }
 }
 

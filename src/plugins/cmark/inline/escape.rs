@@ -17,30 +17,29 @@ pub struct EscapeScanner;
 impl InlineRule for EscapeScanner {
     const MARKER: char = '\\';
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != '\\' { return false; }
+        if chars.next().unwrap() != '\\' { return None; }
 
         match chars.next() {
             Some('\n') => {
-                let map_start = state.pos;
-                state.pos += 2;
-                let map_end = state.pos;
-
-                // skip leading whitespaces from next line
-                while let Some(' ' | '\t') = chars.next() {
-                    state.pos += 1;
-                }
-
                 if !silent {
                     let mut node = Node::new(Hardbreak);
-                    node.srcmap = state.get_map(map_start, map_end);
+                    node.srcmap = state.get_map(state.pos, state.pos + 2);
                     state.node.children.push(node);
                 }
 
-                true
+                // skip leading whitespaces from next line
+                let mut len = 2;
+                while let Some(' ' | '\t') = chars.next() {
+                    len += 1;
+                }
+                Some(len)
             }
             Some(chr) => {
+                let start = state.pos;
+                let end = state.pos + 1 + chr.len_utf8();
+
                 if !silent {
                     let mut orig_str = "\\".to_owned();
                     orig_str.push(chr);
@@ -57,13 +56,12 @@ impl InlineRule for EscapeScanner {
                         markup: orig_str,
                         info: "escape",
                     });
-                    node.srcmap = state.get_map(state.pos, state.pos + 1 + chr.len_utf8());
+                    node.srcmap = state.get_map(start, end);
                     state.node.children.push(node);
                 }
-                state.pos += 1 + chr.len_utf8();
-                true
+                Some(end - start)
             }
-            None => false
+            None => None
         }
     }
 }

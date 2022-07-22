@@ -25,20 +25,15 @@ pub struct HtmlInlineScanner;
 impl InlineRule for HtmlInlineScanner {
     const MARKER: char = '<';
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         // Check start
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != '<' { return false; }
+        if chars.next().unwrap() != '<' { return None; }
 
         // Quick fail on second char
-        if let Some('!' | '?' | '/' | 'A'..='Z' | 'a'..='z') = chars.next() {} else { return false; }
+        if let Some('!' | '?' | '/' | 'A'..='Z' | 'a'..='z') = chars.next() {} else { return None; }
 
-        let capture = if let Some(x) = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max]) {
-            x.get(0).unwrap().as_str()
-        } else {
-            return false;
-        };
-
+        let capture = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max])?.get(0).unwrap().as_str();
         let capture_len = capture.len();
 
         if !silent {
@@ -55,8 +50,6 @@ impl InlineRule for HtmlInlineScanner {
             state.node.children.push(node);
         }
 
-        state.pos += capture_len;
-
-        true
+        Some(capture_len)
     }
 }

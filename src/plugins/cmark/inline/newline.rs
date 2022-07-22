@@ -35,10 +35,10 @@ pub struct NewlineScanner;
 impl InlineRule for NewlineScanner {
     const MARKER: char = '\n';
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
 
-        if chars.next().unwrap() != '\n' { return false; }
+        if chars.next().unwrap() != '\n' { return None; }
 
         let mut pos = state.pos;
         pos += 1;
@@ -73,7 +73,6 @@ impl InlineRule for NewlineScanner {
             state.node.children.push(node);
         }
 
-        state.pos = pos;
-        true
+        Some(pos - state.pos)
     }
 }

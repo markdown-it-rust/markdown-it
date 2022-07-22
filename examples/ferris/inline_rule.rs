@@ -41,15 +41,14 @@ impl InlineRule for FerrisInlineScanner {
     //
     // If custom structure is found, it:
     //  - creates a new `Node` in AST
-    //  - increments `state.pos` to a position after this node
-    //  - returns true
+    //  - returns length of it
     //
     // In "silent mode" (when `silent=true`) you aren't allowed to
     // create any nodes, should only increment `state.pos`.
     //
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let input = &state.src[state.pos..state.pos_max]; // look for stuff at state.pos
-        if !input.starts_with(CRAB_CLAW) { return false; } // return false if it's not found
+        if !input.starts_with(CRAB_CLAW) { return None; } // return None if it's not found
 
         if !silent {
             // create a custom AST node
@@ -60,10 +59,8 @@ impl InlineRule for FerrisInlineScanner {
             state.node.children.push(node);
         }
 
-        // set next parser position
-        state.pos += CRAB_CLAW.len();
-        // true means custom structure is found, parser advances to next position
-        true
+        // return length of this structure
+        Some(CRAB_CLAW.len())
     }
 }
 

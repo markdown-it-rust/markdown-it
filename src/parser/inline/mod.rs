@@ -19,7 +19,7 @@ use crate::{MarkdownIt, Node};
 use crate::common::{ErasedSet, TypeKey};
 use crate::common::ruler::Ruler;
 
-type RuleFn = fn (&mut InlineState, bool) -> bool;
+type RuleFn = fn (&mut InlineState, bool) -> Option<usize>;
 
 #[derive(Debug, Default)]
 /// Inline-level tokenizer.
@@ -39,7 +39,7 @@ impl InlineParser {
     //
     pub fn skip_token(&self, state: &mut InlineState) {
         let pos = state.pos;
-        let mut ok = false;
+        let mut ok = None;
 
         if let Some(x) = state.cache.get(&pos) {
             state.pos = *x;
@@ -49,8 +49,7 @@ impl InlineParser {
         if state.level < state.md.max_nesting {
             for rule in self.ruler.iter() {
                 ok = rule(state, true);
-                if ok {
-                    assert!(state.pos > pos, "inline rule didn't increment state.pos");
+                if ok.is_some() {
                     break;
                 }
             }
@@ -69,7 +68,9 @@ impl InlineParser {
             state.pos = state.pos_max;
         }
 
-        if !ok {
+        if let Some(len) = ok {
+            state.pos += len;
+        } else {
             let ch = state.src[state.pos..state.pos_max].chars().next().unwrap();
             state.pos += ch.len_utf8();
         }
@@ -88,20 +89,19 @@ impl InlineParser {
             // - update `state.pos`
             // - update `state.tokens`
             // - return true
-            let mut ok = false;
-            let prev_pos = state.pos;
+            let mut ok = None;
 
             if state.level < state.md.max_nesting {
                 for rule in self.ruler.iter() {
                     ok = rule(state, false);
-                    if ok {
-                        assert!(state.pos > prev_pos, "inline rule didn't increment state.pos");
+                    if ok.is_some() {
                         break;
                     }
                 }
             }
 
-            if ok {
+            if let Some(len) = ok {
+                state.pos += len;
                 if state.pos >= end { break; }
                 continue;
             }

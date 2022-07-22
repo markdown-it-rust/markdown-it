@@ -50,9 +50,9 @@ pub struct LinkScanner<const ENABLE_NESTED: bool>;
 impl<const ENABLE_NESTED: bool> InlineRule for LinkScanner<ENABLE_NESTED> {
     const MARKER: char = '[';
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != '[' { return false; }
+        if chars.next().unwrap() != '[' { return None; }
         let f = state.md.env.get::<LinkCfg<'\0'>>().unwrap().0;
         rule(state, silent, ENABLE_NESTED, 0, f)
     }
@@ -63,10 +63,10 @@ pub struct LinkPrefixScanner<const PREFIX: char, const ENABLE_NESTED: bool>;
 impl<const PREFIX: char, const ENABLE_NESTED: bool> InlineRule for LinkPrefixScanner<PREFIX, ENABLE_NESTED> {
     const MARKER: char = PREFIX;
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next() != Some(PREFIX) { return false; }
-        if chars.next() != Some('[') { return false; }
+        if chars.next() != Some(PREFIX) { return None; }
+        if chars.next() != Some('[') { return None; }
         let f = state.md.env.get::<LinkCfg<PREFIX>>().unwrap().0;
         rule(state, silent, ENABLE_NESTED, 1, f)
     }
@@ -77,8 +77,8 @@ pub struct LinkScannerEnd;
 impl InlineRule for LinkScannerEnd {
     const MARKER: char = ']';
 
-    fn run(_: &mut InlineState, _: bool) -> bool {
-        false
+    fn run(_: &mut InlineState, _: bool) -> Option<usize> {
+        None
     }
 }
 
@@ -88,7 +88,7 @@ fn rule(
     enable_nested: bool,
     offset: usize,
     f: fn (Option<String>, Option<String>) -> Node
-) -> bool {
+) -> Option<usize> {
     let start = state.pos;
 
     if let Some(result) = parse_link(state, state.pos + offset, enable_nested) {
@@ -112,10 +112,9 @@ fn rule(
             state.link_level -= 1;
         }
 
-        state.pos = result.end;
-        true
+        Some(result.end - state.pos)
     } else {
-        false
+        None
     }
 }
 

@@ -54,16 +54,16 @@ pub struct TextScanner;
 impl InlineRule for TextScanner {
     const MARKER: char = '\0';
 
-    fn run(state: &mut InlineState, silent: bool) -> bool {
+    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
         let text_impl = state.md.inline.text_impl.get_or_init(
             || choose_text_impl(state.md.inline.text_charmap.keys().copied().collect())
         );
 
-        let mut pos = state.pos;
+        let mut len = 0;
 
         match text_impl {
             TextScannerImpl::SkipPunct => {
-                let mut chars = state.src[pos..state.pos_max].chars();
+                let mut chars = state.src[state.pos..state.pos_max].chars();
 
                 loop {
                     match chars.next() {
@@ -75,25 +75,23 @@ impl InlineRule for TextScanner {
                             break;
                         }
                         Some(chr) => {
-                            pos += chr.len_utf8();
+                            len += chr.len_utf8();
                         }
                         None => { break; }
                     }
                 }
             }
             TextScannerImpl::SkipRegex(re) => {
-                if let Some(capture) = re.find(&state.src[pos..state.pos_max]) {
-                    pos += capture.end();
+                if let Some(capture) = re.find(&state.src[state.pos..state.pos_max]) {
+                    len = capture.end();
                 }
             }
         }
 
-        if pos == state.pos { return false; }
+        if len == 0 { return None; }
+        if !silent { state.trailing_text_push(state.pos, state.pos + len); }
 
-        if !silent { state.trailing_text_push(state.pos, pos); }
-        state.pos = pos;
-
-        true
+        Some(len)
     }
 }
 
