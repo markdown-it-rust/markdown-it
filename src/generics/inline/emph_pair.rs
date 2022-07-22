@@ -49,9 +49,7 @@
 use std::cmp::min;
 use crate::{MarkdownIt, Node, NodeValue};
 use crate::common::sourcemap::SourcePos;
-use crate::parser::core::CoreRule;
-use crate::parser::inline::{InlineRule, InlineState, Text};
-use crate::parser::inline::builtin::InlineParserRule;
+use crate::parser::inline::{InlineRule, InlineState};
 
 #[derive(Debug, Default)]
 struct PairConfig<const MARKER: char> {
@@ -81,7 +79,11 @@ pub struct EmphMarker {
 }
 
 // this node is supposed to be replaced by actual emph or text node
-impl NodeValue for EmphMarker {}
+impl NodeValue for EmphMarker {
+    fn to_text_fragment(&self) -> Option<String> {
+        Some(self.marker.to_string().repeat(self.remaining))
+    }
+}
 
 pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool>(md: &mut MarkdownIt, f: fn () -> Node) {
     let pair_config = md.env.get_or_insert_default::<PairConfig<MARKER>>();
@@ -90,12 +92,6 @@ pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool
     if !pair_config.inserted {
         pair_config.inserted = true;
         md.inline.add_rule::<EmphPairScanner<MARKER, CAN_SPLIT_WORD>>();
-    }
-
-    if !md.has_rule::<FragmentsJoin>() {
-        md.add_rule::<FragmentsJoin>()
-            .before_all()
-            .after::<InlineParserRule>();
     }
 }
 
@@ -249,69 +245,4 @@ fn is_odd_match(opener: &EmphMarker, closer: &EmphMarker) -> bool {
     }
 
     false
-}
-
-
-#[doc(hidden)]
-pub struct FragmentsJoin;
-impl CoreRule for FragmentsJoin {
-    fn run(node: &mut Node, _: &MarkdownIt) {
-        node.walk_mut(|node, _| fragments_join(node));
-    }
-}
-
-
-// Clean up tokens after emphasis and strikethrough postprocessing:
-// merge adjacent text nodes into one and re-calculate all token levels
-//
-// This is necessary because initially emphasis delimiter markers (*, _, ~)
-// are treated as their own separate text tokens. Then emphasis rule either
-// leaves them as text (needed to merge with adjacent text) or turns them
-// into opening/closing tags (which messes up levels inside).
-//
-fn fragments_join(node: &mut Node) {
-    // replace all emph markers with text tokens
-    for token in node.children.iter_mut() {
-        if let Some(data) = token.cast::<EmphMarker>() {
-            let content = data.marker.to_string().repeat(data.remaining);
-            token.replace(Text { content });
-        }
-    }
-
-    // collapse adjacent text tokens
-    for idx in 1..node.children.len() {
-        let ( tokens1, tokens2 ) = node.children.split_at_mut(idx);
-
-        let token1 = tokens1.last_mut().unwrap();
-        if let Some(t1_data) = token1.cast_mut::<Text>() {
-
-            let token2 = tokens2.first_mut().unwrap();
-            if let Some(t2_data) = token2.cast_mut::<Text>() {
-                // concat contents
-                let t2_content = std::mem::take(&mut t2_data.content);
-                t1_data.content += &t2_content;
-
-                // adjust source maps
-                if let Some(map1) = token1.srcmap {
-                    if let Some(map2) = token2.srcmap {
-                        token1.srcmap = Some(SourcePos::new(
-                            map1.get_byte_offsets().0,
-                            map2.get_byte_offsets().1
-                        ));
-                    }
-                }
-
-                node.children.swap(idx - 1, idx);
-            }
-        }
-    }
-
-    // remove all empty tokens
-    node.children.retain(|token| {
-        if let Some(data) = token.cast::<Text>() {
-            !data.content.is_empty()
-        } else {
-            true
-        }
-    });
 }

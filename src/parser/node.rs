@@ -98,6 +98,7 @@ impl Node {
     pub fn replace<T: NodeValue>(&mut self, value: T) {
         self.node_type  = TypeKey::of::<T>();
         self.node_value = Box::new(value);
+        self.env        = ErasedSet::new();
     }
 
     /// Execute function `f` recursively on every member of AST tree
@@ -158,6 +159,11 @@ pub trait NodeValue : Debug + Downcast {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let _ = fmt;
         unimplemented!("{} doesn't implement render", node.name());
+    }
+
+    /// Used for temporary nodes, you probably don't need this.
+    fn to_text_fragment(&self) -> Option<String> {
+        None
     }
 }
 
