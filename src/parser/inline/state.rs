@@ -47,12 +47,15 @@ fn is_punct_char(ch: char) -> bool {
 }
 
 #[derive(Debug)]
+#[readonly::make]
 /// Sandbox object containing data required to parse inline structures.
 pub struct InlineState<'a, 'b> where 'b: 'a {
     /// Markdown source.
+    #[readonly]
     pub src: String,
 
     /// Link to parser instance.
+    #[readonly]
     pub md: &'a MarkdownIt,
 
     /// Current node, your rule is supposed to add children to it.

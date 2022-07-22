@@ -6,12 +6,15 @@ use crate::common::sourcemap::SourcePos;
 use crate::common::utils::calc_right_whitespace_with_tabstops;
 
 #[derive(Debug)]
+#[readonly::make]
 /// Sandbox object containing data required to parse block structures.
 pub struct BlockState<'a, 'b> where 'b: 'a {
     /// Markdown source.
+    #[readonly]
     pub src: &'b str,
 
     /// Link to parser instance.
+    #[readonly]
     pub md: &'a MarkdownIt,
 
     pub root_env: &'b mut ErasedSet,

@@ -45,6 +45,7 @@
 //!
 //! If you define two structures with the same marker, only the first one will work.
 //!
+use std::cell::RefCell;
 use crate::{MarkdownIt, Node};
 use crate::parser::inline::{InlineRule, InlineState, Text};
 
@@ -81,7 +82,8 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
         }
 
         // backtick length => last seen position
-        let backticks = state.inline_env.get_or_insert_default::<CodePairCache<MARKER>>();
+        state.inline_env.get_or_insert_default::<RefCell<CodePairCache<MARKER>>>();
+        let mut backticks = state.inline_env.get::<RefCell<CodePairCache<MARKER>>>().unwrap().borrow_mut();
         let opener_len = pos - state.pos;
 
         if backticks.scanned && backticks.max[opener_len] <= state.pos {
@@ -128,6 +130,7 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
 
                         state.pos = pos;
                         state.pos_max = match_start;
+                        drop(backticks);
                         state.md.inline.tokenize(state);
                         state.pos_max = max;
 

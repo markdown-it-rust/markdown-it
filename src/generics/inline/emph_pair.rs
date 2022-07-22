@@ -147,15 +147,13 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState) {
 
     let mut idx = state.node.children.len() - 1;
     let mut new_min_opener_idx = idx;
-    'outer: while idx > min_opener_idx {
+    while idx > min_opener_idx {
         idx -= 1;
 
         if let Some(opener) = state.node.children[idx].cast::<EmphMarker>() {
-            if opener.open && opener.marker == closer.marker && !is_odd_match(opener, &closer) {
-                while closer.remaining > 0 {
-                    // opener is retrieved and cast again on each iteration to satisfy desires of The Borrow Checker,
-                    // I wish it didn't have to be this way
-                    let mut opener = state.node.children[idx].cast_mut::<EmphMarker>().unwrap();
+            let mut opener = opener.clone();
+            if opener.open && opener.marker == closer.marker && !is_odd_match(&opener, &closer) {
+                while closer.remaining > 0 && opener.remaining > 0 {
                     let max_marker_len = min(3, min(opener.remaining, closer.remaining));
                     let mut matched_rule = None;
                     let fns = &state.md.env.get::<PairConfig<MARKER>>().unwrap().fns;
@@ -169,13 +167,12 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState) {
                     // If matched_fn isn't found, it can only mean that function is defined for larger marker
                     // than we have (e.g. function defined for **, we have *).
                     // Treat this as "marker not found".
-                    if matched_rule.is_none() { continue 'outer; }
+                    if matched_rule.is_none() { break; }
 
                     let (marker_len, marker_fn) = matched_rule.unwrap();
 
                     closer.remaining -= marker_len;
                     opener.remaining -= marker_len;
-                    let opener_is_empty = opener.remaining == 0;
 
                     let mut new_token = marker_fn();
                     new_token.children = state.node.children.split_off(idx + 1);
@@ -200,15 +197,17 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState) {
                     new_token.srcmap = state.get_map(start_map_pos, end_map_pos);
 
                     // remove empty node as a small optimization so we can do less work later
-                    if opener_is_empty { state.node.children.pop(); }
+                    if opener.remaining == 0 { state.node.children.pop(); }
 
                     new_min_opener_idx = 0;
                     state.node.children.push(new_token);
 
-                    // node is removed, no reason to continue working on it
-                    if opener_is_empty { break; }
                 }
             }
+
+            if opener.remaining > 0 {
+                state.node.children[idx].replace(opener);
+            } // otherwise node was already deleted
         }
     }
 

@@ -23,16 +23,16 @@ impl InlineRule for EscapeScanner {
 
         match chars.next() {
             Some('\n') => {
-                if !silent {
-                    let mut node = Node::new(Hardbreak);
-                    node.srcmap = state.get_map(state.pos, state.pos + 2);
-                    state.node.children.push(node);
-                }
-
                 // skip leading whitespaces from next line
                 let mut len = 2;
                 while let Some(' ' | '\t') = chars.next() {
                     len += 1;
+                }
+
+                if !silent {
+                    let mut node = Node::new(Hardbreak);
+                    node.srcmap = state.get_map(state.pos, state.pos + 2);
+                    state.node.children.push(node);
                 }
                 Some(len)
             }
