@@ -13,6 +13,7 @@
 //!  - `md` - parser instance
 //!  - `f` - function that should return your custom [Node] given href and title
 //!
+use std::collections::HashMap;
 use crate::{MarkdownIt, Node};
 use crate::common::utils::unescape_all;
 use crate::parser::inline::{InlineRule, InlineState};
@@ -115,6 +116,9 @@ fn rule(
     }
 }
 
+#[derive(Debug, Default)]
+struct LinkLabelScanCache(HashMap<usize, usize>);
+
 // Parse link label
 //
 // this function assumes that first character ("[") already matches;
@@ -123,34 +127,37 @@ fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) 
     let old_pos = state.pos;
     let mut found = false;
     let mut label_end = None;
-    let mut level = 1;
 
     state.pos = start + 1;
 
     while let Some(ch) = state.src[state.pos..state.pos_max].chars().next() {
         if ch == ']' {
-            level -= 1;
-            if level == 0 {
-                found = true;
-                break;
-            }
+            found = true;
+            break;
         }
 
-        let prev_pos = state.pos;
-        state.md.inline.skip_token(state);
-        if ch == '[' {
-            if prev_pos == state.pos - 1 {
-                // increase level if we find text `[`, which is not a part of any token
-                level += 1;
-            } else if !enable_nested {
-                state.pos = old_pos;
-                return None;
+        let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
+        if let Some(&cached_pos) = cache.0.get(&state.pos) {
+            state.pos = cached_pos;
+        } else {
+            let prev_pos = state.pos;
+            if !state.md.inline.skip_token(state) {
+                // text token
+                let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
+                if let Some(&cached_pos) = cache.0.get(&prev_pos) {
+                    state.pos = cached_pos;
+                }
+            } else if ch == '[' && !enable_nested {
+                // non-text token
+                break;
             }
         }
     }
 
     if found {
         label_end = Some(state.pos);
+        let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
+        cache.0.insert(start, state.pos + 1);
     }
 
     // restore old state

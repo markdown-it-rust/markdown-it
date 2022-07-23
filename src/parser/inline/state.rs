@@ -4,7 +4,6 @@ use crate::{MarkdownIt, Node};
 use crate::common::ErasedSet;
 use crate::common::sourcemap::SourcePos;
 use crate::parser::inline::Text;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy)]
 /// Information about emphasis delimiter run returned from [InlineState::scan_delims].
@@ -73,10 +72,6 @@ pub struct InlineState<'a, 'b> where 'b: 'a {
     /// Maximum allowed byte offset in `src`, it must respect char boundaries.
     pub pos_max: usize,
 
-    /// Stores `{ start: end }` pairs. Useful for backtrack
-    /// optimization of pairs parse (emphasis, strikes).
-    pub cache: HashMap<usize, usize>,
-
     /// Counter used to disable inline linkifier execution
     /// inside raw html and markdown links.
     pub link_level: i32,
@@ -102,7 +97,6 @@ impl<'a, 'b> InlineState<'a, 'b> {
             inline_env: ErasedSet::new(),
             md,
             node,
-            cache:      HashMap::new(),
             link_level: 0,
             level:      0,
         };

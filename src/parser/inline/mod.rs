@@ -37,14 +37,8 @@ impl InlineParser {
     // Skip single token by running all rules in validation mode;
     // returns `true` if any rule reported success
     //
-    pub fn skip_token(&self, state: &mut InlineState) {
-        let pos = state.pos;
+    pub fn skip_token(&self, state: &mut InlineState) -> bool {
         let mut ok = None;
-
-        if let Some(x) = state.cache.get(&pos) {
-            state.pos = *x;
-            return;
-        }
 
         if state.level < state.md.max_nesting {
             let oldroot = std::mem::take(&mut state.node);
@@ -72,11 +66,12 @@ impl InlineParser {
 
         if let Some(len) = ok {
             state.pos += len;
+            true
         } else {
             let ch = state.src[state.pos..state.pos_max].chars().next().unwrap();
             state.pos += ch.len_utf8();
+            false
         }
-        state.cache.insert(pos, state.pos);
     }
 
     // Generate tokens for input range
