@@ -69,7 +69,7 @@ pub struct CodePairScanner<const MARKER: char, const TOKENIZE: bool>;
 impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MARKER, TOKENIZE> {
     const MARKER: char = MARKER;
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn run(state: &mut InlineState) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != MARKER { return None; }
         if state.trailing_text_get().ends_with(MARKER) { return None; }
@@ -86,7 +86,7 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
         let mut backticks = state.inline_env.get::<RefCell<CodePairCache<MARKER>>>().unwrap().borrow_mut();
         let opener_len = pos - state.pos;
 
-        if backticks.scanned && backticks.max[opener_len] <= state.pos {
+        if backticks.scanned && backticks.max.get(opener_len).copied().unwrap_or(usize::MAX) <= state.pos {
             // performance note: adding entire sequence into pending is 5x faster,
             // but it will interfere with other rules working on the same char;
             // and it is extremely rare that user would put a thousand "`" in text
@@ -112,36 +112,34 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
 
             if closer_len == opener_len {
                 // Found matching closer length.
-                if !silent {
-                    let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
-                    if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
-                        content = content[1..content.len() - 1].to_owned();
-                        pos += 1;
-                        match_start -= 1;
-                    }
+                let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
+                if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
+                    content = content[1..content.len() - 1].to_owned();
+                    pos += 1;
+                    match_start -= 1;
+                }
 
-                    let f = state.md.env.get::<CodePairConfig<MARKER>>().unwrap().0;
-                    let mut node = f(opener_len);
-                    node.srcmap = state.get_map(state.pos, match_end);
+                let f = state.md.env.get::<CodePairConfig<MARKER>>().unwrap().0;
+                let mut node = f(opener_len);
+                node.srcmap = state.get_map(state.pos, match_end);
 
-                    if TOKENIZE {
-                        let old_node = std::mem::replace(&mut state.node, node);
-                        let max = state.pos_max;
+                if TOKENIZE {
+                    let old_node = std::mem::replace(&mut state.node, node);
+                    let max = state.pos_max;
 
-                        state.pos = pos;
-                        state.pos_max = match_start;
-                        drop(backticks);
-                        state.md.inline.tokenize(state);
-                        state.pos_max = max;
+                    state.pos = pos;
+                    state.pos_max = match_start;
+                    drop(backticks);
+                    state.md.inline.tokenize(state);
+                    state.pos_max = max;
 
-                        let node = std::mem::replace(&mut state.node, old_node);
-                        state.node.children.push(node);
-                    } else {
-                        let mut inner_node = Node::new(Text { content });
-                        inner_node.srcmap = state.get_map(pos, match_start);
-                        node.children.push(inner_node);
-                        state.node.children.push(node);
-                    }
+                    let node = std::mem::replace(&mut state.node, old_node);
+                    state.node.children.push(node);
+                } else {
+                    let mut inner_node = Node::new(Text { content });
+                    inner_node.srcmap = state.get_map(pos, match_start);
+                    node.children.push(inner_node);
+                    state.node.children.push(node);
                 }
                 return Some(match_end - state.pos);
             }

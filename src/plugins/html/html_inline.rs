@@ -25,7 +25,7 @@ pub struct HtmlInlineScanner;
 impl InlineRule for HtmlInlineScanner {
     const MARKER: char = '<';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn run(state: &mut InlineState) -> Option<usize> {
         // Check start
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != '<' { return None; }
@@ -36,20 +36,17 @@ impl InlineRule for HtmlInlineScanner {
         let capture = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max])?.get(0).unwrap().as_str();
         let capture_len = capture.len();
 
-        if !silent {
-            let content = capture.to_owned();
+        let content = capture.to_owned();
 
-            if HTML_LINK_OPEN.is_match(&content) {
-                state.link_level += 1;
-            } else if HTML_LINK_CLOSE.is_match(&content) {
-                state.link_level -= 1;
-            }
-
-            let mut node = Node::new(HtmlInline { content });
-            node.srcmap = state.get_map(state.pos, state.pos + capture_len);
-            state.node.children.push(node);
+        if HTML_LINK_OPEN.is_match(&content) {
+            state.link_level += 1;
+        } else if HTML_LINK_CLOSE.is_match(&content) {
+            state.link_level -= 1;
         }
 
+        let mut node = Node::new(HtmlInline { content });
+        node.srcmap = state.get_map(state.pos, state.pos + capture_len);
+        state.node.children.push(node);
         Some(capture_len)
     }
 }

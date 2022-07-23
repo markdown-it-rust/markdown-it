@@ -100,9 +100,7 @@ pub struct EmphPairScanner<const MARKER: char, const CAN_SPLIT_WORD: bool>;
 impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScanner<MARKER, CAN_SPLIT_WORD> {
     const MARKER: char = MARKER;
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
-        if silent { return None; }
-
+    fn run(state: &mut InlineState) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != MARKER { return None; }
 

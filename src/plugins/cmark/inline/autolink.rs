@@ -41,7 +41,7 @@ pub struct AutolinkScanner;
 impl InlineRule for AutolinkScanner {
     const MARKER: char = '<';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn run(state: &mut InlineState) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != '<' { return None; }
 
@@ -69,18 +69,16 @@ impl InlineRule for AutolinkScanner {
 
         if !(state.md.validate_link)(&full_url) { return None; }
 
-        if !silent {
-            let content = (state.md.normalize_link_text)(url);
+        let content = (state.md.normalize_link_text)(url);
 
-            let mut node = Node::new(Autolink { url: full_url });
-            node.srcmap = state.get_map(state.pos, pos);
+        let mut node = Node::new(Autolink { url: full_url });
+        node.srcmap = state.get_map(state.pos, pos);
 
-            let mut inner_node = Node::new(Text { content });
-            inner_node.srcmap = state.get_map(state.pos + 1, pos - 1);
+        let mut inner_node = Node::new(Text { content });
+        inner_node.srcmap = state.get_map(state.pos + 1, pos - 1);
 
-            node.children.push(inner_node);
-            state.node.children.push(node);
-        }
+        node.children.push(inner_node);
+        state.node.children.push(node);
 
         Some(pos - state.pos)
     }

@@ -35,7 +35,7 @@ pub struct NewlineScanner;
 impl InlineRule for NewlineScanner {
     const MARKER: char = '\n';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn run(state: &mut InlineState) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
 
         if chars.next().unwrap() != '\n' { return None; }
@@ -49,30 +49,27 @@ impl InlineRule for NewlineScanner {
         }
 
         // '  \n' -> hardbreak
-        if !silent {
-            let mut tail_size = 0;
-            let trailing_text = state.trailing_text_get();
+        let mut tail_size = 0;
+        let trailing_text = state.trailing_text_get();
 
-            for ch in trailing_text.chars().rev() {
-                if ch == ' ' {
-                    tail_size += 1;
-                } else {
-                    break;
-                }
-            }
-
-            state.trailing_text_pop(tail_size);
-
-            let mut node = if tail_size >= 2 {
-                Node::new(Hardbreak)
+        for ch in trailing_text.chars().rev() {
+            if ch == ' ' {
+                tail_size += 1;
             } else {
-                Node::new(Softbreak)
-            };
-
-            node.srcmap = state.get_map(state.pos - tail_size, pos);
-            state.node.children.push(node);
+                break;
+            }
         }
 
+        state.trailing_text_pop(tail_size);
+
+        let mut node = if tail_size >= 2 {
+            Node::new(Hardbreak)
+        } else {
+            Node::new(Softbreak)
+        };
+
+        node.srcmap = state.get_map(state.pos - tail_size, pos);
+        state.node.children.push(node);
         Some(pos - state.pos)
     }
 }

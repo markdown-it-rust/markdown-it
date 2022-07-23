@@ -19,7 +19,7 @@ use crate::{MarkdownIt, Node};
 use crate::common::{ErasedSet, TypeKey};
 use crate::common::ruler::Ruler;
 
-type RuleFn = fn (&mut InlineState, bool) -> Option<usize>;
+type RuleFn = fn (&mut InlineState) -> Option<usize>;
 
 #[derive(Debug, Default)]
 /// Inline-level tokenizer.
@@ -47,12 +47,14 @@ impl InlineParser {
         }
 
         if state.level < state.md.max_nesting {
+            let oldroot = std::mem::take(&mut state.node);
             for rule in self.ruler.iter() {
-                ok = rule(state, true);
+                ok = rule(state);
                 if ok.is_some() {
                     break;
                 }
             }
+            state.node = oldroot;
         } else {
             // Too much nesting, just skip until the end of the paragraph.
             //
@@ -93,7 +95,7 @@ impl InlineParser {
 
             if state.level < state.md.max_nesting {
                 for rule in self.ruler.iter() {
-                    ok = rule(state, false);
+                    ok = rule(state);
                     if ok.is_some() {
                         break;
                     }

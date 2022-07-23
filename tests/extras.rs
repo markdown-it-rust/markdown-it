@@ -49,6 +49,14 @@ mod markdown_it_rs_extras {
     }
 
     #[test]
+    fn regression_test_ending_code() {
+        run("foo`", "<p>foo`</p>");
+        run("foo```", "<p>foo```</p>");
+        run("[foo`", "<p>[foo`</p>");
+        run("[foo```", "<p>[foo```</p>");
+    }
+
+    #[test]
     fn regression_list_markers() {
         run("- foo\n- bar", "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>");
         run("1. foo\n1. bar", "<ol>\n<li>foo</li>\n<li>bar</li>\n</ol>");
