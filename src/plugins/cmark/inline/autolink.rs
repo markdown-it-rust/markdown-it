@@ -41,47 +41,55 @@ pub struct AutolinkScanner;
 impl InlineRule for AutolinkScanner {
     const MARKER: char = '<';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
-        let mut chars = state.src[state.pos..state.pos_max].chars();
-        if chars.next().unwrap() != '<' { return None; }
-
-        let mut pos = state.pos + 2;
-
-        loop {
-            match chars.next() {
-                Some('<') | None => return None,
-                Some('>') => break,
-                Some(x) => pos += x.len_utf8(),
-            }
-        }
-
-        let url = &state.src[state.pos+1..pos-1];
-        let is_autolink = AUTOLINK_RE.is_match(url);
-        let is_email = EMAIL_RE.is_match(url);
-
-        if !is_autolink && !is_email { return None; }
-
-        let full_url = if is_autolink {
-            (state.md.normalize_link)(url)
-        } else {
-            (state.md.normalize_link)(&("mailto:".to_owned() + url))
-        };
-
-        if !(state.md.validate_link)(&full_url) { return None; }
-
-        if !silent {
-            let content = (state.md.normalize_link_text)(url);
-
-            let mut node = Node::new(Autolink { url: full_url });
-            node.srcmap = state.get_map(state.pos, pos);
-
-            let mut inner_node = Node::new(Text { content });
-            inner_node.srcmap = state.get_map(state.pos + 1, pos - 1);
-
-            node.children.push(inner_node);
-            state.node.children.push(node);
-        }
-
-        Some(pos - state.pos)
+    fn check(state: &mut InlineState) -> Option<usize> {
+        get_link(state).map(|(size, _)| size)
     }
+
+    fn run(state: &mut InlineState) -> Option<usize> {
+        let (len, full_url) = get_link(state)?;
+
+        let mut node = Node::new(Autolink { url: full_url });
+        node.srcmap = state.get_map(state.pos, state.pos + len);
+
+        let content = (state.md.normalize_link_text)(&state.src[state.pos+1..state.pos+len-1]);
+
+        let mut inner_node = Node::new(Text { content });
+        inner_node.srcmap = state.get_map(state.pos + 1, state.pos + len - 1);
+
+        node.children.push(inner_node);
+        state.node.children.push(node);
+
+        Some(len)
+    }
+}
+
+fn get_link(state: &InlineState) -> Option<(usize, String)> {
+    let mut chars = state.src[state.pos..state.pos_max].chars();
+    if chars.next().unwrap() != '<' { return None; }
+
+    let mut pos = state.pos + 2;
+
+    loop {
+        match chars.next() {
+            Some('<') | None => return None,
+            Some('>') => break,
+            Some(x) => pos += x.len_utf8(),
+        }
+    }
+
+    let url = &state.src[state.pos+1..pos-1];
+    let is_autolink = AUTOLINK_RE.is_match(url);
+    let is_email = EMAIL_RE.is_match(url);
+
+    if !is_autolink && !is_email { return None; }
+
+    let full_url = if is_autolink {
+        (state.md.normalize_link)(url)
+    } else {
+        (state.md.normalize_link)(&("mailto:".to_owned() + url))
+    };
+
+    if !(state.md.validate_link)(&full_url) { return None; }
+
+    Some((pos - state.pos, full_url))
 }

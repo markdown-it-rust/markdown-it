@@ -69,10 +69,9 @@ pub struct CodePairScanner<const MARKER: char, const TOKENIZE: bool>;
 impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MARKER, TOKENIZE> {
     const MARKER: char = MARKER;
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn check(state: &mut InlineState) -> Option<usize> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != MARKER { return None; }
-        if state.trailing_text_get().ends_with(MARKER) { return None; }
 
         let mut pos = state.pos + 1;
 
@@ -112,37 +111,6 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
 
             if closer_len == opener_len {
                 // Found matching closer length.
-                if !silent {
-                    let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
-                    if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
-                        content = content[1..content.len() - 1].to_owned();
-                        pos += 1;
-                        match_start -= 1;
-                    }
-
-                    let f = state.md.env.get::<CodePairConfig<MARKER>>().unwrap().0;
-                    let mut node = f(opener_len);
-                    node.srcmap = state.get_map(state.pos, match_end);
-
-                    if TOKENIZE {
-                        let old_node = std::mem::replace(&mut state.node, node);
-                        let max = state.pos_max;
-
-                        state.pos = pos;
-                        state.pos_max = match_start;
-                        drop(backticks);
-                        state.md.inline.tokenize(state);
-                        state.pos_max = max;
-
-                        let node = std::mem::replace(&mut state.node, old_node);
-                        state.node.children.push(node);
-                    } else {
-                        let mut inner_node = Node::new(Text { content });
-                        inner_node.srcmap = state.get_map(pos, match_start);
-                        node.children.push(inner_node);
-                        state.node.children.push(node);
-                    }
-                }
                 return Some(match_end - state.pos);
             }
 
@@ -155,5 +123,52 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
         backticks.scanned = true;
 
         None
+    }
+
+    fn run(state: &mut InlineState) -> Option<usize> {
+        let len = Self::check(state)?;
+        if state.trailing_text_get().ends_with(MARKER) { return None; }
+
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        let mut marker_len = 0;
+
+        // scan marker length
+        while Some(MARKER) == chars.next() {
+            marker_len += 1;
+        }
+
+        let mut content = state.src[state.pos+marker_len..state.pos+len-marker_len].to_owned().replace('\n', " ");
+        let mut spaces_around = false;
+        if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
+            content = content[1..content.len() - 1].to_owned();
+            spaces_around = true;
+        }
+
+        let f = state.md.env.get::<CodePairConfig<MARKER>>().unwrap().0;
+        let mut node = f(marker_len);
+        node.srcmap = state.get_map(state.pos, state.pos + len);
+
+        let inner_start = state.pos + marker_len + spaces_around as usize;
+        let inner_end   = state.pos + len - marker_len - spaces_around as usize;
+
+        if TOKENIZE {
+            let old_node = std::mem::replace(&mut state.node, node);
+            let max = state.pos_max;
+
+            state.pos = inner_start;
+            state.pos_max = inner_end;
+            state.md.inline.tokenize(state);
+            state.pos_max = max;
+
+            let node = std::mem::replace(&mut state.node, old_node);
+            state.node.children.push(node);
+        } else {
+            let mut inner_node = Node::new(Text { content });
+            inner_node.srcmap = state.get_map(inner_start, inner_end);
+            node.children.push(inner_node);
+            state.node.children.push(node);
+        }
+
+        Some(len)
     }
 }

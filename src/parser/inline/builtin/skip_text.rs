@@ -54,7 +54,7 @@ pub struct TextScanner;
 impl InlineRule for TextScanner {
     const MARKER: char = '\0';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn check(state: &mut InlineState) -> Option<usize> {
         let text_impl = state.md.inline.text_impl.get_or_init(
             || choose_text_impl(state.md.inline.text_charmap.keys().copied().collect())
         );
@@ -89,8 +89,12 @@ impl InlineRule for TextScanner {
         }
 
         if len == 0 { return None; }
-        if !silent { state.trailing_text_push(state.pos, state.pos + len); }
+        Some(len)
+    }
 
+    fn run(state: &mut crate::parser::inline::InlineState) -> Option<usize> {
+        let len = Self::check(state)?;
+        state.trailing_text_push(state.pos, state.pos + len);
         Some(len)
     }
 }

@@ -33,6 +33,14 @@ impl InlineRule for FerrisInlineScanner {
     // (other characters may get skipped over).
     const MARKER: char = '(';
 
+    fn check(state: &mut InlineState) -> Option<usize> {
+        let input = &state.src[state.pos..state.pos_max]; // look for stuff at state.pos
+        if !input.starts_with(CRAB_CLAW) { return None; } // return None if it's not found
+
+        // return length of this structure
+        Some(CRAB_CLAW.len())
+    }
+
     // This is a custom function that will be invoked on every character
     // in an inline context.
     //
@@ -46,18 +54,15 @@ impl InlineRule for FerrisInlineScanner {
     // In "silent mode" (when `silent=true`) you aren't allowed to
     // create any nodes, should only increment `state.pos`.
     //
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
-        let input = &state.src[state.pos..state.pos_max]; // look for stuff at state.pos
-        if !input.starts_with(CRAB_CLAW) { return None; } // return None if it's not found
+    fn run(state: &mut InlineState) -> Option<usize> {
+        Self::check(state)?;
 
-        if !silent {
-            // create a custom AST node
-            let mut node = Node::new(InlineFerris);
-            // set source mapping for it
-            node.srcmap = state.get_map(state.pos, state.pos + CRAB_CLAW.len());
-            // push this node as a last child of `state.node`
-            state.node.children.push(node);
-        }
+        // create a custom AST node
+        let mut node = Node::new(InlineFerris);
+        // set source mapping for it
+        node.srcmap = state.get_map(state.pos, state.pos + CRAB_CLAW.len());
+        // push this node as a last child of `state.node`
+        state.node.children.push(node);
 
         // return length of this structure
         Some(CRAB_CLAW.len())

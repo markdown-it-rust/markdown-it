@@ -73,16 +73,16 @@ pub struct InlineState<'a, 'b> where 'b: 'a {
     /// Maximum allowed byte offset in `src`, it must respect char boundaries.
     pub pos_max: usize,
 
-    /// Stores `{ start: end }` pairs. Useful for backtrack
-    /// optimization of pairs parse (emphasis, strikes).
-    pub cache: HashMap<usize, usize>,
-
     /// Counter used to disable inline linkifier execution
     /// inside raw html and markdown links.
     pub link_level: i32,
 
     /// Counter used to prevent recursion by image and link rules.
     pub level: u32,
+
+    /// Stores `{ start: end }` pairs. Useful for backtrack
+    /// optimization of pairs parse (emphasis, strikes).
+    pub(super) cache: HashMap<usize, usize>,
 }
 
 impl<'a, 'b> InlineState<'a, 'b> {
