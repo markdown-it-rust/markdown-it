@@ -34,84 +34,59 @@ impl InlineParser {
         Self::default()
     }
 
-    // Skip single token by running all rules in validation mode;
-    // returns `true` if any rule reported success
-    //
-    pub fn skip_token(&self, state: &mut InlineState) -> bool {
-        stacker::maybe_grow(64*1024, 1024*1024, || {
-            let mut ok = None;
+    // returns:
+    // None - end reached
+    // Some(true) - rule matched
+    // Some(false) - no rule matched, skipping one char
+    pub fn tokenize_one(&self, state: &mut InlineState) -> Option<bool> {
+        if state.pos == state.pos_max { return None; }
 
-            if state.level < state.md.max_nesting {
-                let oldroot = std::mem::take(&mut state.node);
-                for rule in self.ruler.iter() {
-                    ok = rule(state);
-                    if ok.is_some() {
-                        break;
-                    }
+        // Try all possible rules.
+        // On success, rule should:
+        //
+        // - update `state.pos`
+        // - update `state.tokens`
+        // - return true
+        let mut ok = None;
+
+        if state.level < state.md.max_nesting {
+            for rule in self.ruler.iter() {
+                ok = rule(state);
+                if ok.is_some() {
+                    break;
                 }
-                state.node = oldroot;
-            } else {
-                // Too much nesting, just skip until the end of the paragraph.
-                //
-                // NOTE: this will cause links to behave incorrectly in the following case,
-                //       when an amount of `[` is exactly equal to `maxNesting + 1`:
-                //
-                //       [[[[[[[[[[[[[[[[[[[[[foo]()
-                //
-                // TODO: remove this workaround when CM standard will allow nested links
-                //       (we can replace it by preventing links from being parsed in
-                //       validation mode)
-                //
-                state.pos = state.pos_max;
             }
+        } else {
+            // Too much nesting, just skip until the end of the paragraph.
+            //
+            // NOTE: this will cause links to behave incorrectly in the following case,
+            //       when an amount of `[` is exactly equal to `maxNesting + 1`:
+            //
+            //       [[[[[[[[[[[[[[[[[[[[[foo]()
+            //
+            // TODO: remove this workaround when CM standard will allow nested links
+            //       (we can replace it by preventing links from being parsed in
+            //       validation mode)
+            //
+            state.pos = state.pos_max;
+        }
 
-            if let Some(len) = ok {
-                state.pos += len;
-                true
-            } else {
-                let ch = state.src[state.pos..state.pos_max].chars().next().unwrap();
-                state.pos += ch.len_utf8();
-                false
-            }
-        })
+        if let Some(len) = ok {
+            state.pos += len;
+            Some(true)
+        } else {
+            let ch = state.src[state.pos..state.pos_max].chars().next().unwrap();
+            let len = ch.len_utf8();
+            state.trailing_text_push(state.pos, state.pos + len);
+            state.pos += len;
+            Some(false)
+        }
     }
 
     // Generate tokens for input range
     //
     pub fn tokenize(&self, state: &mut InlineState) {
-        stacker::maybe_grow(64*1024, 1024*1024, || {
-            let end = state.pos_max;
-
-            while state.pos < end {
-                // Try all possible rules.
-                // On success, rule should:
-                //
-                // - update `state.pos`
-                // - update `state.tokens`
-                // - return true
-                let mut ok = None;
-
-                if state.level < state.md.max_nesting {
-                    for rule in self.ruler.iter() {
-                        ok = rule(state);
-                        if ok.is_some() {
-                            break;
-                        }
-                    }
-                }
-
-                if let Some(len) = ok {
-                    state.pos += len;
-                    if state.pos >= end { break; }
-                    continue;
-                }
-
-                let ch = state.src[state.pos..state.pos_max].chars().next().unwrap();
-                let len = ch.len_utf8();
-                state.trailing_text_push(state.pos, state.pos + len);
-                state.pos += len;
-            }
-        });
+        while self.tokenize_one(state).is_some() {}
     }
 
     // Process input string and push inline tokens into `out_tokens`

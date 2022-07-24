@@ -130,7 +130,9 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
                     state.pos = pos;
                     state.pos_max = match_start;
                     drop(backticks);
-                    state.md.inline.tokenize(state);
+                    stacker::maybe_grow(64*1024, 1024*1024, || {
+                        state.md.inline.tokenize(state);
+                    });
                     state.pos_max = max;
 
                     let node = std::mem::replace(&mut state.node, old_node);
