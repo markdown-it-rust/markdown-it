@@ -117,15 +117,25 @@ fn rule(
 }
 
 #[derive(Debug, Default)]
-struct LinkLabelScanCache(HashMap<usize, usize>);
+struct LinkLabelScanCache(HashMap<usize, (usize, bool)>);
 
 // Parse link label
 //
 // this function assumes that first character ("[") already matches;
 // returns the end of the label
 fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) -> Option<usize> {
+    let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
+    if let Some(&(cached_pos, cached_nested)) = cache.0.get(&start) {
+        return if enable_nested || !cached_nested {
+            Some(cached_pos - 1)
+        } else {
+            None
+        }
+    }
+
     let old_pos = state.pos;
     let mut found = false;
+    let mut has_nested = false;
     let mut label_end = None;
 
     state.pos = start + 1;
@@ -136,28 +146,36 @@ fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) 
             break;
         }
 
-        let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
-        if let Some(&cached_pos) = cache.0.get(&state.pos) {
-            state.pos = cached_pos;
+        let prev_pos = state.pos;
+        let found_nontext_token = state.md.inline.skip_token(state);
+
+        if found_nontext_token {
+            if ch == '[' { has_nested = true; }
+            //let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
+            //cache.0.insert(prev_pos, (state.pos, has_nested));
         } else {
-            let prev_pos = state.pos;
-            if !state.md.inline.skip_token(state) {
-                // text token
-                let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
-                if let Some(&cached_pos) = cache.0.get(&prev_pos) {
-                    state.pos = cached_pos;
-                }
-            } else if ch == '[' && !enable_nested {
-                // non-text token
-                break;
+            let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
+            // text token
+            if let Some(&(cached_pos, cached_nested)) = cache.0.get(&prev_pos) {
+                // maybe cache appeared as a result of skip_token
+                // `[[[[...]]]]` case
+                if cached_nested { has_nested = true; }
+                state.pos = cached_pos;
             }
         }
     }
 
+    let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
     if found {
-        label_end = Some(state.pos);
-        let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
-        cache.0.insert(start, state.pos + 1);
+        if !has_nested || enable_nested {
+            label_end = Some(state.pos);
+        }
+        cache.0.insert(start, (state.pos + 1, has_nested));
+    } else {
+        // [ [ [ [ [... case
+        //         ^ if we didn't find a closer here,
+        //       ^ these won't find it either
+        cache.0.insert(start, (state.pos_max, has_nested));
     }
 
     // restore old state
