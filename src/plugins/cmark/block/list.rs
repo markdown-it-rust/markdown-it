@@ -332,7 +332,6 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
         current_line = state.get_line(state.line).to_owned();
 
         // fail if list has another type
-        #[allow(clippy::collapsible_else_if)]
         if marker_value.is_some() {
             if let Some(p) = skip_ordered_list_marker(&current_line) {
                 pos_after_marker = p;

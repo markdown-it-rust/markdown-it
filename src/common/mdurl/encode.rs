@@ -25,7 +25,6 @@ pub fn encode(string: &str, exclude: AsciiSet, keep_escaped: bool) -> String {
         let byte = bytes[i];
         let should_encode = byte >= 0x80 || !exclude.has(byte);
 
-        #[allow(clippy::collapsible_if)]
         if keep_escaped && byte == b'%' && i + 2 < len {
             if bytes[i + 1].is_ascii_hexdigit() && bytes[i + 2].is_ascii_hexdigit() {
                 result.push(bytes[i]);

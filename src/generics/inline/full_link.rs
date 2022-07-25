@@ -83,6 +83,9 @@ impl InlineRule for LinkScannerEnd {
     }
 }
 
+#[derive(Debug)]
+struct SeenLinks;
+
 fn rule(
     state: &mut InlineState,
     enable_nested: bool,
@@ -98,20 +101,11 @@ fn rule(
             // We found the end of the link, and know for a fact it's a valid link;
             // so all that's left to do is to call tokenizer.
             //
-            let old_node = std::mem::replace(&mut state.node, f(result.href, result.title));
-            let max = state.pos_max;
-
-            state.link_level += 1;
-            state.pos = result.label_start;
-            state.pos_max = result.label_end;
-            state.md.inline.tokenize(state);
-            state.pos_max = max;
-
-            let mut node = std::mem::replace(&mut state.node, old_node);
+            let mut node = f(result.href, result.title);
             node.srcmap = state.get_map(start, result.end);
+            node.children = result.nodes;
             state.node.children.push(node);
-            state.link_level -= 1;
-
+            if !enable_nested { state.inline_env.insert(SeenLinks); }
             Some(result.end - state.pos)
         } else {
             None
@@ -120,72 +114,71 @@ fn rule(
 }
 
 #[derive(Debug, Default)]
-struct LinkLabelScanCache(HashMap<usize, (usize, bool)>);
+struct LinkLabelScanCache(HashMap<usize, Option<(Vec<Node>, usize)>>);
 
 // Parse link label
 //
 // this function assumes that first character ("[") already matches;
 // returns the end of the label
+//
+// fills cache as the result
 fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) -> Option<usize> {
     let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
-    if let Some(&(cached_pos, cached_nested)) = cache.0.get(&start) {
-        return if enable_nested || !cached_nested {
-            Some(cached_pos - 1)
+    if let Some(result) = cache.0.get_mut(&start) {
+        return if let Some((_, label_end)) = *result {
+            Some(label_end)
         } else {
             None
         }
     }
 
+    let oldroot = std::mem::take(&mut state.node);
+    let oldseenlinks = state.inline_env.remove::<SeenLinks>();
     let old_pos = state.pos;
     let mut found = false;
-    let mut has_nested = false;
-    let mut label_end = None;
+    let mut level = 1;
 
     state.pos = start + 1;
 
     while let Some(ch) = state.src[state.pos..state.pos_max].chars().next() {
         if ch == ']' {
-            found = true;
+            level -= 1;
+            if level == 0 {
+                found = true;
+                break;
+            }
+        }
+
+        let found_nontext_token = state.md.inline.tokenize_one(state).unwrap_or_default();
+
+        if !enable_nested && state.inline_env.contains::<SeenLinks>() {
             break;
         }
 
-        let prev_pos = state.pos;
-
-        let oldroot = std::mem::take(&mut state.node);
-        let found_nontext_token = state.md.inline.tokenize_one(state).unwrap();
-        state.node = oldroot;
-
-        if found_nontext_token {
-            if ch == '[' { has_nested = true; }
-        } else {
-            let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
-            // text token
-            if let Some(&(cached_pos, cached_nested)) = cache.0.get(&prev_pos) {
-                // maybe cache appeared as a result of skip_token
-                // `[[[[...]]]]` case
-                if cached_nested { has_nested = true; }
-                state.pos = cached_pos;
-            }
+        if !found_nontext_token && ch == '[' {
+            // increase level if we find text `[`, which is not a part of any token
+            level += 1;
         }
     }
 
     let cache = state.inline_env.get_or_insert_default::<LinkLabelScanCache>();
-    if found {
-        if !has_nested || enable_nested {
-            label_end = Some(state.pos);
-        }
-        cache.0.insert(start, (state.pos + 1, has_nested));
+    let result = if found {
+        cache.0.insert(start, Some((std::mem::take(&mut state.node.children), state.pos)));
+        Some(state.pos)
     } else {
         // [ [ [ [ [... case
         //         ^ if we didn't find a closer here,
         //       ^ these won't find it either
-        cache.0.insert(start, (state.pos_max, has_nested));
-    }
+        cache.0.insert(start, None);
+        None
+    };
 
     // restore old state
     state.pos = old_pos;
+    state.node = oldroot;
+    if oldseenlinks.is_some() { state.inline_env.insert(SeenLinks); }
 
-    label_end
+    result
 }
 
 
@@ -313,8 +306,7 @@ pub fn parse_link_title(str: &str, start: usize, max: usize) -> Option<ParseLink
 }
 
 struct ParseLinkResult {
-    pub label_start: usize,
-    pub label_end: usize,
+    pub nodes: Vec<Node>,
     pub href: Option<String>,
     pub title: Option<String>,
     pub end: usize,
@@ -374,9 +366,11 @@ fn parse_link(state: &mut InlineState, pos: usize, enable_nested: bool) -> Optio
         }
 
         if let Some(')') = state.src[pos..state.pos_max].chars().next() {
+            let cache = state.inline_env.get_mut::<LinkLabelScanCache>().unwrap();
+            let result = cache.0.remove(&(label_start - 1)).unwrap();
+
             return Some(ParseLinkResult {
-                label_start,
-                label_end,
+                nodes: result.unwrap().0,
                 href,
                 title,
                 end: pos + 1,
@@ -413,10 +407,11 @@ fn parse_link(state: &mut InlineState, pos: usize, enable_nested: bool) -> Optio
         };
 
         let lref = references.get(&ReferenceMapKey::new(label.to_owned()));
+        let cache = state.inline_env.get_mut::<LinkLabelScanCache>().unwrap();
+        let result = cache.0.remove(&(label_start - 1)).unwrap();
 
         lref.map(|r| ParseLinkResult {
-            label_start,
-            label_end,
+            nodes: result.unwrap().0,
             href: Some(r.destination.clone()),
             title: r.title.clone(),
             end: pos,
