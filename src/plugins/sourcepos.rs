@@ -10,11 +10,13 @@
 use crate::{MarkdownIt, Node};
 use crate::common::sourcemap::SourceWithLineStarts;
 use crate::parser::block::builtin::BlockParserRule;
+use crate::parser::inline::builtin::InlineParserRule;
 use crate::parser::core::{CoreRule, Root};
 
 pub fn add(md: &mut MarkdownIt) {
     md.add_rule::<SyntaxPosRule>()
-        .after::<BlockParserRule>();
+        .after::<BlockParserRule>()
+        .after::<InlineParserRule>();
 }
 
 #[doc(hidden)]

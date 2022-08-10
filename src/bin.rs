@@ -7,6 +7,7 @@ fn main() {
     let mut input = "-".to_owned();
     let mut output = "-".to_owned();
     let mut no_html = false;
+    let mut linkify = false;
     let mut sourcepos = false;
     let mut show_tree = false;
 
@@ -26,6 +27,10 @@ fn main() {
         cli
             .refer(&mut no_html)
             .add_option(&["--no-html"], argparse::StoreTrue, "Disable embedded HTML");
+
+        cli
+            .refer(&mut linkify)
+            .add_option(&["-l", "--linkify"], argparse::StoreTrue, "Autolink text");
 
         cli
             .refer(&mut show_tree)
@@ -54,6 +59,9 @@ fn main() {
     }
     if sourcepos {
         markdown_it::plugins::sourcepos::add(md);
+    }
+    if linkify {
+        markdown_it::plugins::extra::inline::linkify::add(md);
     }
 
     let ast = md.parse(&source);
