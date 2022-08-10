@@ -1,6 +1,6 @@
 //! Inline rule chain
 use std::collections::HashMap;
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 
 mod state;
 pub use state::*;

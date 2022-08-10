@@ -40,7 +40,7 @@ impl NodeValue for CodeFence {
 }
 
 #[derive(Debug, Default)]
-struct FenceSettings(std::cell::Cell<&'static str>);
+struct FenceSettings(&'static str);
 
 pub fn add(md: &mut MarkdownIt) {
     add_with_lang_prefix(md, "language-");
@@ -48,7 +48,7 @@ pub fn add(md: &mut MarkdownIt) {
 
 pub fn add_with_lang_prefix(md: &mut MarkdownIt, lang_prefix: &'static str) {
     md.block.add_rule::<FenceScanner>();
-    md.env.get_or_insert_default::<FenceSettings>().0.set(lang_prefix);
+    md.env.get_or_insert_default::<FenceSettings>().0 = lang_prefix;
 }
 
 #[doc(hidden)]
@@ -145,7 +145,7 @@ impl BlockRule for FenceScanner {
         let indent = state.line_offsets[state.line].indent_nonspace;
         let (content, _) = state.get_lines(state.line + 1, next_line, indent as usize, true);
 
-        let lang_prefix = state.md.env.get::<FenceSettings>().unwrap().0.get();
+        let lang_prefix = state.md.env.get::<FenceSettings>().unwrap().0;
         let node = Node::new(CodeFence {
             info: params,
             marker,

@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+
 
 #[test]
 fn title_example() {
@@ -5,6 +7,20 @@ fn title_example() {
     markdown_it::plugins::cmark::add(parser);
 
     let ast = parser.parse("Hello **world**!");
+    let html = ast.render();
+
+    assert_eq!(html, "<p>Hello <strong>world</strong>!</p>\n");
+}
+
+#[test]
+fn lazy_singleton() {
+    static MD : Lazy<markdown_it::MarkdownIt> = Lazy::new(|| {
+        let mut parser = markdown_it::MarkdownIt::new();
+        markdown_it::plugins::cmark::add(&mut parser);
+        parser
+    });
+
+    let ast = MD.parse("Hello **world**!");
     let html = ast.render();
 
     assert_eq!(html, "<p>Hello <strong>world</strong>!</p>\n");

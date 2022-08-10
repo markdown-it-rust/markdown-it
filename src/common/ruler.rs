@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::slice::Iter;
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 use derivative::Derivative;
 
 ///

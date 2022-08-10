@@ -36,54 +36,54 @@ impl ErasedSet {
     }
 
     #[must_use]
-    pub fn get<T: Debug + Downcast>(&self) -> Option<&T> {
+    pub fn get<T: Debug + Downcast + Send + Sync>(&self) -> Option<&T> {
         let key = TypeKey::of::<T>();
         let result = self.0.get(&key)?;
         Some(&result.downcast_ref::<ErasedMember<T>>()?.0)
     }
 
     #[must_use]
-    pub fn get_mut<T: Debug + Downcast>(&mut self) -> Option<&mut T> {
+    pub fn get_mut<T: Debug + Downcast + Send + Sync>(&mut self) -> Option<&mut T> {
         let key = TypeKey::of::<T>();
         let result = self.0.get_mut(&key)?;
         Some(&mut result.downcast_mut::<ErasedMember<T>>()?.0)
     }
 
-    pub fn get_or_insert<T: Debug + Downcast>(&mut self, value: T) -> &mut T {
+    pub fn get_or_insert<T: Debug + Downcast + Send + Sync>(&mut self, value: T) -> &mut T {
         let key = TypeKey::of::<T>();
         let result = self.0.entry(key).or_insert_with(|| Box::new(ErasedMember(value)));
         &mut result.downcast_mut::<ErasedMember<T>>().unwrap().0
     }
 
-    pub fn get_or_insert_with<T: Debug + Downcast>(&mut self, f: impl FnOnce() -> T) -> &mut T {
+    pub fn get_or_insert_with<T: Debug + Downcast + Send + Sync>(&mut self, f: impl FnOnce() -> T) -> &mut T {
         let key = TypeKey::of::<T>();
         let result = self.0.entry(key).or_insert_with(|| Box::new(ErasedMember(f())));
         &mut result.downcast_mut::<ErasedMember<T>>().unwrap().0
     }
 
-    pub fn get_or_insert_default<T: Debug + Downcast + Default>(&mut self) -> &mut T {
+    pub fn get_or_insert_default<T: Debug + Downcast + Default + Send + Sync>(&mut self) -> &mut T {
         let key = TypeKey::of::<T>();
         let result = self.0.entry(key).or_insert_with(|| Box::new(ErasedMember(T::default())));
         &mut result.downcast_mut::<ErasedMember<T>>().unwrap().0
     }
 
-    pub fn insert<T: Debug + Downcast>(&mut self, value: T) -> Option<T> {
+    pub fn insert<T: Debug + Downcast + Send + Sync>(&mut self, value: T) -> Option<T> {
         let key = TypeKey::of::<T>();
         let result = self.0.insert(key, Box::new(ErasedMember(value)))?;
         return Some(result.downcast::<ErasedMember<T>>().unwrap().0);
     }
 
-    pub fn remove<T: Debug + Downcast>(&mut self) -> Option<T> {
+    pub fn remove<T: Debug + Downcast + Send + Sync>(&mut self) -> Option<T> {
         let key = TypeKey::of::<T>();
         let result = self.0.remove(&key)?;
         return Some(result.downcast::<ErasedMember<T>>().unwrap().0);
     }
 }
 
-trait AnyDebug : Debug + Downcast {}
+trait AnyDebug : Debug + Downcast + Send + Sync {}
 impl_downcast!(AnyDebug);
 
-impl<T: Debug + Downcast> AnyDebug for T {}
+impl<T: Debug + Downcast + Send + Sync> AnyDebug for T {}
 
 struct ErasedMember<T>(T);
 
