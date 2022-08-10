@@ -29,16 +29,18 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct BlockquoteScanner;
 impl BlockRule for BlockquoteScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
+    fn check(state: &mut BlockState) -> Option<()> {
         // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return false; }
+        if state.line_indent(state.line) >= 4 { return None; }
 
         // check the block quote marker
-        if let Some('>') = state.get_line(state.line).chars().next() {} else { return false; }
+        if let Some('>') = state.get_line(state.line).chars().next() {} else { return None; }
 
-        // we know that it's going to be a valid blockquote,
-        // so no point trying to find the end of it in silent mode
-        if silent { return true; }
+        Some(())
+    }
+
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
+        Self::check(state)?;
 
         let mut old_line_offsets = Vec::new();
         let start_line = state.line;
@@ -149,6 +151,8 @@ impl BlockRule for BlockquoteScanner {
         state.line = start_line;
         state.line_max = next_line;
         state.md.block.tokenize(state);
+        next_line = state.line;
+        state.line = start_line;
         state.line_max = old_line_max;
 
         // Restore original tShift; this might not be necessary since the parser
@@ -158,10 +162,7 @@ impl BlockRule for BlockquoteScanner {
         }
         state.blk_indent = old_indent;
 
-        let mut node = std::mem::replace(&mut state.node, old_node);
-        node.srcmap = state.get_map(start_line, next_line - 1);
-        state.node.children.push(node);
-
-        true
+        let node = std::mem::replace(&mut state.node, old_node);
+        Some((node, next_line - start_line))
     }
 }

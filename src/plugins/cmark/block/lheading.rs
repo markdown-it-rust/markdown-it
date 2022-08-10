@@ -36,11 +36,13 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct LHeadingScanner;
 impl BlockRule for LHeadingScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
-        if silent { return false; }
+    fn check(_: &mut BlockState) -> Option<()> {
+        None // can't interrupt any tags
+    }
 
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
         // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return false; }
+        if state.line_indent(state.line) >= 4 { return None; }
 
         let start_line = state.line;
         let mut next_line = start_line;
@@ -86,23 +88,20 @@ impl BlockRule for LHeadingScanner {
 
         if level == 0 {
             // Didn't find valid underline
-            return false;
+            return None;
         }
 
         let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false);
-        state.line = next_line + 1;
 
         let mut node = Node::new(SetextHeader {
             level,
             marker: if level == 2 { '-' } else { '=' }
         });
-        node.srcmap = state.get_map(start_line, state.line - 1);
         node.children.push(Node::new(InlineRoot {
             content,
             mapping,
         }));
-        state.node.children.push(node);
 
-        true
+        Some((node, next_line + 1 - start_line))
     }
 }

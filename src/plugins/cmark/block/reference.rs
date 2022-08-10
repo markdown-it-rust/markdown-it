@@ -10,7 +10,7 @@
 use std::collections::HashMap;
 use derivative::Derivative;
 
-use crate::MarkdownIt;
+use crate::{MarkdownIt, Node};
 use crate::common::utils::normalize_reference;
 use crate::generics::inline::full_link;
 use crate::parser::block::{BlockRule, BlockState};
@@ -98,15 +98,17 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct ReferenceScanner;
 impl BlockRule for ReferenceScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
-        if silent { return false; }
+    fn check(_: &mut BlockState) -> Option<()> {
+        None // can't interrupt anything
+    }
 
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
         // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return false; }
+        if state.line_indent(state.line) >= 4 { return None; }
 
         let mut chars = state.get_line(state.line).chars();
 
-        if let Some('[') = chars.next() {} else { return false; }
+        if let Some('[') = chars.next() {} else { return None; }
 
         // Simple check to quickly interrupt scan on [link](url) at the start of line.
         // Can be useful on practice: https://github.com/markdown-it/markdown-it/issues/54
@@ -117,7 +119,7 @@ impl BlockRule for ReferenceScanner {
                     if let Some(':') = chars.next() {
                         break;
                     } else {
-                        return false;
+                        return None;
                     }
                 }
                 Some(_) => {},
@@ -160,7 +162,7 @@ impl BlockRule for ReferenceScanner {
 
         loop {
             match chars.next() {
-                Some((_, '[')) => return false,
+                Some((_, '[')) => return None,
                 Some((p, ']')) => {
                     label_end = p;
                     break;
@@ -172,11 +174,11 @@ impl BlockRule for ReferenceScanner {
                     }
                 }
                 Some(_) => {},
-                None => return false,
+                None => return None,
             }
         }
 
-        if let Some((_, ':')) = chars.next() {} else { return false; }
+        if let Some((_, ':')) = chars.next() {} else { return None; }
 
         // [label]:   destination   'title'
         //         ^^^ skip optional whitespace here
@@ -190,13 +192,13 @@ impl BlockRule for ReferenceScanner {
         //            ^^^^^^^^^^^ parse this
         let href;
         if let Some(res) = full_link::parse_link_destination(str, pos, str.len()) {
-            if pos == res.pos { return false; }
+            if pos == res.pos { return None; }
             href = (state.md.normalize_link)(&res.str);
-            if !(state.md.validate_link)(&href) { return false; }
+            if !(state.md.validate_link)(&href) { return None; }
             pos = res.pos;
             lines += res.lines;
         } else {
-            return false;
+            return None;
         }
 
         // save cursor state, we could require to rollback later
@@ -242,7 +244,7 @@ impl BlockRule for ReferenceScanner {
                 }
                 Some(_) => {
                     // garbage at the end of the line
-                    return false;
+                    return None;
                 }
             }
         }
@@ -250,14 +252,13 @@ impl BlockRule for ReferenceScanner {
         let label = normalize_reference(&str[1..label_end]);
         if label.is_empty() {
             // CommonMark 0.20 disallows empty labels
-            return false;
+            return None;
         }
 
         let references = &mut state.root_env.get_or_insert_default::<ReferenceMap>();
 
         references.entry(ReferenceMapKey::new(label)).or_insert_with(|| ReferenceMapEntry::new(href, title));
 
-        state.line = start_line + lines + 1;
-        true
+        Some((Node::default(), lines + 1))
     }
 }

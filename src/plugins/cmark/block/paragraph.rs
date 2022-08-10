@@ -28,9 +28,11 @@ impl NodeValue for Paragraph {
 #[doc(hidden)]
 pub struct ParagraphScanner;
 impl BlockRule for ParagraphScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
-        if silent { return false; }
+    fn check(_: &mut BlockState) -> Option<()> {
+        None // can't interrupt anything
+    }
 
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
         let start_line = state.line;
         let mut next_line = start_line;
 
@@ -58,16 +60,12 @@ impl BlockRule for ParagraphScanner {
         }
 
         let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false);
-        state.line = next_line;
 
         let mut node = Node::new(Paragraph);
-        node.srcmap = state.get_map(start_line, state.line - 1);
         node.children.push(Node::new(InlineRoot {
             content,
             mapping,
         }));
-        state.node.children.push(node);
-
-        true
+        Some((node, next_line - start_line))
     }
 }

@@ -73,8 +73,14 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct ListScanner;
 impl BlockRule for ListScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
-        rule(state, silent)
+    fn check(state: &mut BlockState) -> Option<()> {
+        if state.node.is::<BulletList>() || state.node.is::<OrderedList>() { return None; }
+
+        find_marker(state, true).map(|_| ())
+    }
+
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
+        rule(state)
     }
 }
 
@@ -135,11 +141,9 @@ fn mark_tight_paragraphs(nodes: &mut Vec<Node>) {
     }
 }
 
-fn rule(state: &mut BlockState, silent: bool) -> bool {
-    if silent && (state.node.is::<BulletList>() || state.node.is::<OrderedList>()) { return false; }
-
+fn find_marker(state: &mut BlockState, silent: bool) -> Option<(usize, Option<u32>, char)> {
     // if it's indented more than 3 spaces, it should be a code block
-    if state.line_indent(state.line) >= 4 { return false; }
+    if state.line_indent(state.line) >= 4 { return None; }
 
     // Special case:
     //  - item 1
@@ -151,7 +155,7 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
         let indent_nonspace = state.line_offsets[state.line].indent_nonspace;
         if indent_nonspace - list_indent as i32 >= 4 &&
            indent_nonspace < state.blk_indent as i32 {
-            return false;
+            return None;
         }
     }
 
@@ -170,27 +174,26 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
         }
     }
 
-    let start_line = state.line;
-    let mut current_line = state.get_line(state.line).to_owned();
+    let current_line = state.get_line(state.line);
 
     let marker_value;
-    let mut pos_after_marker;
+    let pos_after_marker;
 
     // Detect list type and position after marker
-    if let Some(p) = skip_ordered_list_marker(&current_line) {
+    if let Some(p) = skip_ordered_list_marker(current_line) {
         pos_after_marker = p;
         let int = str::parse(&current_line[..pos_after_marker - 1]).unwrap();
         marker_value = Some(int);
 
         // If we're starting a new ordered list right after
         // a paragraph, it should start with 1.
-        if is_terminating_paragraph && int != 1 { return false; }
+        if is_terminating_paragraph && int != 1 { return None; }
 
-    } else if let Some(p) = skip_bullet_list_marker(&current_line) {
+    } else if let Some(p) = skip_bullet_list_marker(current_line) {
         pos_after_marker = p;
         marker_value = None;
     } else {
-        return false;
+        return None;
     }
 
     // If we're starting a new unordered list right after
@@ -201,15 +204,19 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
             match chars.next() {
                 Some(' ' | '\t') => {},
                 Some(_) => break,
-                None => return false,
+                None => return None,
             }
         }
     }
 
-    if silent { return true; }
-
     // We should terminate list on style change. Remember first one to compare.
     let marker_char = current_line[..pos_after_marker].chars().next_back().unwrap();
+
+    Some((pos_after_marker, marker_value, marker_char))
+}
+
+fn rule(state: &mut BlockState) -> Option<(Node, usize)> {
+    let (mut pos_after_marker, marker_value, marker_char) = find_marker(state, false)?;
 
     let new_node = if let Some(int) = marker_value {
         Node::new(OrderedList {
@@ -228,9 +235,11 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
     // Iterate list items
     //
 
+    let start_line = state.line;
     let mut next_line = state.line;
     let mut prev_empty_end = false;
     let mut tight = true;
+    let mut current_line;
 
     'outer: while next_line < state.line_max {
         let offsets = &state.line_offsets[next_line];
@@ -360,9 +369,7 @@ fn rule(state: &mut BlockState, silent: bool) -> bool {
     }
 
     // Finalize list
-    let mut node = std::mem::replace(&mut state.node, old_node);
-    node.srcmap = state.get_map(start_line, next_line - 1);
-    state.node.children.push(node);
-
-    true
+    state.line = start_line;
+    let node = std::mem::replace(&mut state.node, old_node);
+    Some((node, next_line - state.line))
 }

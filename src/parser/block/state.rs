@@ -171,7 +171,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
 
     pub fn test_rules_at_line(&mut self) -> bool {
         for rule in self.md.block.ruler.iter() {
-            if rule(self, true) {
+            if rule.0(self).is_some() {
                 return true;
             }
         }

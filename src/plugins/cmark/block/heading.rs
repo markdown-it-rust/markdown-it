@@ -32,13 +32,13 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct HeadingScanner;
 impl BlockRule for HeadingScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
         // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return false; }
+        if state.line_indent(state.line) >= 4 { return None; }
 
         let line = state.get_line(state.line);
 
-        if let Some('#') = line.chars().next() {} else { return false; }
+        if let Some('#') = line.chars().next() {} else { return None; }
 
         let text_pos;
 
@@ -49,7 +49,7 @@ impl BlockRule for HeadingScanner {
             match chars.next() {
                 Some((_, '#')) => {
                     level += 1;
-                    if level > 6 { return false; }
+                    if level > 6 { return None; }
                 }
                 Some((x, ' ' | '\t')) => {
                     text_pos = x;
@@ -59,11 +59,9 @@ impl BlockRule for HeadingScanner {
                     text_pos = level as usize;
                     break;
                 }
-                Some(_) => return false,
+                Some(_) => return None,
             }
         }
-
-        if silent { return true; }
 
         // Let's cut tails like '    ###  ' from the end of string
 
@@ -84,15 +82,10 @@ impl BlockRule for HeadingScanner {
         let mapping = vec![(0, state.line_offsets[state.line].first_nonspace + text_pos)];
 
         let mut node = Node::new(ATXHeading { level });
-        node.srcmap = state.get_map(state.line, state.line);
         node.children.push(Node::new(InlineRoot {
             content,
             mapping,
         }));
-        state.node.children.push(node);
-
-        state.line += 1;
-
-        true
+        Some((node, 1))
     }
 }

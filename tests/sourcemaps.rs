@@ -125,11 +125,13 @@ fn html_block() {
 
 #[test]
 fn code_block() {
-    // same as commonmark.js
+    // this should be (1, 5), (1, 9)
+    // for simplicity, we point source maps for block tags to first
+    // nonspace character, but it isn't quite correct for code blocks
     run("      foo\n", |node, map| {
         assert_eq!(
             getmap(&node.children[0], &map),
-            ((1, 5), (1, 9)),
+            ((1, 7), (1, 9)),
         );
     });
 

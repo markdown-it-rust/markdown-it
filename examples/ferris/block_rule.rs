@@ -45,32 +45,24 @@ impl BlockRule for FerrisBlockScanner {
     // In "silent mode" (when `silent=true`) you aren't allowed to
     // create any nodes, should only increment `state.line`.
     //
-    fn run(state: &mut BlockState, silent: bool) -> bool {
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
         // get contents of a line number `state.line` and check it
         let line = state.get_line(state.line).trim();
-        if !line.starts_with(CRAB_CLAW) { return false; }
-        if !line.ends_with(CRAB_CLAW)   { return false; }
+        if !line.starts_with(CRAB_CLAW) { return None; }
+        if !line.ends_with(CRAB_CLAW)   { return None; }
 
         // require any number of `-` in between, but no less than 4
-        if line.len() < CRAB_CLAW.len() * 2 + 4 { return false; }
+        if line.len() < CRAB_CLAW.len() * 2 + 4 { return None; }
 
         // and make sure no other characters are present there
         let dashes = &line[CRAB_CLAW.len()..line.len()-CRAB_CLAW.len()];
-        if dashes.chars().any(|c| c != '-') { return false; }
+        if dashes.chars().any(|c| c != '-') { return None; }
 
-        if !silent {
-            // create a custom AST node
-            let mut node = Node::new(BlockFerris);
-            // set source mapping for it
-            node.srcmap = state.get_map(state.line, state.line);
-            // push this node as a last child of `state.node`
-            state.node.children.push(node);
-        }
-
-        // set next parser position
-        state.line += 1;
-        // true means custom structure is found, parser advances to next line
-        true
+        // return new node and number of lines it occupies
+        Some((
+            Node::new(BlockFerris),
+            1,
+        ))
     }
 }
 

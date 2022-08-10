@@ -13,12 +13,17 @@ use crate::common::{ErasedSet, TypeKey};
 use crate::common::ruler::Ruler;
 use crate::parser::inline::InlineRoot;
 
-type RuleFn = fn (&mut BlockState, bool) -> bool;
+use super::node::NodeEmpty;
+
+type RuleFns = (
+    fn (&mut BlockState) -> Option<()>,
+    fn (&mut BlockState) -> Option<(Node, usize)>,
+);
 
 #[derive(Debug, Default)]
 /// Block-level tokenizer.
 pub struct BlockParser {
-    ruler: Ruler<TypeKey, RuleFn>,
+    ruler: Ruler<TypeKey, RuleFns>,
 }
 
 impl BlockParser {
@@ -52,19 +57,23 @@ impl BlockParser {
             // - update `state.line`
             // - update `state.tokens`
             // - return true
-            let mut ok = false;
-            let prev_line = state.line;
+            let mut ok = None;
 
             for rule in self.ruler.iter() {
-                ok = rule(state, false);
-                if ok {
-                    assert!(state.line > prev_line, "block rule didn't increment state.line");
+                ok = rule.1(state);
+                if ok.is_some() {
                     break;
                 }
             }
 
-            // this can only happen if user disables paragraph rule
-            if !ok {
+            if let Some((mut node, len)) = ok {
+                state.line += len;
+                if !node.is::<NodeEmpty>() {
+                    node.srcmap = state.get_map(state.line - len, state.line - 1);
+                    state.node.children.push(node);
+                }
+            } else {
+                // this can only happen if user disables paragraph rule
                 // push text as is, this behavior can change in the future;
                 // users should always have some kind of default block rule
                 let mut content = state.get_line(state.line).to_owned();
@@ -101,8 +110,8 @@ impl BlockParser {
         state.node
     }
 
-    pub fn add_rule<T: BlockRule>(&mut self) -> RuleBuilder<RuleFn> {
-        let item = self.ruler.add(TypeKey::of::<T>(), T::run);
+    pub fn add_rule<T: BlockRule>(&mut self) -> RuleBuilder<RuleFns> {
+        let item = self.ruler.add(TypeKey::of::<T>(), (T::check, T::run));
         RuleBuilder::new(item)
     }
 

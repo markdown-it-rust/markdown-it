@@ -53,34 +53,41 @@ pub fn add_with_lang_prefix(md: &mut MarkdownIt, lang_prefix: &'static str) {
 
 #[doc(hidden)]
 pub struct FenceScanner;
-impl BlockRule for FenceScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
+
+impl FenceScanner {
+    fn get_header<'a>(state: &'a mut BlockState) -> Option<(char, usize, &'a str)> {
         // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return false; }
+        if state.line_indent(state.line) >= 4 { return None; }
 
         let line = state.get_line(state.line);
         let mut chars = line.chars();
 
-        let marker = if let Some(ch @ ('~' | '`')) = chars.next() {
-            ch
-        } else {
-            return false;
-        };
+        let marker = chars.next()?;
+        if marker != '~' && marker != '`' { return None; }
 
         // scan marker length
         let mut len = 1;
         while Some(marker) == chars.next() { len += 1; }
 
-        if len < 3 { return false; }
+        if len < 3 { return None; }
 
         let params = &line[len..];
 
-        if marker == '`' && params.contains(marker) { return false; }
+        if marker == '`' && params.contains(marker) { return None; }
 
-        // Since start is found, we can report success here in validation mode
-        if silent { return true; }
+        Some((marker, len, params))
+    }
+}
 
-        let start_line = state.line;
+impl BlockRule for FenceScanner {
+    fn check(state: &mut BlockState) -> Option<()> {
+        Self::get_header(state).map(|_| ())
+    }
+
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
+        let (marker, len, params) = Self::get_header(state)?;
+        let params = params.to_owned();
+
         let mut next_line = state.line;
         let mut have_end_marker = false;
 
@@ -135,23 +142,17 @@ impl BlockRule for FenceScanner {
         }
 
         // If a fence has heading spaces, they should be removed from its inner block
-        let indent = state.line_offsets[start_line].indent_nonspace;
-        let (content, _) = state.get_lines(start_line + 1, next_line, indent as usize, true);
-        let params = params.to_owned();
+        let indent = state.line_offsets[state.line].indent_nonspace;
+        let (content, _) = state.get_lines(state.line + 1, next_line, indent as usize, true);
 
         let lang_prefix = state.md.env.get::<FenceSettings>().unwrap().0.get();
-        let mut node = Node::new(CodeFence {
+        let node = Node::new(CodeFence {
             info: params,
             marker,
             marker_len: len,
             content,
             lang_prefix,
         });
-        node.srcmap = state.get_map(start_line, next_line - if have_end_marker { 0 } else { 1 });
-        state.node.children.push(node);
-
-        state.line = next_line + if have_end_marker { 1 } else { 0 };
-
-        true
+        Some((node, next_line - state.line + if have_end_marker { 1 } else { 0 }))
     }
 }

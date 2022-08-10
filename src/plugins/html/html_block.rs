@@ -91,14 +91,15 @@ static HTML_SEQUENCES : Lazy<[HTMLSequence; 7]> = Lazy::new(|| {
 
 #[doc(hidden)]
 pub struct HtmlBlockScanner;
-impl BlockRule for HtmlBlockScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
+
+impl HtmlBlockScanner {
+    fn get_sequence(state: &mut BlockState) -> Option<&'static HTMLSequence> {
         // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return false; }
+        if state.line_indent(state.line) >= 4 { return None; }
 
         let line_text = state.get_line(state.line);
 
-        if let Some('<') = line_text.chars().next() {} else { return false; }
+        if let Some('<') = line_text.chars().next() {} else { return None; }
 
         let mut sequence = None;
         for seq in HTML_SEQUENCES.iter() {
@@ -108,14 +109,21 @@ impl BlockRule for HtmlBlockScanner {
             }
         }
 
-        if sequence.is_none() { return false; }
-        let sequence = sequence.unwrap();
+        sequence
+    }
+}
 
-        if silent {
-            // true if this sequence can be a terminator, false otherwise
-            return sequence.can_terminate_paragraph;
-        }
+impl BlockRule for HtmlBlockScanner {
+    fn check(state: &mut BlockState) -> Option<()> {
+        let sequence = Self::get_sequence(state)?;
+        if !sequence.can_terminate_paragraph { return None; }
+        Some(())
+    }
 
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
+        let sequence = Self::get_sequence(state)?;
+
+        let line_text = state.get_line(state.line);
         let start_line = state.line;
         let mut next_line = state.line + 1;
 
@@ -136,13 +144,8 @@ impl BlockRule for HtmlBlockScanner {
             }
         }
 
-        state.line = next_line;
-
         let (content, _) = state.get_lines(start_line, next_line, state.blk_indent, true);
-        let mut node = Node::new(HtmlBlock { content });
-        node.srcmap = state.get_map(start_line, next_line - 1);
-        state.node.children.push(node);
-
-        true
+        let node = Node::new(HtmlBlock { content });
+        Some((node, next_line - state.line))
     }
 }

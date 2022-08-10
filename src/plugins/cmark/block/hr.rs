@@ -27,18 +27,15 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct HrScanner;
 impl BlockRule for HrScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
         // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return false; }
+        if state.line_indent(state.line) >= 4 { return None; }
 
         let mut chars = state.get_line(state.line).chars();
 
         // Check hr marker
-        let marker = if let Some(ch @ ('*' | '-' | '_')) = chars.next() {
-            ch
-        } else {
-            return false;
-        };
+        let marker = chars.next()?;
+        if marker != '*' && marker != '-' && marker != '_' { return None; }
 
         // markers can be mixed with spaces, but there should be at least 3 of them
         let mut cnt = 1;
@@ -46,18 +43,13 @@ impl BlockRule for HrScanner {
             if ch == marker {
                 cnt += 1;
             } else if ch != ' ' && ch != '\t' {
-                return false;
+                return None;
             }
         }
 
-        if cnt < 3 { return false; }
-        if silent { return true; }
+        if cnt < 3 { return None; }
 
-        let mut node = Node::new(ThematicBreak { marker, marker_len: cnt });
-        node.srcmap = state.get_map(state.line, state.line);
-        state.node.children.push(node);
-        state.line += 1;
-
-        true
+        let node = Node::new(ThematicBreak { marker, marker_len: cnt });
+        Some((node, 1))
     }
 }

@@ -30,9 +30,12 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct CodeScanner;
 impl BlockRule for CodeScanner {
-    fn run(state: &mut BlockState, silent: bool) -> bool {
-        if silent { return false; }
-        if state.line_indent(state.line) < 4 { return false; }
+    fn check(_: &mut BlockState) -> Option<()> {
+        None
+    }
+
+    fn run(state: &mut BlockState) -> Option<(Node, usize)> {
+        if state.line_indent(state.line) < 4 { return None; }
 
         let mut next_line = state.line + 1;
         let mut last = next_line;
@@ -52,16 +55,12 @@ impl BlockRule for CodeScanner {
             break;
         }
 
-        let start_line = state.line;
-        state.line = last;
-
-        let (mut content, mapping) = state.get_lines(start_line, last, 4 + state.blk_indent, false);
+        let (mut content, _mapping) = state.get_lines(state.line, last, 4 + state.blk_indent, false);
         content += "\n";
 
-        let mut node = Node::new(CodeBlock { content });
-        node.srcmap = state.get_map_from_offsets(mapping[0].1, state.line_offsets[state.line - 1].line_end);
-        state.node.children.push(node);
+        let node = Node::new(CodeBlock { content });
+        //node.srcmap = state.get_map_from_offsets(mapping[0].1, state.line_offsets[last - 1].line_end);
 
-        true
+        Some((node, last - state.line))
     }
 }
