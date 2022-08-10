@@ -104,9 +104,11 @@ pub struct EmphPairScanner<const MARKER: char, const CAN_SPLIT_WORD: bool>;
 impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScanner<MARKER, CAN_SPLIT_WORD> {
     const MARKER: char = MARKER;
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
-        if silent { return None; }
+    // this rule works on a closing marker, so for technical reasons any rules trying to skip it
+    // should see just plain text
+    fn check(_: &mut InlineState) -> Option<usize> { None }
 
+    fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != MARKER { return None; }
 
@@ -119,22 +121,23 @@ impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScan
             close:     scanned.can_close,
         });
         node.srcmap = state.get_map(state.pos, state.pos + scanned.length);
-        state.node.children.push(node);
-        if scanned.can_close {
-            scan_and_match_delimiters::<MARKER>(state);
-        }
-        Some(scanned.length)
+        node = scan_and_match_delimiters::<MARKER>(state, node);
+        let map = node.srcmap.unwrap().get_byte_offsets();
+        // backtrack to keep correct source maps
+        state.pos += scanned.length;
+        let token_len = map.1 - map.0;
+        state.pos -= token_len;
+        Some((node, token_len))
     }
 }
 
 // Assuming last token is a closing delimiter we just inserted,
 // try to find opener(s). If any are found, move stuff to nested emph node.
-fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState) {
-    if state.node.children.len() == 1 { return; } // must have at least opener and closer
+fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState, mut closer_token: Node) -> Node {
+    if state.node.children.is_empty() { return closer_token; } // must have at least opener and closer
 
-    let mut closer_token = state.node.children.pop().unwrap();
     let mut closer = closer_token.cast_mut::<EmphMarker>().unwrap().clone();
-    debug_assert!(closer.close);
+    if !closer.close { return closer_token; }
 
     // Previously calculated lower bounds (previous fails)
     // for each marker, each delimiter length modulo 3,
@@ -226,7 +229,9 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState) {
     // remove empty node as a small optimization so we can do less work later
     if closer.remaining > 0 {
         closer_token.replace(closer);
-        state.node.children.push(closer_token);
+        closer_token
+    } else {
+        state.node.children.pop().unwrap()
     }
 }
 

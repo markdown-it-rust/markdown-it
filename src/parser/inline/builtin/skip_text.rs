@@ -51,12 +51,40 @@ pub(crate) enum TextScannerImpl {
 // http://spec.commonmark.org/0.15/#ascii-punctuation-character
 //
 pub struct TextScanner;
-impl InlineRule for TextScanner {
-    const MARKER: char = '\0';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+impl TextScanner {
+    fn choose_text_impl(charmap: Vec<char>) -> TextScannerImpl {
+        let mut can_use_punct = true;
+        for ch in charmap.iter() {
+            match ch {
+                '\n' | '!' | '#' | '$' | '%' | '&' | '*' | '+' | '-' |
+                ':' | '<' | '=' | '>' | '@' | '[' | '\\' | ']' | '^' |
+                '_' | '`' | '{' | '}' | '~' => {},
+                _ => {
+                    can_use_punct = false;
+                    break;
+                }
+            }
+        }
+
+        if can_use_punct {
+            TextScannerImpl::SkipPunct
+        } else {
+            TextScannerImpl::SkipRegex(
+                Regex::new(
+                    // [] panics on "unclosed character class", but it cannot happen here
+                    // (we'd use punct rule instead)
+                    &format!("^[^{}]+", charmap.into_iter().map(
+                        |c| regex::escape(&c.to_string())
+                    ).collect::<String>())
+                ).unwrap()
+            )
+        }
+    }
+
+    fn find_text_length(state: &mut InlineState) -> usize {
         let text_impl = state.md.inline.text_impl.get_or_init(
-            || choose_text_impl(state.md.inline.text_charmap.keys().copied().collect())
+            || Self::choose_text_impl(state.md.inline.text_charmap.keys().copied().collect())
         );
 
         let mut len = 0;
@@ -88,38 +116,24 @@ impl InlineRule for TextScanner {
             }
         }
 
-        if len == 0 { return None; }
-        if !silent { state.trailing_text_push(state.pos, state.pos + len); }
-
-        Some(len)
+        len
     }
 }
 
-fn choose_text_impl(charmap: Vec<char>) -> TextScannerImpl {
-    let mut can_use_punct = true;
-    for ch in charmap.iter() {
-        match ch {
-            '\n' | '!' | '#' | '$' | '%' | '&' | '*' | '+' | '-' |
-            ':' | '<' | '=' | '>' | '@' | '[' | '\\' | ']' | '^' |
-            '_' | '`' | '{' | '}' | '~' => {},
-            _ => {
-                can_use_punct = false;
-                break;
-            }
-        }
+impl InlineRule for TextScanner {
+    const MARKER: char = '\0';
+
+    fn check(state: &mut InlineState) -> Option<usize> {
+        let len = Self::find_text_length(state);
+        if len == 0 { return None; }
+        Some(len)
     }
 
-    if can_use_punct {
-        TextScannerImpl::SkipPunct
-    } else {
-        TextScannerImpl::SkipRegex(
-            Regex::new(
-                // [] panics on "unclosed character class", but it cannot happen here
-                // (we'd use punct rule instead)
-                &format!("^[^{}]+", charmap.into_iter().map(
-                    |c| regex::escape(&c.to_string())
-                ).collect::<String>())
-            ).unwrap()
-        )
+    fn run(state: &mut InlineState) -> Option<(Node, usize)> {
+        let len = Self::find_text_length(state);
+        if len == 0 { return None; }
+        state.trailing_text_push(state.pos, state.pos + len);
+        state.pos += len;
+        Some((Node::default(), 0))
     }
 }

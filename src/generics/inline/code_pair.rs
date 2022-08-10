@@ -6,9 +6,6 @@
 //!
 //! You add a custom structure by using [add_with] function, which takes following arguments:
 //!  - `MARKER` - marker character
-//!  - `TOKENIZE`
-//!    - if `true`, inside of this tag will be parsed further as inline markdown
-//!    - if `false`, inside of this tag will be left as a single [Text] node
 //!  - `md` - parser instance
 //!  - `f` - function that should return your custom [Node]
 //!
@@ -29,7 +26,7 @@
 //! }
 //!
 //! let md = &mut MarkdownIt::new();
-//! code_pair::add_with::<'%', true>(md, |_| Node::new(Ferris));
+//! code_pair::add_with::<'%'>(md, |_| Node::new(Ferris));
 //! let html = md.parse("hello %world%").render();
 //! assert_eq!(html.trim(), "hello 🦀world🦀");
 //! ```
@@ -58,18 +55,18 @@ struct CodePairCache<const MARKER: char> {
 #[derive(Debug)]
 struct CodePairConfig<const MARKER: char>(fn (usize) -> Node);
 
-pub fn add_with<const MARKER: char, const TOKENIZE: bool>(md: &mut MarkdownIt, f: fn (length: usize) -> Node) {
+pub fn add_with<const MARKER: char>(md: &mut MarkdownIt, f: fn (length: usize) -> Node) {
     md.env.insert(CodePairConfig::<MARKER>(f));
 
-    md.inline.add_rule::<CodePairScanner<MARKER, TOKENIZE>>();
+    md.inline.add_rule::<CodePairScanner<MARKER>>();
 }
 
 #[doc(hidden)]
-pub struct CodePairScanner<const MARKER: char, const TOKENIZE: bool>;
-impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MARKER, TOKENIZE> {
+pub struct CodePairScanner<const MARKER: char>;
+impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
     const MARKER: char = MARKER;
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != MARKER { return None; }
         if state.trailing_text_get().ends_with(MARKER) { return None; }
@@ -112,38 +109,21 @@ impl<const MARKER: char, const TOKENIZE: bool> InlineRule for CodePairScanner<MA
 
             if closer_len == opener_len {
                 // Found matching closer length.
-                if !silent {
-                    let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
-                    if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
-                        content = content[1..content.len() - 1].to_owned();
-                        pos += 1;
-                        match_start -= 1;
-                    }
-
-                    let f = state.md.env.get::<CodePairConfig<MARKER>>().unwrap().0;
-                    let mut node = f(opener_len);
-                    node.srcmap = state.get_map(state.pos, match_end);
-
-                    if TOKENIZE {
-                        let old_node = std::mem::replace(&mut state.node, node);
-                        let max = state.pos_max;
-
-                        state.pos = pos;
-                        state.pos_max = match_start;
-                        drop(backticks);
-                        state.md.inline.tokenize(state);
-                        state.pos_max = max;
-
-                        let node = std::mem::replace(&mut state.node, old_node);
-                        state.node.children.push(node);
-                    } else {
-                        let mut inner_node = Node::new(Text { content });
-                        inner_node.srcmap = state.get_map(pos, match_start);
-                        node.children.push(inner_node);
-                        state.node.children.push(node);
-                    }
+                let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
+                if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
+                    content = content[1..content.len() - 1].to_owned();
+                    pos += 1;
+                    match_start -= 1;
                 }
-                return Some(match_end - state.pos);
+
+                let f = state.md.env.get::<CodePairConfig<MARKER>>().unwrap().0;
+                let mut node = f(opener_len);
+
+                let mut inner_node = Node::new(Text { content });
+                inner_node.srcmap = state.get_map(pos, match_start);
+                node.children.push(inner_node);
+
+                return Some((node, match_end - state.pos));
             }
 
             // Some different length found, put it in cache as upper limit of where closer can be found

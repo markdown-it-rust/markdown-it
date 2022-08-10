@@ -50,11 +50,17 @@ pub struct LinkScanner<const ENABLE_NESTED: bool>;
 impl<const ENABLE_NESTED: bool> InlineRule for LinkScanner<ENABLE_NESTED> {
     const MARKER: char = '[';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn check(state: &mut InlineState) -> Option<usize> {
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != '[' { return None; }
+        rule_check(state, ENABLE_NESTED, 0)
+    }
+
+    fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != '[' { return None; }
         let f = state.md.env.get::<LinkCfg<'\0'>>().unwrap().0;
-        rule(state, silent, ENABLE_NESTED, 0, f)
+        rule_run(state, ENABLE_NESTED, 0, f)
     }
 }
 
@@ -63,32 +69,47 @@ pub struct LinkPrefixScanner<const PREFIX: char, const ENABLE_NESTED: bool>;
 impl<const PREFIX: char, const ENABLE_NESTED: bool> InlineRule for LinkPrefixScanner<PREFIX, ENABLE_NESTED> {
     const MARKER: char = PREFIX;
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn check(state: &mut InlineState) -> Option<usize> {
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next() != Some(PREFIX) { return None; }
+        if chars.next() != Some('[') { return None; }
+        rule_check(state, ENABLE_NESTED, 1)
+    }
+
+    fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next() != Some(PREFIX) { return None; }
         if chars.next() != Some('[') { return None; }
         let f = state.md.env.get::<LinkCfg<PREFIX>>().unwrap().0;
-        rule(state, silent, ENABLE_NESTED, 1, f)
+        rule_run(state, ENABLE_NESTED, 1, f)
     }
 }
 
 #[doc(hidden)]
+// this rule makes sure that parser is stopped on "]" character,
+// but it actually doesn't do anything
 pub struct LinkScannerEnd;
 impl InlineRule for LinkScannerEnd {
     const MARKER: char = ']';
 
-    fn run(_: &mut InlineState, _: bool) -> Option<usize> {
+    fn check(_: &mut InlineState) -> Option<usize> { None }
+    fn run(_: &mut InlineState) -> Option<(Node, usize)> { None }
+}
+
+fn rule_check(state: &mut InlineState, enable_nested: bool, offset: usize) -> Option<usize> {
+    if let Some(result) = parse_link(state, state.pos + offset, enable_nested) {
+        Some(result.end - state.pos)
+    } else {
         None
     }
 }
 
-fn rule(
+fn rule_run(
     state: &mut InlineState,
-    silent: bool,
     enable_nested: bool,
     offset: usize,
     f: fn (Option<String>, Option<String>) -> Node
-) -> Option<usize> {
+) -> Option<(Node, usize)> {
     let start = state.pos;
 
     if let Some(result) = parse_link(state, state.pos + offset, enable_nested) {
@@ -96,23 +117,19 @@ fn rule(
         // We found the end of the link, and know for a fact it's a valid link;
         // so all that's left to do is to call tokenizer.
         //
-        if !silent {
-            let old_node = std::mem::replace(&mut state.node, f(result.href, result.title));
-            let max = state.pos_max;
+        let old_node = std::mem::replace(&mut state.node, f(result.href, result.title));
+        let max = state.pos_max;
 
-            state.link_level += 1;
-            state.pos = result.label_start;
-            state.pos_max = result.label_end;
-            state.md.inline.tokenize(state);
-            state.pos_max = max;
+        state.link_level += 1;
+        state.pos = result.label_start;
+        state.pos_max = result.label_end;
+        state.md.inline.tokenize(state);
+        state.pos = start;
+        state.pos_max = max;
+        state.link_level -= 1;
 
-            let mut node = std::mem::replace(&mut state.node, old_node);
-            node.srcmap = state.get_map(start, result.end);
-            state.node.children.push(node);
-            state.link_level -= 1;
-        }
-
-        Some(result.end - state.pos)
+        let node = std::mem::replace(&mut state.node, old_node);
+        Some((node, result.end - state.pos))
     } else {
         None
     }

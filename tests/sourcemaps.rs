@@ -289,7 +289,7 @@ fn escapes() {
     run("  foo  \\\n  bar  ", |node, map| {
         assert_eq!(
             getmap(&node.children[0].children[1], &map),
-            ((1, 8), (2, 0)),
+            ((1, 8), (2, 2)),
         );
     });
 }

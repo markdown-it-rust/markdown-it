@@ -129,14 +129,16 @@ impl Node {
     }
 }
 
+#[derive(Debug)]
+#[doc(hidden)]
+pub struct NodeEmpty;
+impl NodeValue for NodeEmpty {}
+
 impl Default for Node {
     /// Create empty Node. Empty node should only be used as placeholder for functions like
     /// std::mem::take, and it cannot be rendered.
     fn default() -> Self {
-        #[derive(Debug)]
-        struct Empty;
-        impl NodeValue for Empty {}
-        Node::new(Empty)
+        Node::new(NodeEmpty)
     }
 }
 

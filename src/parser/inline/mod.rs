@@ -19,12 +19,17 @@ use crate::{MarkdownIt, Node};
 use crate::common::{ErasedSet, TypeKey};
 use crate::common::ruler::Ruler;
 
-type RuleFn = fn (&mut InlineState, bool) -> Option<usize>;
+use super::node::NodeEmpty;
+
+type RuleFns = (
+    fn (&mut InlineState) -> Option<usize>,
+    fn (&mut InlineState) -> Option<(Node, usize)>,
+);
 
 #[derive(Debug, Default)]
 /// Inline-level tokenizer.
 pub struct InlineParser {
-    ruler: Ruler<TypeKey, RuleFn>,
+    ruler: Ruler<TypeKey, RuleFns>,
     text_charmap: HashMap<char, Vec<TypeKey>>,
     text_impl: OnceCell<TextScannerImpl>,
 }
@@ -48,7 +53,7 @@ impl InlineParser {
 
         if state.level < state.md.max_nesting {
             for rule in self.ruler.iter() {
-                ok = rule(state, true);
+                ok = rule.0(state);
                 if ok.is_some() {
                     break;
                 }
@@ -93,16 +98,20 @@ impl InlineParser {
 
             if state.level < state.md.max_nesting {
                 for rule in self.ruler.iter() {
-                    ok = rule(state, false);
+                    ok = rule.1(state);
                     if ok.is_some() {
                         break;
                     }
                 }
             }
 
-            if let Some(len) = ok {
+            if let Some((mut node, len)) = ok {
                 state.pos += len;
-                if state.pos >= end { break; }
+                if !node.is::<NodeEmpty>() {
+                    node.srcmap = state.get_map(state.pos - len, state.pos);
+                    state.node.children.push(node);
+                    if state.pos >= end { break; }
+                }
                 continue;
             }
 
@@ -121,13 +130,13 @@ impl InlineParser {
         state.node
     }
 
-    pub fn add_rule<T: InlineRule>(&mut self) -> RuleBuilder<RuleFn> {
+    pub fn add_rule<T: InlineRule>(&mut self) -> RuleBuilder<RuleFns> {
         if T::MARKER != '\0' {
             let charvec = self.text_charmap.entry(T::MARKER).or_insert(vec![]);
             charvec.push(TypeKey::of::<T>());
         }
 
-        let item = self.ruler.add(TypeKey::of::<T>(), T::run);
+        let item = self.ruler.add(TypeKey::of::<T>(), (T::check, T::run));
         RuleBuilder::new(item)
     }
 

@@ -17,7 +17,7 @@ pub struct EscapeScanner;
 impl InlineRule for EscapeScanner {
     const MARKER: char = '\\';
 
-    fn run(state: &mut InlineState, silent: bool) -> Option<usize> {
+    fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != '\\' { return None; }
 
@@ -28,38 +28,28 @@ impl InlineRule for EscapeScanner {
                 while let Some(' ' | '\t') = chars.next() {
                     len += 1;
                 }
-
-                if !silent {
-                    let mut node = Node::new(Hardbreak);
-                    node.srcmap = state.get_map(state.pos, state.pos + 2);
-                    state.node.children.push(node);
-                }
-                Some(len)
+                Some((Node::new(Hardbreak), len))
             }
             Some(chr) => {
                 let start = state.pos;
                 let end = state.pos + 1 + chr.len_utf8();
 
-                if !silent {
-                    let mut orig_str = "\\".to_owned();
-                    orig_str.push(chr);
+                let mut orig_str = "\\".to_owned();
+                orig_str.push(chr);
 
-                    let content_str = match chr {
-                        '\\' | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')' |
-                        '*' | '+' | ',' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' |
-                        '@' | '[' | ']' | '^' | '_' | '`' | '{' | '|' | '}' | '~' | '-' => chr.into(),
-                        _ => orig_str.clone()
-                    };
+                let content_str = match chr {
+                    '\\' | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')' |
+                    '*' | '+' | ',' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' |
+                    '@' | '[' | ']' | '^' | '_' | '`' | '{' | '|' | '}' | '~' | '-' => chr.into(),
+                    _ => orig_str.clone()
+                };
 
-                    let mut node = Node::new(TextSpecial {
-                        content: content_str,
-                        markup: orig_str,
-                        info: "escape",
-                    });
-                    node.srcmap = state.get_map(start, end);
-                    state.node.children.push(node);
-                }
-                Some(end - start)
+                let node = Node::new(TextSpecial {
+                    content: content_str,
+                    markup: orig_str,
+                    info: "escape",
+                });
+                Some((node, end - start))
             }
             None => None
         }
