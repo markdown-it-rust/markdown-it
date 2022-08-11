@@ -97,10 +97,7 @@ impl BlockRule for LHeadingScanner {
             level,
             marker: if level == 2 { '-' } else { '=' }
         });
-        node.children.push(Node::new(InlineRoot {
-            content,
-            mapping,
-        }));
+        node.children.push(Node::new(InlineRoot::new(content, mapping)));
 
         Some((node, next_line + 1 - start_line))
     }

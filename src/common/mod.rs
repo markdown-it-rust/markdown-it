@@ -8,8 +8,5 @@ pub mod ruler;
 pub mod sourcemap;
 pub mod utils;
 
-mod erasedset;
-pub use erasedset::ErasedSet;
-
 mod typekey;
 pub use typekey::TypeKey;

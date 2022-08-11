@@ -9,11 +9,11 @@ pub use rule::*;
 pub mod builtin;
 
 use crate::{MarkdownIt, Node};
-use crate::common::{ErasedSet, TypeKey};
+use crate::common::TypeKey;
 use crate::common::ruler::Ruler;
+use crate::parser::extset::RootExtSet;
 use crate::parser::inline::InlineRoot;
-
-use super::node::NodeEmpty;
+use crate::parser::node::NodeEmpty;
 
 type RuleFns = (
     fn (&mut BlockState) -> Option<()>,
@@ -78,10 +78,10 @@ impl BlockParser {
                 // users should always have some kind of default block rule
                 let mut content = state.get_line(state.line).to_owned();
                 content.push('\n');
-                let node = Node::new(InlineRoot {
+                let node = Node::new(InlineRoot::new(
                     content,
-                    mapping: vec![(0, state.line_offsets[state.line].first_nonspace)],
-                });
+                    vec![(0, state.line_offsets[state.line].first_nonspace)],
+                ));
                 state.node.children.push(node);
                 state.line += 1;
             }
@@ -104,8 +104,8 @@ impl BlockParser {
 
     // Process input string and push block tokens into `out_tokens`
     //
-    pub fn parse(&self, src: &str, node: Node, md: &MarkdownIt, env: &mut ErasedSet) -> Node {
-        let mut state = BlockState::new(src, md, env, node);
+    pub fn parse(&self, src: &str, node: Node, md: &MarkdownIt, root_ext: &mut RootExtSet) -> Node {
+        let mut state = BlockState::new(src, md, root_ext, node);
         self.tokenize(&mut state);
         state.node
     }

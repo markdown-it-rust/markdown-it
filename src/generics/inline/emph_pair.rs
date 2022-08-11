@@ -50,6 +50,7 @@ use std::cmp::min;
 use crate::{MarkdownIt, Node, NodeValue};
 use crate::common::sourcemap::SourcePos;
 use crate::parser::core::CoreRule;
+use crate::parser::extset::{MarkdownItExt, NodeExt};
 use crate::parser::inline::{InlineRule, InlineState, Text};
 use crate::parser::inline::builtin::InlineParserRule;
 
@@ -58,9 +59,11 @@ struct PairConfig<const MARKER: char> {
     inserted: bool,
     fns: [Option<fn () -> Node>; 3],
 }
+impl<const MARKER: char> MarkdownItExt for PairConfig<MARKER> {}
 
 #[derive(Debug, Default)]
 struct OpenersBottom<const MARKER: char>([ usize; 6 ]);
+impl<const MARKER: char> NodeExt for OpenersBottom<MARKER> {}
 
 #[derive(Debug, Clone)]
 #[doc(hidden)]
@@ -84,7 +87,7 @@ pub struct EmphMarker {
 impl NodeValue for EmphMarker {}
 
 pub fn add_with<const MARKER: char, const LENGTH: u8, const CAN_SPLIT_WORD: bool>(md: &mut MarkdownIt, f: fn () -> Node) {
-    let pair_config = md.env.get_or_insert_default::<PairConfig<MARKER>>();
+    let pair_config = md.ext.get_or_insert_default::<PairConfig<MARKER>>();
     pair_config.fns[LENGTH as usize - 1] = Some(f);
 
     if !pair_config.inserted {
@@ -143,7 +146,7 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState, mut cl
     // for each marker, each delimiter length modulo 3,
     // and for whether this closer can be an opener;
     // https://github.com/commonmark/cmark/commit/34250e12ccebdc6372b8b49c44fab57c72443460
-    let openers_for_marker = state.node.env.get_or_insert_default::<OpenersBottom<MARKER>>();
+    let openers_for_marker = state.node.ext.get_or_insert_default::<OpenersBottom<MARKER>>();
     let openers_parameter = (closer.open as usize) * 3 + closer.length % 3;
 
     let min_opener_idx = openers_for_marker.0[openers_parameter];
@@ -159,7 +162,7 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState, mut cl
                 while closer.remaining > 0 && opener.remaining > 0 {
                     let max_marker_len = min(3, min(opener.remaining, closer.remaining));
                     let mut matched_rule = None;
-                    let fns = &state.md.env.get::<PairConfig<MARKER>>().unwrap().fns;
+                    let fns = &state.md.ext.get::<PairConfig<MARKER>>().unwrap().fns;
                     for marker_len in (1..=max_marker_len).rev() {
                         if let Some(f) = fns[marker_len-1] {
                             matched_rule = Some((marker_len, f));
@@ -222,7 +225,7 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState, mut cl
         // See details here:
         // https://github.com/commonmark/cmark/issues/178#issuecomment-270417442
         //
-        let openers_for_marker = state.node.env.get_or_insert_default::<OpenersBottom<MARKER>>();
+        let openers_for_marker = state.node.ext.get_or_insert_default::<OpenersBottom<MARKER>>();
         openers_for_marker.0[openers_parameter] = new_min_opener_idx;
     }
 

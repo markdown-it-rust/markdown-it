@@ -1,8 +1,9 @@
 use downcast_rs::{Downcast, impl_downcast};
 use std::{fmt::Debug, any::TypeId};
 use crate::Renderer;
-use crate::common::{ErasedSet, TypeKey};
+use crate::common::TypeKey;
 use crate::common::sourcemap::SourcePos;
+use crate::parser::extset::NodeExtSet;
 use crate::parser::renderer::HTMLRenderer;
 
 /// Single node in the CommonMark AST.
@@ -16,7 +17,7 @@ pub struct Node {
     pub srcmap: Option<SourcePos>,
 
     /// Custom data specific to this token.
-    pub env: ErasedSet,
+    pub ext: NodeExtSet,
 
     /// Additional attributes to be added to resulting html.
     pub attrs: Vec<(&'static str, String)>,
@@ -37,7 +38,7 @@ impl Node {
             children:   Vec::new(),
             srcmap:     None,
             attrs:      Vec::new(),
-            env:        ErasedSet::new(),
+            ext:        NodeExtSet::new(),
             node_type:  TypeKey::of::<T>(),
             node_value: Box::new(value),
         }

@@ -14,6 +14,7 @@ use crate::{MarkdownIt, Node};
 use crate::common::utils::normalize_reference;
 use crate::generics::inline::full_link;
 use crate::parser::block::{BlockRule, BlockState};
+use crate::parser::extset::RootExt;
 
 /// Storage for parsed references
 ///
@@ -34,7 +35,7 @@ use crate::parser::block::{BlockRule, BlockState};
 /// impl CoreRule for ReferencePatcher {
 ///     fn run(root: &mut Node, _: &MarkdownIt) {
 ///         let data = root.cast_mut::<Root>().unwrap();
-///         let references = data.env.get_or_insert_default::<ReferenceMap>();
+///         let references = data.ext.get_or_insert_default::<ReferenceMap>();
 ///         references.insert(
 ///             ReferenceMapKey::new("rust".into()),
 ///             ReferenceMapEntry::new(
@@ -59,6 +60,7 @@ use crate::parser::block::{BlockRule, BlockState};
 /// please tell us whether that's useful for you.
 ///
 pub type ReferenceMap = HashMap<ReferenceMapKey, ReferenceMapEntry>;
+impl RootExt for ReferenceMap {}
 
 #[derive(Derivative)]
 #[derivative(Debug, Default, Hash, PartialEq, Eq)]
@@ -255,7 +257,7 @@ impl BlockRule for ReferenceScanner {
             return None;
         }
 
-        let references = &mut state.root_env.get_or_insert_default::<ReferenceMap>();
+        let references = &mut state.root_ext.get_or_insert_default::<ReferenceMap>();
 
         references.entry(ReferenceMapKey::new(label)).or_insert_with(|| ReferenceMapEntry::new(href, title));
 

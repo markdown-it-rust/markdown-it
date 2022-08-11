@@ -82,10 +82,7 @@ impl BlockRule for HeadingScanner {
         let mapping = vec![(0, state.line_offsets[state.line].first_nonspace + text_pos)];
 
         let mut node = Node::new(ATXHeading { level });
-        node.children.push(Node::new(InlineRoot {
-            content,
-            mapping,
-        }));
+        node.children.push(Node::new(InlineRoot::new(content, mapping)));
         Some((node, 1))
     }
 }

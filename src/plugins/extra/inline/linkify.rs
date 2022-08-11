@@ -5,6 +5,7 @@ use linkify::{LinkFinder, LinkKind};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::parser::core::{CoreRule, Root};
+use crate::parser::extset::RootExt;
 use crate::parser::inline::builtin::InlineParserRule;
 use crate::parser::inline::{InlineRule, InlineState, Text};
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
@@ -37,6 +38,7 @@ pub fn add(md: &mut MarkdownIt) {
 }
 
 type LinkifyState = Vec<LinkifyPosition>;
+impl RootExt for LinkifyState {}
 
 #[derive(Debug, Clone, Copy)]
 struct LinkifyPosition {
@@ -63,7 +65,7 @@ impl CoreRule for LinkifyPrescan {
                 None
             }
         }).collect::<Vec<_>>();
-        root_data.env.insert(positions);
+        root_data.ext.insert(positions);
     }
 }
 
@@ -83,7 +85,7 @@ impl InlineRule for LinkifyScanner {
         let map = state.get_map(state.pos, state.pos_max)?;
         let (start, _) = map.get_byte_offsets();
 
-        let positions = state.root_env.get::<LinkifyState>().unwrap();
+        let positions = state.root_ext.get::<LinkifyState>().unwrap();
 
         let found_idx = positions.binary_search_by(|x| {
             if x.start >= start {

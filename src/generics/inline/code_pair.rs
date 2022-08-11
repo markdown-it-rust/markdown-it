@@ -43,6 +43,7 @@
 //! If you define two structures with the same marker, only the first one will work.
 //!
 use crate::{MarkdownIt, Node};
+use crate::parser::extset::{InlineRootExt, MarkdownItExt};
 use crate::parser::inline::{InlineRule, InlineState, Text};
 
 #[derive(Debug, Default)]
@@ -50,12 +51,14 @@ struct CodePairCache<const MARKER: char> {
     scanned: bool,
     max: Vec<usize>,
 }
+impl<const MARKER: char> InlineRootExt for CodePairCache<MARKER> {}
 
 #[derive(Debug)]
 struct CodePairConfig<const MARKER: char>(fn (usize) -> Node);
+impl<const MARKER: char> MarkdownItExt for CodePairConfig<MARKER> {}
 
 pub fn add_with<const MARKER: char>(md: &mut MarkdownIt, f: fn (length: usize) -> Node) {
-    md.env.insert(CodePairConfig::<MARKER>(f));
+    md.ext.insert(CodePairConfig::<MARKER>(f));
 
     md.inline.add_rule::<CodePairScanner<MARKER>>();
 }
@@ -78,7 +81,7 @@ impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
         }
 
         // backtick length => last seen position
-        let backticks = state.inline_env.get_or_insert_default::<CodePairCache<MARKER>>();
+        let backticks = state.inline_ext.get_or_insert_default::<CodePairCache<MARKER>>();
         let opener_len = pos - state.pos;
 
         if backticks.scanned && backticks.max[opener_len] <= state.pos {
@@ -114,7 +117,7 @@ impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
                     match_start -= 1;
                 }
 
-                let f = state.md.env.get::<CodePairConfig<MARKER>>().unwrap().0;
+                let f = state.md.ext.get::<CodePairConfig<MARKER>>().unwrap().0;
                 let mut node = f(opener_len);
 
                 let mut inner_node = Node::new(Text { content });
@@ -125,13 +128,13 @@ impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
             }
 
             // Some different length found, put it in cache as upper limit of where closer can be found
-            let backticks = state.inline_env.get_mut::<CodePairCache<MARKER>>().unwrap();
+            let backticks = state.inline_ext.get_mut::<CodePairCache<MARKER>>().unwrap();
             while backticks.max.len() <= closer_len { backticks.max.push(0); }
             backticks.max[closer_len] = match_start;
         }
 
         // Scanned through the end, didn't find anything
-        let mut backticks = state.inline_env.get_mut::<CodePairCache<MARKER>>().unwrap();
+        let mut backticks = state.inline_ext.get_mut::<CodePairCache<MARKER>>().unwrap();
         backticks.scanned = true;
 
         None

@@ -2,12 +2,13 @@ use derivative::Derivative;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::Node;
-use crate::common::{ErasedSet, TypeKey};
+use crate::common::TypeKey;
 use crate::common::mdurl::{self, AsciiSet};
 use crate::common::ruler::Ruler;
 use crate::common::sourcemap::SourcePos;
 use crate::parser::block::{self, BlockParser};
 use crate::parser::inline::{self, InlineParser};
+use crate::parser::extset::MarkdownItExtSet;
 use crate::parser::core::Root;
 use crate::parser::core::*;
 
@@ -39,7 +40,7 @@ pub struct MarkdownIt {
     pub normalize_link_text: fn (&str) -> String,
 
     /// Storage for custom data used in plugins.
-    pub env: ErasedSet,
+    pub ext: MarkdownItExtSet,
 
     /// Maximum depth of the generated AST, exists to prevent recursion
     /// (if markdown source reaches this depth, deeply nested structures
@@ -83,10 +84,7 @@ impl MarkdownIt {
     }
 
     pub fn parse(&self, src: &str) -> Node {
-        let mut node = Node::new(Root {
-            content: src.to_owned(),
-            env: ErasedSet::new(),
-        });
+        let mut node = Node::new(Root::new(src.to_owned()));
         node.srcmap = Some(SourcePos::new(0, src.len()));
 
         for rule in self.ruler.iter() {
@@ -118,7 +116,7 @@ impl Default for MarkdownIt {
             validate_link,
             normalize_link,
             normalize_link_text,
-            env: ErasedSet::new(),
+            ext: MarkdownItExtSet::new(),
             max_nesting: 100,
             ruler: Ruler::new(),
         };

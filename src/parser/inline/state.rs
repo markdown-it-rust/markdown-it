@@ -1,8 +1,8 @@
 // Inline parser state
 //
 use crate::{MarkdownIt, Node};
-use crate::common::ErasedSet;
 use crate::common::sourcemap::SourcePos;
+use crate::parser::extset::{InlineRootExtSet, RootExtSet};
 use crate::parser::inline::Text;
 use std::collections::HashMap;
 
@@ -64,8 +64,8 @@ pub struct InlineState<'a, 'b> where 'b: 'a {
     /// For each line, it holds offset of the start of the line in original
     /// markdown source and offset of the start of the line in `src`.
     pub srcmap: Vec<(usize, usize)>,
-    pub root_env: &'b mut ErasedSet,
-    pub inline_env: ErasedSet,
+    pub root_ext: &'b mut RootExtSet,
+    pub inline_ext: &'b mut InlineRootExtSet,
 
     /// Current byte offset in `src`, it must respect char boundaries.
     pub pos: usize,
@@ -90,7 +90,8 @@ impl<'a, 'b> InlineState<'a, 'b> {
         src: String,
         srcmap: Vec<(usize, usize)>,
         md: &'a MarkdownIt,
-        env: &'b mut ErasedSet,
+        root_ext: &'b mut RootExtSet,
+        inline_ext: &'b mut InlineRootExtSet,
         node: Node,
     ) -> Self {
         let mut result = Self {
@@ -98,8 +99,8 @@ impl<'a, 'b> InlineState<'a, 'b> {
             pos_max:    src.len(),
             src,
             srcmap,
-            root_env:   env,
-            inline_env: ErasedSet::new(),
+            root_ext,
+            inline_ext,
             md,
             node,
             cache:      HashMap::new(),

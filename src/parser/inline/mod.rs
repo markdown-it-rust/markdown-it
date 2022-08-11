@@ -16,8 +16,9 @@ pub use builtin::skip_text::{Text, TextSpecial};
 use builtin::skip_text::TextScannerImpl;
 
 use crate::{MarkdownIt, Node};
-use crate::common::{ErasedSet, TypeKey};
+use crate::common::TypeKey;
 use crate::common::ruler::Ruler;
+use crate::parser::extset::{InlineRootExtSet, RootExtSet};
 
 use super::node::NodeEmpty;
 
@@ -124,8 +125,16 @@ impl InlineParser {
 
     // Process input string and push inline tokens into `out_tokens`
     //
-    pub fn parse(&self, src: String, srcmap: Vec<(usize, usize)>, node: Node, md: &MarkdownIt, env: &mut ErasedSet) -> Node {
-        let mut state = InlineState::new(src, srcmap, md, env, node);
+    pub fn parse(
+        &self,
+        src: String,
+        srcmap: Vec<(usize, usize)>,
+        node: Node,
+        md: &MarkdownIt,
+        root_ext: &mut RootExtSet,
+        inline_ext: &mut InlineRootExtSet,
+    ) -> Node {
+        let mut state = InlineState::new(src, srcmap, md, root_ext, inline_ext, node);
         self.tokenize(&mut state);
         state.node
     }

@@ -62,10 +62,7 @@ impl BlockRule for ParagraphScanner {
         let (content, mapping) = state.get_lines(start_line, next_line, state.blk_indent, false);
 
         let mut node = Node::new(Paragraph);
-        node.children.push(Node::new(InlineRoot {
-            content,
-            mapping,
-        }));
+        node.children.push(Node::new(InlineRoot::new(content, mapping)));
         Some((node, next_line - start_line))
     }
 }

@@ -15,18 +15,20 @@
 //!
 use crate::{MarkdownIt, Node};
 use crate::common::utils::unescape_all;
+use crate::parser::extset::MarkdownItExt;
 use crate::parser::inline::{InlineRule, InlineState};
 use crate::plugins::cmark::block::reference::{ReferenceMap, ReferenceMapKey};
 
 #[derive(Debug)]
 struct LinkCfg<const PREFIX: char>(fn (Option<String>, Option<String>) -> Node);
+impl<const PREFIX: char> MarkdownItExt for LinkCfg<PREFIX> {}
 
 /// adds custom rule with no prefix
 pub fn add<const ENABLE_NESTED: bool>(
     md: &mut MarkdownIt,
     f: fn (url: Option<String>, title: Option<String>) -> Node
 ) {
-    md.env.insert(LinkCfg::<'\0'>(f));
+    md.ext.insert(LinkCfg::<'\0'>(f));
     md.inline.add_rule::<LinkScanner<ENABLE_NESTED>>();
     if !md.inline.has_rule::<LinkScannerEnd>() {
         md.inline.add_rule::<LinkScannerEnd>();
@@ -38,7 +40,7 @@ pub fn add_prefix<const PREFIX: char, const ENABLE_NESTED: bool>(
     md: &mut MarkdownIt,
     f: fn (url: Option<String>, title: Option<String>) -> Node
 ) {
-    md.env.insert(LinkCfg::<PREFIX>(f));
+    md.ext.insert(LinkCfg::<PREFIX>(f));
     md.inline.add_rule::<LinkPrefixScanner<PREFIX, ENABLE_NESTED>>();
     if !md.inline.has_rule::<LinkScannerEnd>() {
         md.inline.add_rule::<LinkScannerEnd>();
@@ -59,7 +61,7 @@ impl<const ENABLE_NESTED: bool> InlineRule for LinkScanner<ENABLE_NESTED> {
     fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next().unwrap() != '[' { return None; }
-        let f = state.md.env.get::<LinkCfg<'\0'>>().unwrap().0;
+        let f = state.md.ext.get::<LinkCfg<'\0'>>().unwrap().0;
         rule_run(state, ENABLE_NESTED, 0, f)
     }
 }
@@ -80,7 +82,7 @@ impl<const PREFIX: char, const ENABLE_NESTED: bool> InlineRule for LinkPrefixSca
         let mut chars = state.src[state.pos..state.pos_max].chars();
         if chars.next() != Some(PREFIX) { return None; }
         if chars.next() != Some('[') { return None; }
-        let f = state.md.env.get::<LinkCfg<PREFIX>>().unwrap().0;
+        let f = state.md.ext.get::<LinkCfg<PREFIX>>().unwrap().0;
         rule_run(state, ENABLE_NESTED, 1, f)
     }
 }
@@ -394,7 +396,7 @@ fn parse_link(state: &mut InlineState, pos: usize, enable_nested: bool) -> Optio
         _ => pos = label_end + 1,
     }
 
-    if let Some(references) = state.root_env.get::<ReferenceMap>() {
+    if let Some(references) = state.root_ext.get::<ReferenceMap>() {
         // covers label === '' and label === undefined
         // (collapsed reference link and shortcut reference link respectively)
         let label = if matches!(maybe_label, None | Some("")) {

@@ -1,9 +1,9 @@
 // Parser state class
 //
 use crate::{MarkdownIt, Node};
-use crate::common::ErasedSet;
 use crate::common::sourcemap::SourcePos;
 use crate::common::utils::calc_right_whitespace_with_tabstops;
+use crate::parser::extset::RootExtSet;
 
 #[derive(Debug)]
 #[readonly::make]
@@ -17,7 +17,7 @@ pub struct BlockState<'a, 'b> where 'b: 'a {
     #[readonly]
     pub md: &'a MarkdownIt,
 
-    pub root_env: &'b mut ErasedSet,
+    pub root_ext: &'b mut RootExtSet,
 
     /// Current node, your rule is supposed to add children to it.
     pub node: Node,
@@ -99,11 +99,11 @@ pub struct LineOffset {
 }
 
 impl<'a, 'b> BlockState<'a, 'b> {
-    pub fn new(src: &'b str, md: &'a MarkdownIt, env: &'b mut ErasedSet, node: Node) -> Self {
+    pub fn new(src: &'b str, md: &'a MarkdownIt, root_ext: &'b mut RootExtSet, node: Node) -> Self {
         let mut result = Self {
             src,
             md,
-            root_env: env,
+            root_ext,
             node,
             line_offsets: Vec::new(),
             blk_indent: 0,

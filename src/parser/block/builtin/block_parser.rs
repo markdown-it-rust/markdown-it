@@ -12,12 +12,12 @@ impl CoreRule for BlockParserRule {
         let mut node = std::mem::take(root);
         let data = node.cast_mut::<Root>().unwrap();
         let source = std::mem::take(&mut data.content);
-        let mut env = std::mem::take(&mut data.env);
+        let mut ext = std::mem::take(&mut data.ext);
 
-        node = md.block.parse(source.as_str(), node, md, &mut env);
+        node = md.block.parse(source.as_str(), node, md, &mut ext);
         let data = node.cast_mut::<Root>().unwrap();
         data.content = source;
-        data.env = env;
+        data.ext = ext;
         *root = node;
     }
 }
