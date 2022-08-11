@@ -44,10 +44,12 @@ impl CoreRule for InlineParserRule {
                     root = md.inline.parse(content, mapping, root, md, root_ext, &mut inline_ext);
 
                     let len = root.children.len();
-                    node.children.splice(idx..=idx, root.children);
+                    node.children.splice(idx..=idx, std::mem::take(&mut root.children));
                     idx += len;
                 } else {
-                    walk_recursive(child, md, root_ext);
+                    stacker::maybe_grow(64*1024, 1024*1024, || {
+                        walk_recursive(child, md, root_ext);
+                    });
                     idx += 1;
                 }
             }

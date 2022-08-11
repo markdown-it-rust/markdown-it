@@ -193,7 +193,7 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState, mut cl
 
                     // cut marker_len chars from end, i.e. "12345" -> "123"
                     let mut start_map_pos = 0;
-                    let mut opener_token = state.node.children.last_mut().unwrap();
+                    let opener_token = state.node.children.last_mut().unwrap();
                     if let Some(map) = opener_token.srcmap {
                         let (start, end) = map.get_byte_offsets();
                         opener_token.srcmap = Some(SourcePos::new(start, end - marker_len));

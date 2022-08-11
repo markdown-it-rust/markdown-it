@@ -108,7 +108,9 @@ impl Node {
         fn walk_recursive(node: &Node, depth: u32, f: &mut impl FnMut(&Node, u32)) {
             f(node, depth);
             for n in node.children.iter() {
-                walk_recursive(n, depth + 1, f);
+                stacker::maybe_grow(64*1024, 1024*1024, || {
+                    walk_recursive(n, depth + 1, f);
+                });
             }
         }
 
@@ -122,11 +124,51 @@ impl Node {
         fn walk_recursive(node: &mut Node, depth: u32, f: &mut impl FnMut(&mut Node, u32)) {
             f(node, depth);
             for n in node.children.iter_mut() {
-                walk_recursive(n, depth + 1, f);
+                stacker::maybe_grow(64*1024, 1024*1024, || {
+                    walk_recursive(n, depth + 1, f);
+                });
             }
         }
 
         walk_recursive(self, 0, &mut f);
+    }
+
+    /// Execute function `f` recursively on every member of AST tree
+    /// (using postorder deep-first search).
+    pub fn walk_post(&self, mut f: impl FnMut(&Node, u32)) {
+        fn walk_recursive(node: &Node, depth: u32, f: &mut impl FnMut(&Node, u32)) {
+            for n in node.children.iter() {
+                stacker::maybe_grow(64*1024, 1024*1024, || {
+                    walk_recursive(n, depth + 1, f);
+                });
+            }
+            f(node, depth);
+        }
+
+        walk_recursive(self, 0, &mut f);
+    }
+
+    /// Execute function `f` recursively on every member of AST tree
+    /// (using postorder deep-first search).
+    pub fn walk_post_mut(&mut self, mut f: impl FnMut(&mut Node, u32)) {
+        fn walk_recursive(node: &mut Node, depth: u32, f: &mut impl FnMut(&mut Node, u32)) {
+            for n in node.children.iter_mut() {
+                stacker::maybe_grow(64*1024, 1024*1024, || {
+                    walk_recursive(n, depth + 1, f);
+                });
+            }
+            f(node, depth);
+        }
+
+        walk_recursive(self, 0, &mut f);
+    }
+}
+
+impl Drop for Node {
+    fn drop(&mut self) {
+        self.walk_post_mut(|node, _| {
+            drop(std::mem::take(&mut node.children));
+        });
     }
 }
 
