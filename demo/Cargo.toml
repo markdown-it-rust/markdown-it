@@ -1,0 +1,27 @@
+[package]
+name = "index"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+js-sys = "0.3.59"
+markdown-it = { path = "../" }
+wasm-bindgen = "0.2.82"
+
+[dependencies.web-sys]
+version = "0.3.59"
+features = [
+  'Document',
+  'Element',
+  'HtmlElement',
+  'HtmlBodyElement',
+  'HtmlTextAreaElement',
+  'InputEvent',
+  'Node',
+  'NodeList',
+  'Window',
+  'console'
+]

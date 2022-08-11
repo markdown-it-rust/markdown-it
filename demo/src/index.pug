@@ -1,0 +1,21 @@
+doctype html
+html(lang='en')
+    head
+        title markdown-it.rs demo
+        link(rel='stylesheet', href='https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css')
+        link(rel='stylesheet', href=require('./index.styl'))
+
+    body
+        .container
+            .row
+                .col-md-6
+                    .header markdown-it.rs demo
+            .row
+                .col-md-6
+                    textarea#source.form-control
+                        include sample.md
+
+                .col-md-6
+                    #target.form-control
+
+        script(src=require('../pkg'))

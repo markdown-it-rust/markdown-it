@@ -13,6 +13,8 @@ TL;DR:
  - if you want to render GFM exactly like github, use [comrak](https://github.com/kivikakk/comrak)
  - if you want to define your own syntax (like `@mentions`, `:emoji:`, custom html classes), use this library
 
+You can check a [demo](https://rlidwka.github.io/markdown-it.rs/) in your browser *(it's Rust compiled into WASM)*.
+
 ### Features
 
  - 100% CommonMark compatibility
