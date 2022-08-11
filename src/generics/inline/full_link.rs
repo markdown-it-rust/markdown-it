@@ -13,9 +13,11 @@
 //!  - `md` - parser instance
 //!  - `f` - function that should return your custom [Node] given href and title
 //!
+use std::collections::HashMap;
+
 use crate::{MarkdownIt, Node};
 use crate::common::utils::unescape_all;
-use crate::parser::extset::MarkdownItExt;
+use crate::parser::extset::{MarkdownItExt, InlineRootExt};
 use crate::parser::inline::{InlineRule, InlineState};
 use crate::plugins::cmark::block::reference::{ReferenceMap, ReferenceMapKey};
 
@@ -137,11 +139,21 @@ fn rule_run(
     }
 }
 
+#[derive(Debug, Default)]
+struct LinkLabelScanCache(HashMap<(usize, bool), Option<usize>>);
+impl InlineRootExt for LinkLabelScanCache {}
+
+
 // Parse link label
 //
 // this function assumes that first character ("[") already matches;
 // returns the end of the label
 fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) -> Option<usize> {
+    let cache = state.inline_ext.get_or_insert_default::<LinkLabelScanCache>();
+    if let Some(&cached) = cache.0.get(&(start, enable_nested)) {
+        return cached;
+    }
+
     let old_pos = state.pos;
     let mut found = false;
     let mut label_end = None;
@@ -164,9 +176,19 @@ fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) 
             if prev_pos == state.pos - 1 {
                 // increase level if we find text `[`, which is not a part of any token
                 level += 1;
+
+                let cache = state.inline_ext.get_or_insert_default::<LinkLabelScanCache>();
+                if let Some(&cached) = cache.0.get(&(prev_pos, enable_nested)) {
+                    // maybe cache appeared as a result of skip_token
+                    if let Some(cached_pos) = cached {
+                        state.pos = cached_pos;
+                    } else {
+                        break;
+                    }
+                }
+
             } else if !enable_nested {
-                state.pos = old_pos;
-                return None;
+                break;
             }
         }
     }
@@ -177,6 +199,9 @@ fn parse_link_label(state: &mut InlineState, start: usize, enable_nested: bool) 
 
     // restore old state
     state.pos = old_pos;
+
+    let cache = state.inline_ext.get_or_insert_default::<LinkLabelScanCache>();
+    cache.0.insert((start, enable_nested), label_end);
 
     label_end
 }

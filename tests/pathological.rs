@@ -51,8 +51,7 @@ mod commonmark {
 
     #[test]
     fn many_link_openers_with_no_closers() {
-        // most probably a bug
-        run(&"[a".repeat(1500));
+        run(&"[a".repeat(50000));
     }
 
     #[test]
@@ -73,7 +72,7 @@ mod commonmark {
 
     #[test]
     fn link_openers_and_emph_closers() {
-        run(&"[ a_".repeat(1000));
+        run(&"[ a_".repeat(50000));
     }
 
     #[test]
@@ -83,8 +82,7 @@ mod commonmark {
 
     #[test]
     fn nested_brackets() {
-        // very slow
-        run(&format!("{}{}{}", "[".repeat(1500), "a", "]".repeat(1500)));
+        run(&format!("{}{}{}", "[".repeat(50000), "a", "]".repeat(50000)));
     }
 
     #[test]

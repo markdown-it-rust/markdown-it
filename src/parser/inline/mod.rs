@@ -45,13 +45,7 @@ impl InlineParser {
     //
     pub fn skip_token(&self, state: &mut InlineState) {
         stacker::maybe_grow(64*1024, 1024*1024, || {
-            let pos = state.pos;
             let mut ok = None;
-
-            if let Some(x) = state.cache.get(&pos) {
-                state.pos = *x;
-                return;
-            }
 
             if state.level < state.md.max_nesting {
                 for rule in self.ruler.iter() {
@@ -81,7 +75,6 @@ impl InlineParser {
                 let ch = state.src[state.pos..state.pos_max].chars().next().unwrap();
                 state.pos += ch.len_utf8();
             }
-            state.cache.insert(pos, state.pos);
         });
     }
 
