@@ -1,6 +1,41 @@
+body
+    margin-top: 1rem
+
 .header
-    padding-top 1rem
-    padding-bottom .25rem
+    padding-top: .25rem
+    padding-bottom: .25rem
+    height: 2.5rem
+
+.nav-tabs
+    height: 2.5rem
+    border-bottom: 0
 
 #source, #target
-    height 400px
+    height: 400px
+
+#result-preview
+#result-html
+#result-ast
+#result-loading
+    overflow-wrap: break-word
+    overflow: auto
+    height: 400px
+    display: none
+
+#result-loading
+    display: flex
+    justify-content: center
+    align-items: center
+
+.loading-banner
+    font-size: 2rem
+    font-weight: 100
+    font-family: monospace
+    color: #ccc
+
+#result-html
+#result-ast
+    white-space: pre-wrap
+
+#result-preview
+    border-top-left-radius: 0

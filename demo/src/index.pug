@@ -10,12 +10,22 @@ html(lang='en')
             .row
                 .col-md-6
                     .header markdown-it.rs demo
-            .row
-                .col-md-6
                     textarea#source.form-control
                         include sample.md
 
                 .col-md-6
-                    #target.form-control
+                    ul#tabs-toggle.nav.nav-tabs
+                        li.nav-item
+                            a.nav-link(href='#', data-toggle="result-preview") Preview
+                        li.nav-item
+                            a.nav-link(href='#', data-toggle="result-html") HTML
+                        li.nav-item
+                            a.nav-link(href='#', data-toggle="result-ast") AST
+
+                    #result-preview.tab-content.form-control
+                    #result-html.tab-content.form-control
+                    #result-ast.tab-content.form-control
+                    #result-loading.tab-content
+                        .loading-banner Loading...
 
         script(src=require('../pkg'))
