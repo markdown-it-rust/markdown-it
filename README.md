@@ -23,8 +23,6 @@ You can check a [demo](https://rlidwka.github.io/markdown-it.rs/) in your browse
  - Ability to write your own syntax of arbitrary complexity
    - to prove this point, CommonMark syntax itself is written as a plugin
 
-*You can probably parse AsciiDoc, reStructuredText or [any other](https://github.com/mundimark/awesome-markdown-alternatives) plain text format with this without too much effort <-- I&nbsp;might actually write these as proof-of-concept.*
-
 ### Usage
 
 ```rust
@@ -40,3 +38,7 @@ print!("{html}");
 ```
 
 For a guide on how to extend it, see `examples` folder.
+
+### Notes
+
+*This is an attempt at making a language-agnostic parser. You can probably parse AsciiDoc, reStructuredText or [any other](https://github.com/mundimark/awesome-markdown-alternatives) plain text format with this without too much effort. I&nbsp;might eventually write these as proof-of-concept.*

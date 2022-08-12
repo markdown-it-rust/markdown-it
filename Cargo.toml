@@ -1,6 +1,6 @@
 [package]
 name = "markdown-it"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Alex Kocharin <alex@kocharin.ru>"]
 description = "Rust port of popular markdown-it.js library."
 documentation = "https://docs.rs/markdown-it"
@@ -23,16 +23,16 @@ doc = false
 
 [dependencies]
 argparse = "0.2.2"
-const_format = "0.2.23"
+const_format = "0.2.26"
 derivative = "2.2.0"
 downcast-rs = "1.2.0"
 entities = "1.0.1"
 html-escape = "0.2.11"
 linkify = "0.9.0"
-once_cell = "1.12.0"
-readonly = "0.2"
-regex = "1.5"
-stacker = "0.1.14"
+once_cell = "1.13.0"
+readonly = "0.2.2"
+regex = "1.6.0"
+stacker = "0.1.15"
 unicode-general-category = "0.5.1"
 
 [dev-dependencies]
