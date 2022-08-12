@@ -10,12 +10,19 @@
 //! let html = md.parse("hello ~~world~~").render();
 //! assert_eq!(html.trim(), r#"<p>hello <s>world</s></p>"#);
 //! ```
-pub mod inline;
+pub mod strikethrough;
+#[cfg(feature = "linkify")]
+pub mod linkify;
+#[cfg(feature = "syntect")]
+pub mod syntect;
 
 use crate::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
-    inline::linkify::add(md);
-    inline::strikethrough::add(md);
+    strikethrough::add(md);
+    #[cfg(feature = "linkify")]
+    linkify::add(md);
     //block::tables::add(md);
+    #[cfg(feature = "syntect")]
+    syntect::add(md);
 }

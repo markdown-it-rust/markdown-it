@@ -40,7 +40,7 @@ impl NodeValue for CodeFence {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct FenceSettings(&'static str);
 impl MarkdownItExt for FenceSettings {}
 
@@ -50,7 +50,7 @@ pub fn add(md: &mut MarkdownIt) {
 
 pub fn add_with_lang_prefix(md: &mut MarkdownIt, lang_prefix: &'static str) {
     md.block.add_rule::<FenceScanner>();
-    md.ext.get_or_insert_default::<FenceSettings>().0 = lang_prefix;
+    md.ext.insert(FenceSettings(lang_prefix));
 }
 
 #[doc(hidden)]

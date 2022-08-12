@@ -1,10 +1,10 @@
-
+#![cfg(feature = "linkify")]
 fn run(input: &str, output: &str) {
     let output = if output.is_empty() { "".to_owned() } else { output.to_owned() + "\n" };
     let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::plugins::cmark::add(md);
     markdown_it::plugins::html::add(md);
-    markdown_it::plugins::extra::inline::linkify::add(md);
+    markdown_it::plugins::extra::linkify::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
 
     // make sure we have sourcemaps for everything
