@@ -23,6 +23,51 @@ static NAMED_RE : Lazy<Regex> = Lazy::new(|| {
 
 #[doc(hidden)]
 pub struct EntityScanner;
+
+impl EntityScanner {
+    fn parse_digital_entity(state: &mut InlineState) -> Option<(Node, usize)> {
+        let capture = DIGITAL_RE.captures(&state.src[state.pos..])?;
+        let entity_len = capture[0].len();
+        let entity = &capture[1];
+        #[allow(clippy::from_str_radix_10)]
+        let code = if entity.starts_with('x') || entity.starts_with('X') {
+            u32::from_str_radix(&entity[1..], 16).unwrap()
+        } else {
+            u32::from_str_radix(entity, 10).unwrap()
+        };
+
+        let content_str = if is_valid_entity_code(code) {
+            char::from_u32(code).unwrap().into()
+        } else {
+            '\u{FFFD}'.into()
+        };
+
+        let markup_str = capture[0].to_owned();
+
+        let node = Node::new(TextSpecial {
+            content: content_str,
+            markup: markup_str,
+            info: "entity",
+        });
+        Some((node, entity_len))
+    }
+
+    fn parse_named_entity(state: &mut InlineState) -> Option<(Node, usize)> {
+        let capture = NAMED_RE.captures(&state.src[state.pos..])?;
+        let str = get_entity_from_str(&capture[0])?;
+        let entity_len = capture[0].len();
+        let markup_str = capture[0].to_owned();
+        let content_str = (*str).to_owned();
+
+        let node = Node::new(TextSpecial {
+            content: content_str,
+            markup: markup_str,
+            info: "entity",
+        });
+        Some((node, entity_len))
+    }
+}
+
 impl InlineRule for EntityScanner {
     const MARKER: char = '&';
 
@@ -31,51 +76,9 @@ impl InlineRule for EntityScanner {
         if chars.next().unwrap() != '&' { return None; }
 
         if let Some('#') = chars.next() {
-            parse_digital_entity(state)
+            Self::parse_digital_entity(state)
         } else {
-            parse_named_entity(state)
+            Self::parse_named_entity(state)
         }
     }
-}
-
-fn parse_digital_entity(state: &mut InlineState) -> Option<(Node, usize)> {
-    let capture = DIGITAL_RE.captures(&state.src[state.pos..])?;
-    let entity_len = capture[0].len();
-    let entity = &capture[1];
-    #[allow(clippy::from_str_radix_10)]
-    let code = if entity.starts_with('x') || entity.starts_with('X') {
-        u32::from_str_radix(&entity[1..], 16).unwrap()
-    } else {
-        u32::from_str_radix(entity, 10).unwrap()
-    };
-
-    let content_str = if is_valid_entity_code(code) {
-        char::from_u32(code).unwrap().into()
-    } else {
-        '\u{FFFD}'.into()
-    };
-
-    let markup_str = capture[0].to_owned();
-
-    let node = Node::new(TextSpecial {
-        content: content_str,
-        markup: markup_str,
-        info: "entity",
-    });
-    Some((node, entity_len))
-}
-
-fn parse_named_entity(state: &mut InlineState) -> Option<(Node, usize)> {
-    let capture = NAMED_RE.captures(&state.src[state.pos..])?;
-    let str = get_entity_from_str(&capture[0])?;
-    let entity_len = capture[0].len();
-    let markup_str = capture[0].to_owned();
-    let content_str = (*str).to_owned();
-
-    let node = Node::new(TextSpecial {
-        content: content_str,
-        markup: markup_str,
-        info: "entity",
-    });
-    Some((node, entity_len))
 }
