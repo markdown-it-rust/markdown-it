@@ -20,16 +20,21 @@ impl NodeValue for SyntectSnippet {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct SyntectSettings(&'static str);
 impl MarkdownItExt for SyntectSettings {}
 
-pub fn add(md: &mut MarkdownIt) {
-    add_with_theme(md, "InspiredGitHub");
+impl Default for SyntectSettings {
+    fn default() -> Self {
+        Self("InspiredGitHub")
+    }
 }
 
-pub fn add_with_theme(md: &mut MarkdownIt, theme: &'static str) {
+pub fn add(md: &mut MarkdownIt) {
     md.add_rule::<SyntectRule>();
+}
+
+pub fn set_theme(md: &mut MarkdownIt, theme: &'static str) {
     md.ext.insert(SyntectSettings(theme));
 }
 
@@ -38,9 +43,7 @@ impl CoreRule for SyntectRule {
     fn run(root: &mut Node, md: &MarkdownIt) {
         let ss = SyntaxSet::load_defaults_newlines();
         let ts = ThemeSet::load_defaults();
-        let theme = &ts.themes[md.ext.get::<SyntectSettings>().unwrap().0];
-
-        dbg!(&ts.themes.keys());
+        let theme = &ts.themes[md.ext.get::<SyntectSettings>().copied().unwrap_or_default().0];
 
         root.walk_mut(|node, _| {
             let mut content = None;
