@@ -153,6 +153,7 @@ impl<'a, 'b> InlineState<'a, 'b> {
         }
     }
 
+    #[must_use]
     pub fn trailing_text_get(&self) -> &str {
         if let Some(text) = self.node.children.last()
                                 .and_then(|t| t.cast::<Text>()) {
@@ -168,6 +169,7 @@ impl<'a, 'b> InlineState<'a, 'b> {
     //  - start - position to scan from (it should point at a valid marker);
     //  - can_split_word - determine if these markers can be found inside a word
     //
+    #[must_use]
     pub fn scan_delims(&self, start: usize, can_split_word: bool) -> DelimiterRun {
         let mut left_flanking = true;
         let mut right_flanking = true;

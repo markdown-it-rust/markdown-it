@@ -169,6 +169,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
         self.line_max = self.line_offsets.len();
     }
 
+    #[must_use]
     pub fn test_rules_at_line(&mut self) -> bool {
         for rule in self.md.block.ruler.iter() {
             if rule.0(self).is_some() {
@@ -178,6 +179,8 @@ impl<'a, 'b> BlockState<'a, 'b> {
         false
     }
 
+    #[must_use]
+    #[inline]
     pub fn is_empty(&self, line: usize) -> bool {
         if let Some(offsets) = self.line_offsets.get(line) {
             offsets.first_nonspace >= offsets.line_end
@@ -196,15 +199,27 @@ impl<'a, 'b> BlockState<'a, 'b> {
 
     // return line indent of specific line, taking into account blockquotes and lists;
     // it may be negative if a text has less indentation than current list item
+    #[must_use]
+    #[inline]
     pub fn line_indent(&self, line: usize) -> i32 {
-        self.line_offsets[line].indent_nonspace - self.blk_indent as i32
+        if line < self.line_max {
+            self.line_offsets[line].indent_nonspace - self.blk_indent as i32
+        } else {
+            0
+        }
     }
 
     // return a single line, trimming initial spaces
+    #[must_use]
+    #[inline]
     pub fn get_line(&self, line: usize) -> &str {
-        let pos = self.line_offsets[line].first_nonspace;
-        let max = self.line_offsets[line].line_end;
-        &self.src[pos..max]
+        if line < self.line_max {
+            let pos = self.line_offsets[line].first_nonspace;
+            let max = self.line_offsets[line].line_end;
+            &self.src[pos..max]
+        } else {
+            ""
+        }
     }
 
     // Cut a range of lines begin..end (not including end) from the source without preceding indent.
@@ -237,6 +252,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
     }
 
     #[must_use]
+    #[inline]
     pub fn get_map(&self, start_line: usize, end_line: usize) -> Option<SourcePos> {
         debug_assert!(start_line <= end_line);
 
@@ -247,6 +263,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
     }
 
     #[must_use]
+    #[inline]
     pub fn get_map_from_offsets(&self, start_pos: usize, end_pos: usize) -> Option<SourcePos> {
         debug_assert!(start_pos <= end_pos);
 
