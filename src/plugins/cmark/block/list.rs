@@ -239,7 +239,7 @@ impl BlockRule for ListScanner {
         let mut tight = true;
         let mut current_line;
 
-        'outer: while next_line < state.line_max {
+        while next_line < state.line_max {
             let offsets = &state.line_offsets[next_line];
             let initial = offsets.indent_nonspace as usize + pos_after_marker;
 
@@ -332,9 +332,7 @@ impl BlockRule for ListScanner {
             if state.line_indent(next_line) >= 4 { break; }
 
             // fail if terminating block found
-            if state.test_rules_at_line() {
-                break 'outer;
-            }
+            if state.test_rules_at_line() { break; }
 
             current_line = state.get_line(state.line).to_owned();
 

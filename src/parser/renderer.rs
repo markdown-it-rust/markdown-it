@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use crate::Node;
 use crate::common::utils::escape_html;
+use crate::parser::extset::RenderExtSet;
 
 /// Each node outputs its HTML using this API.
 ///
@@ -21,18 +22,22 @@ pub trait Renderer {
     fn text(&mut self, text: &str);
     /// Write plain text without escaping, `<div>` -> `<div>`.
     fn text_raw(&mut self, text: &str);
+    /// Extension set to store custom stuff.
+    fn ext(&mut self) -> &mut RenderExtSet;
 }
 
 #[derive(Debug, Default)]
 /// Default HTML/XHTML renderer.
 pub(crate) struct HTMLRenderer<const XHTML: bool> {
     result: String,
+    ext: RenderExtSet,
 }
 
 impl<const XHTML: bool> HTMLRenderer<XHTML> {
     pub fn new() -> Self {
         Self {
             result: String::new(),
+            ext: RenderExtSet::new(),
         }
     }
 
@@ -120,5 +125,9 @@ impl<const XHTML: bool> Renderer for HTMLRenderer<XHTML> {
 
     fn text_raw(&mut self, text: &str) {
         self.result.push_str(text);
+    }
+
+    fn ext(&mut self) -> &mut RenderExtSet {
+        &mut self.ext
     }
 }

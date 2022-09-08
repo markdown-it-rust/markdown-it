@@ -11,6 +11,7 @@
 //! assert_eq!(html.trim(), r#"<p>hello <s>world</s></p>"#);
 //! ```
 pub mod strikethrough;
+pub mod tables;
 #[cfg(feature = "linkify")]
 pub mod linkify;
 #[cfg(feature = "syntect")]
@@ -22,7 +23,7 @@ pub fn add(md: &mut MarkdownIt) {
     strikethrough::add(md);
     #[cfg(feature = "linkify")]
     linkify::add(md);
-    //block::tables::add(md);
+    tables::add(md);
     #[cfg(feature = "syntect")]
     syntect::add(md);
 }

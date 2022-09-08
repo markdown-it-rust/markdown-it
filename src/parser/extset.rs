@@ -25,6 +25,10 @@ pub trait RootExt : Debug + Downcast + Send + Sync {}
 impl_downcast!(RootExt);
 extension_set!(RootExtSet, RootExt);
 
+/// Extension set member for a renderer context.
+pub trait RenderExt : Debug + Downcast + Send + Sync {}
+impl_downcast!(RenderExt);
+extension_set!(RenderExtSet, RenderExt);
 
 // see https://github.com/malobre/erased_set for inspiration and API
 // see https://lucumr.pocoo.org/2022/1/7/as-any-hack/ for additional impl details

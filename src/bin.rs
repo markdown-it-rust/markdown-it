@@ -58,6 +58,7 @@ fn main() {
     markdown_it::plugins::cmark::add(md);
     #[cfg(feature = "syntect")]
     markdown_it::plugins::extra::syntect::add(md);
+    markdown_it::plugins::extra::tables::add(md);
     markdown_it::plugins::extra::strikethrough::add(md);
     if !no_html {
         markdown_it::plugins::html::add(md);
