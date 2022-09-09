@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use crate::Node;
 use crate::common::utils::escape_html;
@@ -55,8 +56,27 @@ impl<const XHTML: bool> HTMLRenderer<XHTML> {
     }
 
     fn make_attrs(&mut self, attrs: &[(&str, String)]) {
+        let mut attr_hash = HashMap::new();
+        let mut attr_order = Vec::with_capacity(attrs.len());
+
         for (name, value) in attrs {
-            self.make_attr(name, value);
+            let entry = attr_hash.entry(*name).or_insert(Vec::new());
+            entry.push(value.as_str());
+            attr_order.push(*name);
+        }
+
+        for name in attr_order {
+            if let Some(value) = attr_hash.remove(name) {
+                if name == "class" {
+                    self.make_attr(name, &value.join(" "));
+                } else if name == "style" {
+                    self.make_attr(name, &value.join(";"));
+                } else {
+                    for v in value {
+                        self.make_attr(name, v);
+                    }
+                }
+            }
         }
     }
 }
