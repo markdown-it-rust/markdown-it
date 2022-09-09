@@ -6,6 +6,8 @@ use crate::common::sourcemap::SourcePos;
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::extset::RenderExt;
 use crate::parser::inline::InlineRoot;
+use crate::plugins::cmark::block::heading::HeadingScanner;
+use crate::plugins::cmark::block::list::ListScanner;
 
 #[derive(Debug)]
 pub struct Table {
@@ -119,16 +121,18 @@ impl NodeValue for TableCell {
 }
 
 pub fn add(md: &mut MarkdownIt) {
-    md.block.add_rule::<TableScanner>();
+    md.block.add_rule::<TableScanner>()
+        .before::<ListScanner>()
+        .before::<HeadingScanner>();
 }
 
 #[doc(hidden)]
 pub struct TableScanner;
 
-#[derive(Clone, Copy)]
-struct RowContent<'a> {
-    str: &'a str,
-    offset: usize,
+#[derive(Debug)]
+struct RowContent {
+    str: String,
+    srcmap: Vec<(usize, usize)>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -146,46 +150,63 @@ impl Default for ColumnAlignment {
 impl TableScanner {
     fn scan_row(line: &str) -> Vec<RowContent> {
         let mut result = Vec::new();
-        let mut column_start = 0;
-        let mut chars = line.char_indices().fuse();
+        let mut str = String::new();
+        let mut srcmap = vec![(0, 0)];
+        let mut is_escaped = false;
+        let mut is_leading = true;
 
-        while let Some((pos, ch)) = chars.next() {
+        for (pos, ch) in line.char_indices() {
             match ch {
+                ' ' | '\t' if is_leading => {
+                    srcmap[0].1 += 1;
+                }
                 '|' => {
-                    result.push(RowContent {
-                        str: &line[column_start..pos],
-                        offset: column_start,
-                    });
-                    column_start = pos + 1;
+                    is_leading = false;
+                    if is_escaped {
+                        str.push_str(&line[srcmap.last().unwrap().1..pos-1]);
+                        srcmap.push((str.len(), pos));
+                    } else {
+                        str.push_str(&line[srcmap.last().unwrap().1..pos]);
+                        result.push(RowContent {
+                            str: std::mem::take(&mut str),
+                            srcmap: std::mem::take(&mut srcmap),
+                        });
+                        srcmap = vec![(0, pos + 1)];
+                        is_escaped = false;
+                        is_leading = true;
+                    }
                 }
                 '\\' => {
-                    chars.next();
+                    is_leading = false;
+                    is_escaped = true;
                 }
-                _ => {}
+                _ => {
+                    is_leading = false;
+                    is_escaped = false;
+                }
             }
         }
 
+        str.push_str(&line[srcmap.last().unwrap().1..]);
         result.push(RowContent {
-            str: &line[column_start..],
-            offset: column_start,
+            str,
+            srcmap,
         });
 
-        // trim spaces
-        result = result.into_iter().map(|content| {
-            let RowContent { mut str, offset: start } = content;
-            let trim_spaces = |c| c == ' ' || c == '\t';
-            str = str.trim_end_matches(trim_spaces);
-            let trimmed = str.trim_start_matches(trim_spaces);
-            RowContent { str: trimmed, offset: start + str.len() - trimmed.len() }
-        }).collect();
+        // trim trailing spaces
+        for content in result.iter_mut() {
+            while content.str.ends_with([ ' ', '\t' ]) {
+                content.str.pop();
+            }
+        }
 
         // remove last cell if empty
-        if let Some(RowContent { str, offset: _ }) = result.last() {
+        if let Some(RowContent { str, srcmap: _ }) = result.last() {
             if str.is_empty() { result.pop(); }
         }
 
         // remove first cell if empty
-        if let Some(RowContent { str, offset: _ }) = result.first() {
+        if let Some(RowContent { str, srcmap: _ }) = result.first() {
             if str.is_empty() { result.remove(0); }
         }
 
@@ -202,10 +223,15 @@ impl TableScanner {
             }
         }
 
+        // if first character is '-', then second character must not be a space
+        // (due to parsing ambiguity with list)
+        if line.starts_with("- ") { return None; }
+
         let mut result = Vec::new();
 
-        for RowContent { str: mut cell, offset: _ } in Self::scan_row(line) {
+        for RowContent { str, srcmap: _ } in Self::scan_row(line) {
             let mut alignment : u8 = 0;
+            let mut cell = str.as_str();
 
             if cell.starts_with(':') {
                 alignment |= 1;
@@ -234,7 +260,7 @@ impl TableScanner {
         Some(result)
     }
 
-    fn scan_header<'a>(state: &'a mut BlockState) -> Option<(Vec<RowContent<'a>>, Vec<ColumnAlignment>)> {
+    fn scan_header(state: &BlockState) -> Option<(Vec<RowContent>, Vec<ColumnAlignment>)> {
         // should have at least two lines
         if state.line + 2 > state.line_max { return None; }
 
@@ -255,6 +281,11 @@ impl TableScanner {
             return None;
         }
 
+        // table without any columns is not a table, see markdown-it#724
+        if header_row.is_empty() {
+            return None;
+        }
+
         Some(( header_row, alignments ))
     }
 }
@@ -268,9 +299,6 @@ impl BlockRule for TableScanner {
 
     fn run(state: &mut BlockState) -> Option<(Node, usize)> {
         let ( header_row, alignments ) = Self::scan_header(state)?;
-        let header_row = header_row.into_iter()
-            .map(|RowContent { str, offset }| (str.to_owned(), offset))
-            .collect::<Vec<_>>();
         let table_cell_count = header_row.len();
         let mut table_node = Node::new(Table { alignments });
 
@@ -280,21 +308,22 @@ impl BlockRule for TableScanner {
         let mut row_node = Node::new(TableRow);
         row_node.srcmap = state.get_map(state.line, state.line);
 
-        fn add_cell(row_node: &mut Node, cell: String, offset: usize) {
+        fn add_cell(row_node: &mut Node, cell: String, srcmap: Vec<(usize, usize)>) {
             let mut cell_node = Node::new(TableCell);
-            cell_node.srcmap = row_node.srcmap.map(|map| {
-                let (start, _) = map.get_byte_offsets();
-                SourcePos::new(
-                    start + offset,
-                    start + offset + cell.len(),
-                )
-            });
-            cell_node.children.push(Node::new(InlineRoot::new(cell, vec![(0, 0)])));
+            let (start, _) = row_node.srcmap.unwrap().get_byte_offsets();
+            cell_node.srcmap = Some(SourcePos::new(
+                start + srcmap.first().unwrap().1,
+                start + srcmap.last().unwrap().1 + cell.len() - srcmap.last().unwrap().0,
+            ));
+            if !cell.is_empty() {
+                let mapping = srcmap.into_iter().map(|(dstpos, srcpos)| (dstpos, srcpos + start)).collect();
+                cell_node.children.push(Node::new(InlineRoot::new(cell, mapping)));
+            }
             row_node.children.push(cell_node);
         }
 
-        for (cell, offset) in header_row {
-            add_cell(&mut row_node, cell, offset);
+        for RowContent { str: cell, srcmap } in header_row {
+            add_cell(&mut row_node, cell, srcmap);
         }
 
         thead_node.children.push(row_node);
@@ -329,14 +358,12 @@ impl BlockRule for TableScanner {
             row_node.srcmap = state.get_map(state.line, state.line);
             let line = state.get_line(state.line);
 
-            let mut body_row = Self::scan_row(line).into_iter()
-                .map(|RowContent { str, offset }| (str.to_owned(), offset))
-                .collect::<Vec<_>>();
-            let mut end_of_line = (String::new(), line.len());
+            let mut body_row = Self::scan_row(line);
+            let mut end_of_line = RowContent { str: String::new(), srcmap: vec![(0, line.len())] };
 
             for index in 0..table_cell_count {
-                let (cell, offset) = body_row.get_mut(index).unwrap_or(&mut end_of_line);
-                add_cell(&mut row_node, std::mem::take(cell), *offset);
+                let RowContent { str: cell, srcmap } = body_row.get_mut(index).unwrap_or(&mut end_of_line);
+                add_cell(&mut row_node, cell.clone(), srcmap.clone());
             }
 
             state.node.children.push(row_node);
@@ -353,5 +380,63 @@ impl BlockRule for TableScanner {
         let line_count = state.line - start_line;
         state.line = start_line;
         Some((table_node, line_count))
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::TableScanner;
+
+    #[test]
+    fn should_split_cells() {
+        assert_eq!(TableScanner::scan_row("").len(), 0);
+        assert_eq!(TableScanner::scan_row("a").len(), 1);
+        assert_eq!(TableScanner::scan_row("a | b").len(), 2);
+        assert_eq!(TableScanner::scan_row("a | b | c").len(), 3);
+    }
+
+    #[test]
+    fn should_ignore_leading_trailing_empty_cells() {
+        assert_eq!(TableScanner::scan_row("foo | bar").len(), 2);
+        assert_eq!(TableScanner::scan_row("foo | bar |").len(), 2);
+        assert_eq!(TableScanner::scan_row("| foo | bar").len(), 2);
+        assert_eq!(TableScanner::scan_row("| foo | bar |").len(), 2);
+        assert_eq!(TableScanner::scan_row("| | foo | bar | |").len(), 4);
+        assert_eq!(TableScanner::scan_row("|").len(), 0);
+        assert_eq!(TableScanner::scan_row("||").len(), 1);
+    }
+
+    #[test]
+    fn should_trim_cell_content() {
+        assert_eq!(TableScanner::scan_row("|foo|")[0].str, "foo");
+        assert_eq!(TableScanner::scan_row("| foo |")[0].str, "foo");
+        assert_eq!(TableScanner::scan_row("|\tfoo\t|")[0].str, "foo");
+        assert_eq!(TableScanner::scan_row("| \t foo \t |")[0].str, "foo");
+    }
+
+    #[test]
+    fn should_process_backslash_escapes() {
+        assert_eq!(TableScanner::scan_row(r#"| foo\bar |"#)[0].str, r#"foo\bar"#);
+        assert_eq!(TableScanner::scan_row(r#"| foo\|bar |"#)[0].str, r#"foo|bar"#);
+        assert_eq!(TableScanner::scan_row(r#"| foo\\|bar |"#)[0].str, r#"foo\|bar"#);
+        assert_eq!(TableScanner::scan_row(r#"| foo\\\|bar |"#)[0].str, r#"foo\\|bar"#);
+        assert_eq!(TableScanner::scan_row(r#"| foo\\\\|bar |"#)[0].str, r#"foo\\\|bar"#);
+    }
+
+    #[test]
+    fn should_trim_cell_content_srcmaps() {
+        let row = TableScanner::scan_row("| foo | \tbar\t |");
+        assert_eq!(row[0].str, "foo");
+        assert_eq!(row[0].srcmap, vec![(0, 2)]);
+        assert_eq!(row[1].str, "bar");
+        assert_eq!(row[1].srcmap, vec![(0, 9)]);
+    }
+
+    #[test]
+    fn should_process_backslash_escapes_srcmaps() {
+        let row = TableScanner::scan_row(r#"|  foo\\|bar\\\|baz\  |"#);
+        assert_eq!(row[0].str, r#"foo\|bar\\|baz\"#);
+        assert_eq!(row[0].srcmap, vec![(0, 3), (4, 8), (10, 15)]);
     }
 }
