@@ -1,9 +1,9 @@
 use derivative::Derivative;
+use mdurl::AsciiSet;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::Node;
 use crate::common::TypeKey;
-use crate::common::mdurl::{self, AsciiSet};
 use crate::common::ruler::Ruler;
 use crate::common::sourcemap::SourcePos;
 use crate::parser::block::{self, BlockParser};
