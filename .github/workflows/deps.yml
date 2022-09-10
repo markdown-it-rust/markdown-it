@@ -1,0 +1,19 @@
+name: deps
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        rust:
+         - nightly
+
+    steps:
+     - uses: actions/checkout@v3
+     - uses: dtolnay/rust-toolchain@nightly
+     - run: cargo +nightly -Z minimal-versions update && cargo +nightly test --no-default-features --features linkify
