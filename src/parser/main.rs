@@ -1,5 +1,4 @@
 use derivative::Derivative;
-use mdurl::AsciiSet;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::Node;
@@ -70,8 +69,7 @@ fn validate_link(str: &str) -> bool {
 }
 
 fn normalize_link(str: &str) -> String {
-    const ASCII : AsciiSet = AsciiSet::from(r#";/?:@&=+$,-_.!~*'()#"#);
-    mdurl::encode(str, ASCII, true)
+    mdurl::urlencode::encode(str, mdurl::urlencode::ENCODE_DEFAULT_CHARS, true).into()
 }
 
 fn normalize_link_text(str: &str) -> String {
