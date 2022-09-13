@@ -6,6 +6,14 @@ body
     padding-bottom: .25rem
     height: 2.5rem
 
+    & > a
+        color: black
+        text-decoration: none
+        font-weight: bold
+
+    & > a:hover
+        text-decoration: underline
+
 .nav-tabs
     height: 2.5rem
     border-bottom: 0
@@ -39,3 +47,29 @@ body
 
 #result-preview
     border-top-left-radius: 0
+
+// https://github.com/markdown-it/markdown-it/blob/master/support/demo_template/index.styl
+.gh-ribbon
+    display: block
+    position: absolute
+    right: -60px
+    top: 44px
+    transform: rotate(45deg)
+    width: 230px
+    z-index: 10000
+    white-space: nowrap
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif
+    background-color: #686868
+    box-shadow: 0 0 2px rgba(102,102,102,0.4)
+    padding: 1px 0
+
+    a
+        text-decoration: none !important
+        border: 1px solid #ccc
+        color: #fff
+        display: block
+        font-size: 13px
+        font-weight: 700
+        outline: medium none
+        padding: 4px 50px 2px
+        text-align: center

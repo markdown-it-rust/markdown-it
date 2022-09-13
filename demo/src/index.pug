@@ -6,10 +6,14 @@ html(lang='en')
         link(rel='stylesheet', href=require('./index.styl'))
 
     body
+        .gh-ribbon
+            a(href='https://github.com/rlidwka/markdown-it.rs') Fork me on GitHub
+
         .container
             .row
                 .col-md-6
-                    .header markdown-it.rs demo
+                    .header
+                        a(href="https://github.com/rlidwka/markdown-it.rs") markdown-it.rs demo
                     textarea#source.form-control
                         include sample.md
 
