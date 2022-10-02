@@ -49,6 +49,7 @@ fn run(input: &str, output: &str) {
     let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::plugins::cmark::add(md);
     markdown_it::plugins::html::add(md);
+    markdown_it::plugins::extra::beautify_links::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
     node.walk(|node, _| assert!(node.srcmap.is_some()));
     let result = node.render();
@@ -100,6 +101,12 @@ r#"<blockquote>
     fn cr_lf_newlines() {
         run("foo\r\nbar", "<p>foo\nbar</p>");
         run("    foo\r\n    bar", "<pre><code>foo\nbar\n</code></pre>");
+    }
+
+    #[test]
+    fn beautify_links() {
+        run("<https://www.reddit.com/r/programming/comments/vxttiq/comment/ifyqsqt/?utm_source=reddit&utm_medium=web2x&context=3>",
+            "<p><a href=\"https://www.reddit.com/r/programming/comments/vxttiq/comment/ifyqsqt/?utm_source=reddit&amp;utm_medium=web2x&amp;context=3\">www.reddit.com/r/programming/comments/…/ifyqsqt/?u…</a></p>");
     }
 }
 

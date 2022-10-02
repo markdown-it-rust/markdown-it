@@ -60,6 +60,7 @@ fn main() {
     markdown_it::plugins::extra::syntect::add(md);
     markdown_it::plugins::extra::tables::add(md);
     markdown_it::plugins::extra::strikethrough::add(md);
+    markdown_it::plugins::extra::beautify_links::add(md);
     if !no_html {
         markdown_it::plugins::html::add(md);
     }

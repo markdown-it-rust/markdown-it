@@ -12,6 +12,7 @@
 //! ```
 pub mod strikethrough;
 pub mod tables;
+pub mod beautify_links;
 #[cfg(feature = "linkify")]
 pub mod linkify;
 #[cfg(feature = "syntect")]
@@ -21,6 +22,7 @@ use crate::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
     strikethrough::add(md);
+    beautify_links::add(md);
     #[cfg(feature = "linkify")]
     linkify::add(md);
     tables::add(md);

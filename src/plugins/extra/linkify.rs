@@ -1,9 +1,9 @@
 //! Find urls and emails, and turn them into links
-use std::cmp::Ordering;
 
 use linkify::{LinkFinder, LinkKind};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use std::cmp::Ordering;
 use crate::parser::core::{CoreRule, Root};
 use crate::parser::extset::RootExt;
 use crate::parser::inline::builtin::InlineParserRule;
