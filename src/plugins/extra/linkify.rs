@@ -111,11 +111,11 @@ impl InlineRule for LinkifyScanner {
         if url_end > state.pos_max { return None; }
 
         let url = &state.src[url_start..url_end];
-        let full_url = (state.md.normalize_link)(url);
+        let full_url = state.md.link_formatter.normalize_link(url);
 
-        if !(state.md.validate_link)(&full_url) { return None; }
+        state.md.link_formatter.validate_link(&full_url)?;
 
-        let content = (state.md.normalize_link_text)(url);
+        let content = state.md.link_formatter.normalize_link_text(url);
 
         let mut inner_node = Node::new(Text { content });
         inner_node.srcmap = state.get_map(url_start, url_end);

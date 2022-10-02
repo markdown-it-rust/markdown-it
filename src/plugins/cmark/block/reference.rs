@@ -195,8 +195,8 @@ impl BlockRule for ReferenceScanner {
         let href;
         if let Some(res) = full_link::parse_link_destination(str, pos, str.len()) {
             if pos == res.pos { return None; }
-            href = (state.md.normalize_link)(&res.str);
-            if !(state.md.validate_link)(&href) { return None; }
+            href = state.md.link_formatter.normalize_link(&res.str);
+            state.md.link_formatter.validate_link(&href)?;
             pos = res.pos;
             lines += res.lines;
         } else {

@@ -365,8 +365,8 @@ fn parse_link(state: &mut InlineState, pos: usize, enable_nested: bool) -> Optio
         // [link](  <href>  "title"  )
         //          ^^^^^^ parsing link destination
         if let Some(res) = parse_link_destination(&state.src, pos, state.pos_max) {
-            let href_candidate = (state.md.normalize_link)(&res.str);
-            if (state.md.validate_link)(&href_candidate) {
+            let href_candidate = state.md.link_formatter.normalize_link(&res.str);
+            if state.md.link_formatter.validate_link(&href_candidate).is_some() {
                 pos = res.pos;
                 href = Some(href_candidate);
             }

@@ -62,14 +62,14 @@ impl InlineRule for AutolinkScanner {
         if !is_autolink && !is_email { return None; }
 
         let full_url = if is_autolink {
-            (state.md.normalize_link)(url)
+            state.md.link_formatter.normalize_link(url)
         } else {
-            (state.md.normalize_link)(&("mailto:".to_owned() + url))
+            state.md.link_formatter.normalize_link(&("mailto:".to_owned() + url))
         };
 
-        if !(state.md.validate_link)(&full_url) { return None; }
+        state.md.link_formatter.validate_link(&full_url)?;
 
-        let content = (state.md.normalize_link_text)(url);
+        let content = state.md.link_formatter.normalize_link_text(url);
 
         let mut inner_node = Node::new(Text { content });
         inner_node.srcmap = state.get_map(state.pos + 1, pos - 1);

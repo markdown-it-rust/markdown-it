@@ -1,6 +1,4 @@
 use derivative::Derivative;
-use once_cell::sync::Lazy;
-use regex::Regex;
 use crate::Node;
 use crate::common::TypeKey;
 use crate::common::ruler::Ruler;
@@ -10,6 +8,7 @@ use crate::parser::inline::{self, InlineParser};
 use crate::parser::extset::MarkdownItExtSet;
 use crate::parser::core::Root;
 use crate::parser::core::*;
+use crate::parser::linkfmt::{LinkFormatter, MDLinkFormatter};
 
 type RuleFn = fn (&mut Node, &MarkdownIt);
 
@@ -23,20 +22,8 @@ pub struct MarkdownIt {
     /// Inline-level tokenizer.
     pub inline: InlineParser,
 
-    #[doc(hidden)]
-    #[derivative(Debug="ignore")]
-    // TODO: move this somewhere
-    pub validate_link: fn (&str) -> bool,
-
-    #[doc(hidden)]
-    #[derivative(Debug="ignore")]
-    // TODO: move this somewhere
-    pub normalize_link: fn (&str) -> String,
-
-    #[doc(hidden)]
-    #[derivative(Debug="ignore")]
-    // TODO: move this somewhere
-    pub normalize_link_text: fn (&str) -> String,
+    /// Link valiator and formatter.
+    pub link_formatter: Box<dyn LinkFormatter>,
 
     /// Storage for custom data used in plugins.
     pub ext: MarkdownItExtSet,
@@ -44,36 +31,11 @@ pub struct MarkdownIt {
     /// Maximum depth of the generated AST, exists to prevent recursion
     /// (if markdown source reaches this depth, deeply nested structures
     /// will be parsed as plain text).
+    /// TODO: doesn't work
+    #[doc(hidden)]
     pub max_nesting: u32,
 
     ruler: Ruler<TypeKey, RuleFn>,
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// This validator can prohibit more than really needed to prevent XSS. It's a
-// tradeoff to keep code simple and to be secure by default.
-//
-// If you need different setup - override validator method as you wish. Or
-// replace it with dummy function and use external sanitizer.
-//
-static BAD_PROTO_RE : Lazy<Regex> = Lazy::new(||
-    Regex::new(r#"(?i)^(vbscript|javascript|file|data):"#).unwrap()
-);
-
-static GOOD_DATA_RE : Lazy<Regex> = Lazy::new(||
-    Regex::new(r#"(?i)^data:image/(gif|png|jpeg|webp);"#).unwrap()
-);
-
-fn validate_link(str: &str) -> bool {
-    !BAD_PROTO_RE.is_match(str) || GOOD_DATA_RE.is_match(str)
-}
-
-fn normalize_link(str: &str) -> String {
-    mdurl::urlencode::encode(str, mdurl::urlencode::ENCODE_DEFAULT_CHARS, true).into()
-}
-
-fn normalize_link_text(str: &str) -> String {
-    str.to_owned()
 }
 
 impl MarkdownIt {
@@ -111,9 +73,7 @@ impl Default for MarkdownIt {
         let mut md = Self {
             block: BlockParser::new(),
             inline: InlineParser::new(),
-            validate_link,
-            normalize_link,
-            normalize_link_text,
+            link_formatter: Box::new(MDLinkFormatter::new()),
             ext: MarkdownItExtSet::new(),
             max_nesting: 100,
             ruler: Ruler::new(),
