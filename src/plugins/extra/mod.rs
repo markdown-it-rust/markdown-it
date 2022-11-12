@@ -17,6 +17,7 @@ pub mod beautify_links;
 pub mod linkify;
 #[cfg(feature = "syntect")]
 pub mod syntect;
+pub mod typographer;
 
 use crate::MarkdownIt;
 
