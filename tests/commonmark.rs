@@ -18,6 +18,7 @@ fn run(input: &str, output: &str) {
 
 ///////////////////////////////////////////////////////////////////////////
 // TESTGEN: fixtures/commonmark/good.txt
+#[rustfmt::skip]
 mod fixtures_commonmark_good_txt {
 use super::run;
 // this part of the file is auto-generated

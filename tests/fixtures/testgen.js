@@ -72,6 +72,7 @@ for (let line of input.split('\n')) {
             let match = line.match(/^\/{2,}\s+TESTGEN:\s*(.+)\s*$/)
             if (match) {
                 let has_data = false
+                lines.push('#[rustfmt::skip]')
                 lines.push(`mod ${ident(match[1])} {`)
                 lines.push('use super::run;')
                 lines.push('// this part of the file is auto-generated')
