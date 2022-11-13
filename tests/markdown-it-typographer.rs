@@ -7,6 +7,7 @@ fn run(input: &str, output: &str) {
     let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::plugins::cmark::add(md);
     markdown_it::plugins::html::add(md);
+    markdown_it::plugins::extra::linkify::add(md);
     markdown_it::plugins::extra::typographer::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
 
@@ -19,7 +20,21 @@ fn run(input: &str, output: &str) {
     // make sure it doesn't crash without trailing \n
     let _ = md.parse(input.trim_end());
 }
-
+///////////////////////////////////////////////////////////////////////////
+// TESTGEN: fixtures/markdown-it/typographer-extra.txt
+#[rustfmt::skip]
+mod fixtures_markdown_it_typographer_extra_txt {
+use super::run;
+// this part of the file is auto-generated
+// don't edit it, otherwise your changes might be lost
+#[test]
+fn don_t_touch_text_in_autolinks() {
+    let input = r#"URL with (C) (c) (R) (r) (TM) (tm): https://example.com/(c)(r)(tm)/(C)(R)(TM) what do you think?"#;
+    let output = r#"<p>URL with © © ® ® ™ ™: <a href="https://example.com/(c)(r)(tm)/(C)(R)(TM)">https://example.com/(c)(r)(tm)/(C)(R)(TM)</a> what do you think?</p>"#;
+    run(input, output);
+}
+// end of auto-generated module
+}
 ///////////////////////////////////////////////////////////////////////////
 // TESTGEN: fixtures/markdown-it/typographer.txt
 #[rustfmt::skip]

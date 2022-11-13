@@ -1,0 +1,6 @@
+don't touch text in autolinks
+.
+URL with (C) (c) (R) (r) (TM) (tm): https://example.com/(c)(r)(tm)/(C)(R)(TM) what do you think?
+.
+<p>URL with © © ® ® ™ ™: <a href="https://example.com/(c)(r)(tm)/(C)(R)(TM)">https://example.com/(c)(r)(tm)/(C)(R)(TM)</a> what do you think?</p>
+.
