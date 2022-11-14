@@ -15,6 +15,7 @@ pub mod tables;
 pub mod beautify_links;
 #[cfg(feature = "linkify")]
 pub mod linkify;
+pub mod smartquotes;
 #[cfg(feature = "syntect")]
 pub mod syntect;
 pub mod typographer;

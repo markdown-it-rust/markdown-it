@@ -9,6 +9,7 @@ fn run(input: &str, output: &str) {
     markdown_it::plugins::html::add(md);
     markdown_it::plugins::extra::linkify::add(md);
     markdown_it::plugins::extra::typographer::add(md);
+    markdown_it::plugins::extra::smartquotes::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
 
     // make sure we have sourcemaps for everything
