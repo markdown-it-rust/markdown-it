@@ -41,11 +41,4 @@ readonly     = ">= 0.2.0, < 0.3"
 regex        = ">= 0.2.0, < 2"
 stacker      = ">= 0.1.2, < 0.2"
 syntect      = { version = ">= 5.0.0, < 6", optional = true, default-features = false, features = ["default-fancy"] }
-unicode-general-category = ">= 0.1.0, < 0.6"
-
-[dev-dependencies]
-criterion    = ">= 0.3, < 0.5"
-
-[[bench]]
-name = "test-file"
-harness = false
+unicode-general-category = ">= 0.1.0, < 0.7"
