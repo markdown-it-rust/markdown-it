@@ -6,7 +6,7 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
-use crate::parser::inline::{InlineRule, InlineState, Text};
+use crate::parser::inline::{InlineRule, InlineState, TextSpecial};
 
 #[derive(Debug)]
 pub struct Autolink {
@@ -71,7 +71,11 @@ impl InlineRule for AutolinkScanner {
 
         let content = state.md.link_formatter.normalize_link_text(url);
 
-        let mut inner_node = Node::new(Text { content });
+        let mut inner_node = Node::new(TextSpecial {
+            content: content.clone(),
+            markup: content,
+            info: "autolink",
+        });
         inner_node.srcmap = state.get_map(state.pos + 1, pos - 1);
 
         let mut node = Node::new(Autolink { url: full_url });

@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 use crate::parser::core::{CoreRule, Root};
 use crate::parser::extset::RootExt;
 use crate::parser::inline::builtin::InlineParserRule;
-use crate::parser::inline::{InlineRule, InlineState, Text};
+use crate::parser::inline::{InlineRule, InlineState, TextSpecial};
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 static SCHEME_RE : Lazy<Regex> = Lazy::new(|| {
@@ -117,7 +117,11 @@ impl InlineRule for LinkifyScanner {
 
         let content = state.md.link_formatter.normalize_link_text(url);
 
-        let mut inner_node = Node::new(Text { content });
+        let mut inner_node = Node::new(TextSpecial {
+            content: content.clone(),
+            markup: content,
+            info: "autolink",
+        });
         inner_node.srcmap = state.get_map(url_start, url_end);
 
         let mut node = Node::new(Linkified { url: full_url });
