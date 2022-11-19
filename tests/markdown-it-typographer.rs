@@ -33,6 +33,13 @@ fn don_t_touch_text_in_autolinks() {
     let output = r#"<p>URL with © © ® ® ™ ™: <a href="https://example.com/(c)(r)(tm)/(C)(R)(TM)">https://example.com/(c)(r)(tm)/(C)(R)(TM)</a> what do you think?</p>"#;
     run(input, output);
 }
+
+#[test]
+fn replacements_for_tm_should_allow_mixed_case_tm_and_tm() {
+    let input = r#"These two should both end up the same as (TM) and (tm): (tM), (Tm)."#;
+    let output = r#"<p>These two should both end up the same as ™ and ™: ™, ™.</p>"#;
+    run(input, output);
+}
 // end of auto-generated module
 }
 ///////////////////////////////////////////////////////////////////////////

@@ -4,3 +4,11 @@ URL with (C) (c) (R) (r) (TM) (tm): https://example.com/(c)(r)(tm)/(C)(R)(TM) wh
 .
 <p>URL with © © ® ® ™ ™: <a href="https://example.com/(c)(r)(tm)/(C)(R)(TM)">https://example.com/(c)(r)(tm)/(C)(R)(TM)</a> what do you think?</p>
 .
+
+
+replacements for TM should allow mixed case tM and Tm
+.
+These two should both end up the same as (TM) and (tm): (tM), (Tm).
+.
+<p>These two should both end up the same as ™ and ™: ™, ™.</p>
+.
