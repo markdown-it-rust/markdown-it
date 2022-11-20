@@ -36,6 +36,8 @@ fn get_replacements() -> &'static Box<[(Regex, &'static str)]> {
             (Regex::new(r"\+-").unwrap(), "±"),
             (Regex::new(r"\.{2,}").unwrap(), "…"),
             (Regex::new(r"([?!])…").unwrap(), "$1.."),
+            (Regex::new(r"([?!]){4,}").unwrap(), "$1$1$1"),
+            (Regex::new(r",{2,}").unwrap(), ","),
         ])
     })
 }
