@@ -31,5 +31,11 @@ impl CoreRule for TypographerRule {
 }
 
 fn get_replacements() -> &'static Box<[(Regex, &'static str)]> {
-    REPLACEMENTS.get_or_init(|| Box::new([(Regex::new(r"\+-").unwrap(), "±")]))
+    REPLACEMENTS.get_or_init(|| {
+        Box::new([
+            (Regex::new(r"\+-").unwrap(), "±"),
+            (Regex::new(r"\.{2,}").unwrap(), "…"),
+            (Regex::new(r"([?!])…").unwrap(), "$1.."),
+        ])
+    })
 }
