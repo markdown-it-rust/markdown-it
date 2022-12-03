@@ -173,32 +173,13 @@ impl<
             }
 
             if can_close {
-                for (j, other_item) in quote_stack.iter().enumerate().rev() {
-                    if other_item.level < level {
-                        break;
-                    }
-                    if other_item.quote_type == quote_type && other_item.level == level {
-                        result.push(ReplacementOp {
-                            walk_index: other_item.walk_index,
-                            quote_position: other_item.quote_position,
-                            quote: if quote_type == QuoteType::Single {
-                                OPEN_SINGLE_QUOTE
-                            } else {
-                                OPEN_DOUBLE_QUOTE
-                            },
-                        });
-                        result.push(ReplacementOp {
-                            walk_index,
-                            quote_position,
-                            quote: if quote_type == QuoteType::Single {
-                                CLOSE_SINGLE_QUOTE
-                            } else {
-                                CLOSE_DOUBLE_QUOTE
-                            },
-                        });
-                        quote_stack.truncate(j);
-                        continue 'outer;
-                    }
+                if let Some((opening_op, closing_op, new_stack_len)) =
+                    Self::try_close(quote_stack, walk_index, level, quote_type, quote_position)
+                {
+                    quote_stack.truncate(new_stack_len);
+                    result.push(opening_op);
+                    result.push(closing_op);
+                    continue 'outer;
                 }
             }
 
@@ -218,6 +199,44 @@ impl<
             }
         }
         result
+    }
+
+    fn try_close(
+        quote_stack: &[QuoteMarker],
+        walk_index: usize,
+        level: u32,
+        quote_type: QuoteType,
+        quote_position: usize,
+    ) -> Option<(ReplacementOp, ReplacementOp, usize)> {
+        for (j, other_item) in quote_stack.iter().enumerate().rev() {
+            if other_item.level < level {
+                return None;
+            }
+            if other_item.quote_type == quote_type && other_item.level == level {
+                return Some((
+                    ReplacementOp {
+                        walk_index: other_item.walk_index,
+                        quote_position: other_item.quote_position,
+                        quote: if quote_type == QuoteType::Single {
+                            OPEN_SINGLE_QUOTE
+                        } else {
+                            OPEN_DOUBLE_QUOTE
+                        },
+                    },
+                    ReplacementOp {
+                        walk_index,
+                        quote_position,
+                        quote: if quote_type == QuoteType::Single {
+                            CLOSE_SINGLE_QUOTE
+                        } else {
+                            CLOSE_DOUBLE_QUOTE
+                        },
+                    },
+                    j,
+                ));
+            }
+        }
+        None
     }
 }
 
