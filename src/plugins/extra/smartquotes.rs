@@ -1,4 +1,27 @@
-//! Typography for quotes and apostrophes.
+//! Replaces `"` and `'` quotes with "nicer" ones like `‘`, `’`, `“`, `”`, or
+//! with `’` for words like "isn't".
+//!
+//!
+//! ## Implementation notes
+//!
+//! The main obstacle to implementing this was the fact that the document is
+//! necessarily represented as a tree of nodes.
+//! Each node is thus necessarily referenced by its parents, which means that an
+//! any given moment we cannot hold a mutable reference to a node if any other
+//! part of the code holds a reference to the document. At least that's my
+//! understanding of the problem.
+//! The smartquotes algorithm from the JS library makes heavy use of iteration
+//! backwards and forwards through a flat list of tokens. This isn't really
+//! possible in the Rust implementation. Building a flat representation of all
+//! `Node` objects is easy, but holding that list precludes us from executing a
+//! `root.walk_mut` call at the same time.
+//! On top of that, while the smartquotes algorithm iterates linearly over all
+//! nodes/tokens, looking at a specific token with index `j` can trigger
+//! replacements in any of the tokens with `0` to `j - 1`.
+//!
+//! The solution proposed here is to first compute all the replacement
+//! operations on a read-only flat view of the document, and _then_ to perform
+//! all replacements in a single call to `root.walk_mut`.
 use crate::parser::core::CoreRule;
 use crate::parser::inline::Text;
 use crate::plugins::cmark::block::paragraph::Paragraph;
@@ -20,6 +43,14 @@ pub fn add(md: &mut MarkdownIt) {
     md.add_rule::<SmartQuotesRule<'‘', '’', '“', '”'>>();
 }
 
+/// Simplified Node type that only holds the info we need
+///
+/// To replace quotes, we'll be iterating forward and backward over the nodes in
+/// our document tree. The `Node` class doesn't provide a mechanism to do this
+/// efficiently, and in any case we only care about certain parts of the
+/// information. This struct will be used to build a flat view of the document;
+/// the `Irrelevant` variant serves as a "filler" so that the indexes of the
+/// entries line up correctly with the order we see during tree traversal.
 enum FlatToken<'a> {
     LineBreak,
     Text {
@@ -29,23 +60,44 @@ enum FlatToken<'a> {
     Irrelevant,
 }
 
+/// A simple enum to distinguish single and double quotes
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 enum QuoteType {
     Single,
     Double,
 }
 
+/// Holds information about quotes we have encountered thus far.
+///
+/// These quotes may or may not be used to close a pair further down the line.
+/// The different fields thus hold all the information we need to a) decide
+/// whether or not to match them up with anoter quote we encounter, and b) to
+/// perform the correct replacement, should be indeed use this quote to close a
+/// pair.
 struct QuoteMarker {
-    /// The iteration index of the node in which this quote was found
+    /// The iteration index of the node in which this quote was found.
+    ///
+    /// This is the index at which this quote's `Node` appears in a pre-order
+    /// depth-first walk of the document tree. Since we can only _modify_ nodes
+    /// during a walk, we rely on this index to tell us which nodes to modify.
     walk_index: usize,
-    /// The position within the content string inside the node's `content`
+    /// The position of the quote within node's `content`
     quote_position: usize,
     /// Whether this is a single or a double quote
     quote_type: QuoteType,
     /// Nesting level of the containing token
+    ///
+    /// This is the nesting of the containing `Node` within the document tree.
+    /// It is used to decide which quotes can be matched up.
     level: u32,
 }
 
+/// Description of a single quote replacement to be executed
+///
+/// As described above, we have to compute the replacements in a first step that
+/// treats the entire document tree read-only. Only then can we perform the
+/// actual replacements. This `struct` holds the information we need to perform
+/// the replacement of a single quote character during a `walk_mut`.
 struct ReplacementOp {
     walk_index: usize,
     quote_position: usize,
@@ -75,11 +127,6 @@ impl<
     fn run(root: &mut Node, _: &MarkdownIt) {
         let text_tokens = all_text_tokens(root);
 
-        // walk the tree of nodes to figure out what needs replacing where. to
-        // do this, we need to search back and forth over the nodes to find
-        // matching quotes across nodes. The borrow checker won't let us handle
-        // the entire set of nodes as mutable at the same time however, so all
-        // we do here is figure out what we _want_ to replace in which node.
         let replacement_ops = Self::compute_replacements(text_tokens);
 
         // now that we know what we want to replace where, we go over the nodes a _third_ time to do all the actual replacements.
@@ -102,6 +149,11 @@ impl<
     >
     SmartQuotesRule<OPEN_SINGLE_QUOTE, CLOSE_SINGLE_QUOTE, OPEN_DOUBLE_QUOTE, CLOSE_DOUBLE_QUOTE>
 {
+    /// Walk the list of tokens to figure out what needs replacing where. to do
+    /// this, we need to search back and forth over the nodes to find matching
+    /// quotes across nodes. The borrow checker won't let us handle the entire
+    /// set of nodes as mutable at the same time however, so all we do here is
+    /// figure out what we _want_ to replace in which node.
     fn compute_replacements(text_tokens: Vec<FlatToken>) -> HashMap<usize, HashMap<usize, char>> {
         let mut quote_stack: Vec<QuoteMarker> = Vec::new();
         let mut replacement_ops: HashMap<usize, HashMap<usize, char>> = HashMap::new();
@@ -128,6 +180,7 @@ impl<
         replacement_ops
     }
 
+    /// Compute quote replacements found by looking at a single text block
     fn replace_smartquotes(
         content: &str,
         walk_index: usize,
@@ -189,6 +242,10 @@ impl<
         result
     }
 
+    /// Try to find a matching opening quote to the given one.
+    ///
+    /// If a match is found, returns `Some` with two `ReplacementOp`s to be
+    /// added to the result, and with the resulting length of the `quote_stack`.
     fn try_close(
         quote_stack: &[QuoteMarker],
         walk_index: usize,
@@ -229,18 +286,19 @@ impl<
 }
 
 /// Produces a simplified flat list of all tokens, with the necessary
-/// information to handle them later on.
+/// information to do smart quote replacement.
 ///
 /// This handles inline html and inline code like JS version seems to do.
 /// This list is a work-around for the fact that we can't build a flat list of
 /// all nodes for iteration back and forth, and at the same time do a mutable
 /// walk on the document tree.
 ///
-/// Returns:
-///
-/// TODO: update description
-///  A Vec holding all Text and Newline tokens along with their nesting levels
-///  and indexes, in order of appearance for a pre-order depth-first search.
+/// Returns a `Vec<FlatToken<'a>>` where `<'a>` is the same lifetime as `root`.
+/// This simply reflects the fact that the `content: &str` entries of the
+/// `FlatToken` structs reference the same memory as `root`'s children.
+/// Every entry in the `Vec` will produce an entry in the result, meaning that
+/// the index of a token in the resulting `Vec` will be the same as the index it
+/// would get during a `root.walk` call.
 fn all_text_tokens(root: &Node) -> Vec<FlatToken> {
     let mut result = Vec::new();
     let mut walk_index = 0;
@@ -265,6 +323,8 @@ fn all_text_tokens(root: &Node) -> Vec<FlatToken> {
     result
 }
 
+/// Checks whether we can open or close a pair of quotes, given the quote type
+/// and the type of characters before and after the quote
 fn can_open_or_close(quote_type: &QuoteType, last_char: char, next_char: char) -> (bool, bool) {
     // special case: 1"" -> count first quote as an inch
     // We handle this before doing anything else to simplify the conditions
@@ -316,6 +376,7 @@ fn can_open_or_close(quote_type: &QuoteType, last_char: char, next_char: char) -
     (can_open, can_close)
 }
 
+/// Executes a set of character replacements on a string
 fn execute_replacements(replacement_ops: &HashMap<usize, char>, content: &str) -> String {
     content
         .chars()
@@ -338,7 +399,7 @@ fn truncate_stack(quote_stack: &mut Vec<QuoteMarker>, level: u32) {
     quote_stack.truncate(stack_len);
 }
 
-/// Finds the next single or double quote, starting at the given position
+/// Finds all single or double quotes in a string, together with their positions
 ///
 /// This might be replaced with a regex search, but not sure that's really worth
 /// it, given that we only check for two fixed characters.
@@ -363,10 +424,10 @@ fn find_quotes(content: &str) -> impl Iterator<Item = (usize, QuoteType)> + '_ {
 ///
 /// This is the mirror image of `find_last_char_before`.
 ///
-/// The position given is typically that of a quote we found. It is identified
-/// by its token/node index and the position of the quote inside that token.
-/// The full sequence of the text tokens is searched forwards from that point
-/// and the first character is returned.
+/// The position given is that of a quote we found. It is identified by its
+/// token/node index and the position of the quote inside that token. The full
+/// sequence of the text tokens is searched forwards from that point and the
+/// first character is returned.
 ///
 /// If a line break or the end of the document is encountered during search,
 /// space (0x20) is returned.
@@ -404,10 +465,10 @@ fn find_first_char_after(
 
 /// Finds the last relevant character before a given position
 ///
-/// The position given is typically that of a quote we found. It is identified
-/// by its token/node index and the position of the quote inside that token.
-/// The full sequence of the text tokens is searched backwards from that point
-/// and the first character is returned.
+/// The position given is that of a quote we found. It is identified by its
+/// token/node index and the position of the quote inside that token. The full
+/// sequence of the text tokens is searched backwards from that point and the
+/// first character is returned.
 ///
 /// If a line break or the beginning of the document is encountered during
 /// search, space (0x20) is returned.
@@ -435,6 +496,8 @@ fn find_last_char_before(
         } else {
             token.len()
         };
+        // means we can't go any further left -> try the next token (i.e. the
+        // one preceding this one)
         if start_index == 0 {
             continue;
         }
