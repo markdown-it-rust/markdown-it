@@ -103,9 +103,9 @@ impl Node {
 
     /// Execute function `f` recursively on every member of AST tree
     /// (using preorder deep-first search).
-    pub fn walk(&self, mut f: impl FnMut(&Node, u32)) {
+    pub fn walk<'a>(&'a self, mut f: impl FnMut(&'a Node, u32)) {
         // performance note: this is faster than emulating recursion using vec stack
-        fn walk_recursive(node: &Node, depth: u32, f: &mut impl FnMut(&Node, u32)) {
+        fn walk_recursive<'b>(node: &'b Node, depth: u32, f: &mut impl FnMut(&'b Node, u32)) {
             f(node, depth);
             for n in node.children.iter() {
                 stacker::maybe_grow(64*1024, 1024*1024, || {
