@@ -22,22 +22,19 @@
 //! The solution proposed here is to first compute all the replacement
 //! operations on a read-only flat view of the document, and _then_ to perform
 //! all replacements in a single call to `root.walk_mut`.
+use crate::common::utils::is_punct_char;
 use crate::parser::core::CoreRule;
 use crate::parser::inline::Text;
 use crate::plugins::cmark::block::paragraph::Paragraph;
 use crate::plugins::cmark::inline::newline::{Hardbreak, Softbreak};
 use crate::plugins::html::html_inline::HtmlInline;
 use crate::{MarkdownIt, Node};
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::collections::HashMap;
 
 const APOSTROPHE: char = '\u{2019}';
 const SINGLE_QUOTE: char = '\'';
 const DOUBLE_QUOTE: char = '"';
 const SPACE: char = ' ';
-
-static PUNCTUATION_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\p{Punctuation}").unwrap());
 
 pub fn add(md: &mut MarkdownIt) {
     md.add_rule::<SmartQuotesRule<'‘', '’', '“', '”'>>();
@@ -338,15 +335,10 @@ fn can_open_or_close(quote_type: &QuoteType, last_char: char, next_char: char) -
 
     // using `is_ascii_punctuation` here matches the JS version exactly, but
     // that also means we might inherit that implementation's shortcomings
-    // by ignoring unicode punctuation
-    // Also, the PUNCTUATION_RE uses rust's unicode classes so we rely on
-    // those matching what we want to do. It's not guaranteed to work
-    // exactly 100% like the JS implementation, but in all likelihood the
-    // rust implementation will do *better* in case of differences.
-    let is_last_punctuation =
-        last_char.is_ascii_punctuation() || PUNCTUATION_RE.is_match(&last_char.to_string());
-    let is_next_punctuation =
-        next_char.is_ascii_punctuation() || PUNCTUATION_RE.is_match(&next_char.to_string());
+    // by ignoring unicode punctuation. `is_punct_char` however should
+    // compensate for this.
+    let is_last_punctuation = last_char.is_ascii_punctuation() || is_punct_char(last_char);
+    let is_next_punctuation = next_char.is_ascii_punctuation() || is_punct_char(next_char);
 
     // Yet again we rely on rust's built-in character handling. The definition
     // of `is_whitespace` according to the unicode proplist.txt shows that the

@@ -282,6 +282,36 @@ pub fn calc_right_whitespace_with_tabstops(source: &str, mut indent: i32) -> (us
     ( 0, start )
 }
 
+/// Checks whether a given character should count as punctuation
+///
+/// used to determine word boundaries, made to match the implementation of
+/// `isPunctChar` from the JS library.
+/// This is currently implemented as a `match`, but might be simplified as a
+/// regex if benchmarking shows this to be beneficient.
+pub fn is_punct_char(ch: char) -> bool {
+    use unicode_general_category::get_general_category;
+    use unicode_general_category::GeneralCategory::*;
+
+    match get_general_category(ch) {
+        // P
+        ConnectorPunctuation | DashPunctuation | OpenPunctuation | ClosePunctuation |
+        InitialPunctuation | FinalPunctuation | OtherPunctuation => true,
+
+        // L
+        UppercaseLetter | LowercaseLetter | TitlecaseLetter | ModifierLetter | OtherLetter |
+        // M
+        NonspacingMark | SpacingMark | EnclosingMark |
+        // N
+        DecimalNumber | LetterNumber | OtherNumber |
+        // S
+        MathSymbol | CurrencySymbol | ModifierSymbol | OtherSymbol |
+        // Z
+        SpaceSeparator | LineSeparator | ParagraphSeparator |
+        // C
+        Control | Format | Surrogate | PrivateUse | Unassigned => false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::cut_right_whitespace_with_tabstops as cut_ws;
