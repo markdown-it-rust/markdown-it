@@ -9,6 +9,9 @@
 //!
 //! let html = md.parse("hello ~~world~~").render();
 //! assert_eq!(html.trim(), r#"<p>hello <s>world</s></p>"#);
+//!
+//! let html = md.parse(r#"Markdown done "The Right Way(TM)""#).render();
+//! assert_eq!(html.trim(), r#"<p>Markdown done “The Right Way™”</p>"#);
 //! ```
 pub mod strikethrough;
 pub mod tables;
@@ -30,4 +33,6 @@ pub fn add(md: &mut MarkdownIt) {
     tables::add(md);
     #[cfg(feature = "syntect")]
     syntect::add(md);
+    typographer::add(md);
+    smartquotes::add(md);
 }
