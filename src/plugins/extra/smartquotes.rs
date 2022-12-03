@@ -1,6 +1,8 @@
 //! Replaces `"` and `'` quotes with "nicer" ones like `‘`, `’`, `“`, `”`, or
 //! with `’` for words like "isn't".
 //!
+//! This currently only supports single character quotes, which is a limitation
+//! of the Rust implementation due to the use of `const` generics.
 //!
 //! ## Implementation notes
 //!
@@ -36,8 +38,24 @@ const SINGLE_QUOTE: char = '\'';
 const DOUBLE_QUOTE: char = '"';
 const SPACE: char = ' ';
 
+/// Add smartquotes with the "classic" quote set of `‘`, `’`, `“`, and `”`.
 pub fn add(md: &mut MarkdownIt) {
-    md.add_rule::<SmartQuotesRule<'‘', '’', '“', '”'>>();
+    add_with::<'‘', '’', '“', '”'>(md);
+}
+
+pub fn add_with<
+    const OPEN_SINGLE_QUOTE: char,
+    const CLOSE_SINGLE_QUOTE: char,
+    const OPEN_DOUBLE_QUOTE: char,
+    const CLOSE_DOUBLE_QUOTE: char,
+>(
+    md: &mut MarkdownIt,
+) {
+    md.add_rule::<SmartQuotesRule<
+        OPEN_SINGLE_QUOTE,
+        CLOSE_SINGLE_QUOTE,
+        OPEN_DOUBLE_QUOTE,
+        CLOSE_DOUBLE_QUOTE>>();
 }
 
 /// Simplified Node type that only holds the info we need
