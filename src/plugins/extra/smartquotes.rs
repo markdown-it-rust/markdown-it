@@ -138,19 +138,7 @@ impl<
         truncate_stack(quote_stack, level);
 
         let mut result: Vec<_> = Vec::new();
-
-        let mut pos: usize = 0;
-
-        'outer: while pos < content.len() {
-            let (quote_position, quote_type) = match find_next_quote(&content, pos) {
-                Some(p) => p,
-                None => {
-                    break 'outer;
-                }
-            };
-
-            pos = quote_position + 1;
-
+        for (quote_position, quote_type) in find_quotes(content) {
             let last_char = find_last_char_before(text_tokens, walk_index, quote_position);
             let next_char = find_first_char_after(text_tokens, walk_index, quote_position);
 
@@ -169,7 +157,7 @@ impl<
                 }
                 // in any case, we're done with this quote and continue searching
                 // for more quotes in this text block
-                continue 'outer;
+                continue;
             }
 
             if can_close {
@@ -179,7 +167,7 @@ impl<
                     quote_stack.truncate(new_stack_len);
                     result.push(opening_op);
                     result.push(closing_op);
-                    continue 'outer;
+                    continue;
                 }
             }
 
@@ -363,23 +351,21 @@ fn truncate_stack(quote_stack: &mut Vec<QuoteMarker>, level: u32) {
 ///
 /// This might be replaced with a regex search, but not sure that's really worth
 /// it, given that we only check for two fixed characters.
-fn find_next_quote(content: &str, pos: usize) -> Option<(usize, QuoteType)> {
-    match content
-        .chars()
-        .enumerate()
-        .skip(pos)
-        .find(|(_, c)| *c == SINGLE_QUOTE || *c == DOUBLE_QUOTE)
-    {
-        Some((p, c)) => Some((
-            p,
-            if c == SINGLE_QUOTE {
-                QuoteType::Single
-            } else {
-                QuoteType::Double
-            },
-        )),
-        None => None,
-    }
+fn find_quotes(content: &str) -> impl Iterator<Item = (usize, QuoteType)> + '_ {
+    content.chars().enumerate().filter_map(|(p, c)| {
+        if c == SINGLE_QUOTE || c == DOUBLE_QUOTE {
+            Some((
+                p,
+                if c == SINGLE_QUOTE {
+                    QuoteType::Single
+                } else {
+                    QuoteType::Double
+                },
+            ))
+        } else {
+            None
+        }
+    })
 }
 
 /// Finds the next relevant character after a given position
@@ -402,8 +388,8 @@ fn find_first_char_after(
     token_index: usize,
     quote_position: usize,
 ) -> char {
-    for idx_t in token_index..text_tokens.len() {
-        let token = match &text_tokens[idx_t] {
+    for (idx_t, text_token) in text_tokens.iter().enumerate().skip(token_index) {
+        let token = match text_token {
             FlatToken::LineBreak => return SPACE,
             FlatToken::Text {
                 content,
