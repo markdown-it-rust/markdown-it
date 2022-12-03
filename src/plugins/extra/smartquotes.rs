@@ -266,6 +266,16 @@ fn all_text_tokens(root: &Node) -> Vec<FlatToken> {
 }
 
 fn can_open_or_close(quote_type: &QuoteType, last_char: char, next_char: char) -> (bool, bool) {
+    // special case: 1"" -> count first quote as an inch
+    // We handle this before doing anything else to simplify the conditions
+    // below.
+    let is_double = *quote_type == QuoteType::Double;
+    let next_is_double = next_char == DOUBLE_QUOTE;
+    let last_is_digit = last_char.is_ascii_digit();
+    if next_is_double && is_double && last_is_digit {
+        return (false, false);
+    }
+
     // using `is_ascii_punctuation` here matches the JS version exactly, but
     // that also means we might inherit that implementation's shortcomings
     // by ignoring unicode punctuation
@@ -278,38 +288,20 @@ fn can_open_or_close(quote_type: &QuoteType, last_char: char, next_char: char) -
     let is_next_punctuation =
         next_char.is_ascii_punctuation() || PUNCTUATION_RE.is_match(&next_char.to_string());
 
-    // Yet again we rely on rust's built-in character handling. The
-    // definition of `is_whitespace` according to the unicode proplist.txt
-    // ( https://www.unicode.org/Public/UCD/latest/ucd/PropList.txt )
-    // shows that the difference to the JS version.
+    // Yet again we rely on rust's built-in character handling. The definition
+    // of `is_whitespace` according to the unicode proplist.txt shows that the
+    // difference to the JS version.
+    // https://www.unicode.org/Public/UCD/latest/ucd/PropList.txt
     //
-    // Not recognized by JS as whitespace but by rust: 0x85, 0x28, 0x29
+    // Recognized as whitespace by Rust, but not by JS:
+    // 0x85, 0x28, 0x29
     let is_last_whitespace = last_char.is_whitespace();
     let is_next_whitespace = next_char.is_whitespace();
 
-    let is_double = *quote_type == QuoteType::Double;
-
-    let next_is_double = next_char == DOUBLE_QUOTE;
-
-    let last_is_digit = last_char.is_ascii_digit();
-
-    // TODO: simplify this assignment
-    let mut can_open = true;
-    let mut can_close = true;
-
-    if is_next_whitespace || (is_next_punctuation && !is_last_whitespace && !is_last_punctuation) {
-        can_open = false;
-    }
-
-    if is_last_whitespace || (is_last_punctuation && !is_next_whitespace && !is_next_punctuation) {
-        can_close = false;
-    }
-
-    // special case: 1"" -> count first quote as an inch
-    if next_is_double && is_double && last_is_digit {
-        can_open = false;
-        can_close = false;
-    }
+    let can_open =
+        !is_next_whitespace && (!is_next_punctuation || is_last_whitespace || is_last_punctuation);
+    let can_close =
+        !is_last_whitespace && (!is_last_punctuation || is_next_whitespace || is_next_punctuation);
 
     if can_open && can_close {
         // Replace quotes in the middle of punctuation sequence, but not
@@ -318,8 +310,7 @@ fn can_open_or_close(quote_type: &QuoteType, last_char: char, next_char: char) -
         // 1. foo " bar " baz - not replaced
         // 2. foo-"-bar-"-baz - replaced
         // 3. foo"bar"baz     - not replaced
-        can_open = is_last_punctuation;
-        can_close = is_next_punctuation;
+        return (is_last_punctuation, is_next_punctuation);
     }
 
     (can_open, can_close)
