@@ -9,6 +9,7 @@ fn main() {
     let mut no_html = false;
     #[cfg(feature = "linkify")]
     let mut linkify = false;
+    let mut typographer = false;
     let mut sourcepos = false;
     let mut show_tree = false;
 
@@ -33,6 +34,10 @@ fn main() {
         cli
             .refer(&mut linkify)
             .add_option(&["-l", "--linkify"], argparse::StoreTrue, "Autolink text");
+
+        cli
+            .refer(&mut typographer)
+            .add_option(&["-t", "--typographer"], argparse::StoreTrue, "Enable smartquotes and other typographic replacements");
 
         cli
             .refer(&mut show_tree)
@@ -70,6 +75,10 @@ fn main() {
     #[cfg(feature = "linkify")]
     if linkify {
         markdown_it::plugins::extra::linkify::add(md);
+    }
+    if typographer {
+        markdown_it::plugins::extra::smartquotes::add(md);
+        markdown_it::plugins::extra::typographer::add(md);
     }
 
     let ast = md.parse(&source);
