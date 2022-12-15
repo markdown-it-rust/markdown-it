@@ -1,4 +1,6 @@
-name: deps
+# this action tests that minimal possible semver versions are correct,
+# if it fails, there's probably minimal dependency version needs to be bumped
+name: minimal-dep-check-ignore-this
 
 on:
   - push
