@@ -3,7 +3,7 @@ use markdown_it::{
     parser::{core::CoreRule, inline::Text},
     plugins::{
         cmark::{
-            block::{code::CodeBlock, fence::CodeFence, heading::ATXHeading, paragraph::Paragraph},
+            block::heading::ATXHeading,
             inline::{
                 backticks::CodeInline,
                 emphasis::{Em, Strong},
@@ -67,12 +67,6 @@ fn node_to_string(node: &Node) -> String {
     for node in node.children.iter() {
         if let Some(txt) = node.cast::<Text>() {
             pieces.push(txt.content.clone());
-        } else if node.is::<Paragraph>() {
-            pieces.push(format!(" {} ", node_to_string(node)));
-        } else if let Some(code) = node.cast::<CodeFence>() {
-            pieces.push(code.content.clone());
-        } else if let Some(code) = node.cast::<CodeBlock>() {
-            pieces.push(code.content.clone());
         } else if node.is::<CodeInline>()
             || node.is::<Link>()
             || node.is::<Strong>()
