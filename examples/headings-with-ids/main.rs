@@ -45,7 +45,7 @@ impl CoreRule for HeadingsWithIds {
         // Walk the existing AST and replace all headings with our custom headings
         node.walk_mut(|node, _| {
             if let Some(heading) = node.cast::<ATXHeading>() {
-                let slug = slugify(node_to_string(node));
+                let slug = slugify(inline_node_to_string(node));
 
                 node.replace(HeadingWithSlug {
                     level: heading.level,
@@ -61,7 +61,7 @@ impl CoreRule for HeadingsWithIds {
 // `Here is **strong** text` needs to be coverted to the string `here is strong
 // text` (and then turned into the ID `here-is-strong-text`). There's probably
 // a more elegant way to do this but this works for me.
-fn node_to_string(node: &Node) -> String {
+fn inline_node_to_string(node: &Node) -> String {
     let mut pieces: Vec<String> = Vec::new();
 
     for node in node.children.iter() {
@@ -73,7 +73,7 @@ fn node_to_string(node: &Node) -> String {
             || node.is::<Em>()
             || node.is::<Strikethrough>()
         {
-            pieces.push(node_to_string(node));
+            pieces.push(inline_node_to_string(node));
         }
     }
 
