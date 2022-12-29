@@ -24,8 +24,10 @@ struct HeadingWithSlug {
 
 impl NodeValue for HeadingWithSlug {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        let tag = &format!("h{}", self.level);
+        static TAG: [&str; 6] = ["h1", "h2", "h3", "h4", "h5", "h6"];
+        debug_assert!(self.level >= 1 && self.level <= 6);
 
+        let tag = TAG[self.level as usize - 1];
         let attrs = &[("id", self.slug.clone())];
 
         fmt.cr();
@@ -40,7 +42,8 @@ struct HeadingsWithIds;
 
 impl CoreRule for HeadingsWithIds {
     fn run(node: &mut Node, _: &MarkdownIt) {
-        node.walk_post_mut(|node, _| {
+        // Walk the existing AST and replace all headings with our custom headings
+        node.walk_mut(|node, _| {
             if let Some(heading) = node.cast::<ATXHeading>() {
                 let slug = slugify(node_to_string(node));
 
@@ -53,6 +56,11 @@ impl CoreRule for HeadingsWithIds {
     }
 }
 
+// In order to calculate an ID for the heading, the content of the heading must
+// first be "flattened" into a string. That means that a Markdown heading like
+// `Here is **strong** text` needs to be coverted to the string `here is strong
+// text` (and then turned into the ID `here-is-strong-text`). There's probably
+// a more elegant way to do this but this works for me.
 fn node_to_string(node: &Node) -> String {
     let mut pieces: Vec<String> = Vec::new();
 
