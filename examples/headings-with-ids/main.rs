@@ -58,7 +58,7 @@ impl CoreRule for HeadingsWithIds {
 
 // In order to calculate an ID for the heading, the content of the heading must
 // first be "flattened" into a string. That means that a Markdown heading like
-// `Here is **strong** text` needs to be coverted to the string `here is strong
+// `Here is **strong** text` needs to be coverted to the string `Here is strong
 // text` (and then turned into the ID `here-is-strong-text`). There's probably
 // a more elegant way to do this but this works for me.
 fn inline_node_to_string(node: &Node) -> String {
