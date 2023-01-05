@@ -79,7 +79,9 @@ fn inline_node_to_string(node: &Node) -> String {
     pieces.join("").trim().to_owned()
 }
 
-pub fn add(_: &mut MarkdownIt) {}
+pub fn add(md: &mut MarkdownIt) {
+    md.add_rule::<HeadingsWithIds>();
+}
 
 #[cfg(test)]
 mod tests {
