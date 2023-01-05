@@ -14,7 +14,8 @@
 //! assert_eq!(html.trim(), r#"<p>Markdown done “The Right Way™”</p>"#);
 //! ```
 pub mod beautify_links;
-pub mod heading_anchor;
+#[cfg(feature = "heading-anchors")]
+pub mod heading_anchors;
 #[cfg(feature = "linkify")]
 pub mod linkify;
 pub mod smartquotes;
@@ -27,7 +28,8 @@ pub mod typographer;
 use crate::MarkdownIt;
 
 pub fn add(md: &mut MarkdownIt) {
-    heading_anchor::add(md);
+    #[cfg(feature = "heading-anchors")]
+    heading_anchors::add(md);
     strikethrough::add(md);
     beautify_links::add(md);
     #[cfg(feature = "linkify")]
