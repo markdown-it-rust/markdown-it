@@ -80,3 +80,67 @@ fn inline_node_to_string(node: &Node) -> String {
 }
 
 pub fn add(_: &mut MarkdownIt) {}
+
+#[cfg(test)]
+mod tests {
+    use super::{HeadingsWithIds, MarkdownIt};
+    use indoc::indoc;
+
+    #[test]
+    fn heading_anchors() {
+        let md = &mut MarkdownIt::new();
+        crate::plugins::cmark::add(md);
+        md.add_rule::<HeadingsWithIds>();
+
+        let cases: Vec<(&str, &str)> = vec![
+            (
+                "## A simple one",
+                "<h2 id=\"a-simple-one\">A simple one</h2>\n",
+            ),
+            (
+                "### A heading with `code` and **bold**",
+                "<h3 id=\"a-heading-with-code-and-bold\">A heading with <code>code</code> and <strong>bold</strong></h3>\n",
+            ),
+            (
+                indoc! { "
+                    Welcome to this page!
+
+                    # This heading is very important
+
+                    But the next one is also pretty important.
+
+                    ## This one has `code` in it
+
+                    ## Yep, second level ain't bad
+
+                    Now they start to get a bit less important.
+
+                    ### And now for the third tier
+
+                    Starting to get a little sad.
+
+                    #### Le sigh
+
+                    Welp.
+                " },
+                indoc! {r#"
+                    <p>Welcome to this page!</p>
+                    <h1 id="this-heading-is-very-important">This heading is very important</h1>
+                    <p>But the next one is also pretty important.</p>
+                    <h2 id="this-one-has-code-in-it">This one has <code>code</code> in it</h2>
+                    <h2 id="yep-second-level-ain-t-bad">Yep, second level ain't bad</h2>
+                    <p>Now they start to get a bit less important.</p>
+                    <h3 id="and-now-for-the-third-tier">And now for the third tier</h3>
+                    <p>Starting to get a little sad.</p>
+                    <h4 id="le-sigh">Le sigh</h4>
+                    <p>Welp.</p>
+                "#},
+            ),
+        ];
+
+        for (input, expected_html) in cases {
+            let html = md.parse(input).render();
+            assert_eq!(expected_html, &html);
+        }
+    }
+}
