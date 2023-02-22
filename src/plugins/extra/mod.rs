@@ -1,7 +1,7 @@
 //! Frequently used markdown extensions and stuff from GFM.
 //!
 //! It currently includes `~~strikethrough~~` syntax, other things like
-//! tables may be included here in the future.
+//! fenced code blocks may be included here in the future.
 //! ```rust
 //! let md = &mut markdown_it::MarkdownIt::new();
 //! markdown_it::plugins::cmark::add(md);
