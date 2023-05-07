@@ -79,7 +79,7 @@ impl ListScanner {
     fn skip_bullet_list_marker(src: &str) -> Option<usize> {
         let mut chars = src.chars();
 
-        if let Some('*' | '-' | '+') = chars.next() {} else { return None; }
+        let Some('*' | '-' | '+') = chars.next() else { return None; };
 
         match chars.next() {
             Some(' ' | '\t') | None => Some(1),
@@ -91,8 +91,7 @@ impl ListScanner {
     // or -1 on fail.
     fn skip_ordered_list_marker(src: &str) -> Option<usize> {
         let mut chars = src.chars();
-
-        if let Some('0'..='9') = chars.next() {} else { return None; }
+        let Some('0'..='9') = chars.next() else { return None; };
 
         let mut pos = 1;
         loop {

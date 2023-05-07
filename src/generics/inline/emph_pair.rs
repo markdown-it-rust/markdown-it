@@ -156,65 +156,65 @@ fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState, mut cl
     while idx > min_opener_idx {
         idx -= 1;
 
-        if let Some(opener) = state.node.children[idx].cast::<EmphMarker>() {
-            let mut opener = opener.clone();
-            if opener.open && opener.marker == closer.marker && !is_odd_match(&opener, &closer) {
-                while closer.remaining > 0 && opener.remaining > 0 {
-                    let max_marker_len = min(3, min(opener.remaining, closer.remaining));
-                    let mut matched_rule = None;
-                    let fns = &state.md.ext.get::<PairConfig<MARKER>>().unwrap().fns;
-                    for marker_len in (1..=max_marker_len).rev() {
-                        if let Some(f) = fns[marker_len-1] {
-                            matched_rule = Some((marker_len, f));
-                            break;
-                        }
+        let Some(opener) = state.node.children[idx].cast::<EmphMarker>() else { continue; };
+
+        let mut opener = opener.clone();
+        if opener.open && opener.marker == closer.marker && !is_odd_match(&opener, &closer) {
+            while closer.remaining > 0 && opener.remaining > 0 {
+                let max_marker_len = min(3, min(opener.remaining, closer.remaining));
+                let mut matched_rule = None;
+                let fns = &state.md.ext.get::<PairConfig<MARKER>>().unwrap().fns;
+                for marker_len in (1..=max_marker_len).rev() {
+                    if let Some(f) = fns[marker_len-1] {
+                        matched_rule = Some((marker_len, f));
+                        break;
                     }
-
-                    // If matched_fn isn't found, it can only mean that function is defined for larger marker
-                    // than we have (e.g. function defined for **, we have *).
-                    // Treat this as "marker not found".
-                    if matched_rule.is_none() { break; }
-
-                    let (marker_len, marker_fn) = matched_rule.unwrap();
-
-                    closer.remaining -= marker_len;
-                    opener.remaining -= marker_len;
-
-                    let mut new_token = marker_fn();
-                    new_token.children = state.node.children.split_off(idx + 1);
-
-                    // cut marker_len chars from start, i.e. "12345" -> "345"
-                    let mut end_map_pos = 0;
-                    if let Some(map) = closer_token.srcmap {
-                        let (start, end) = map.get_byte_offsets();
-                        closer_token.srcmap = Some(SourcePos::new(start + marker_len, end));
-                        end_map_pos = start + marker_len;
-                    }
-
-                    // cut marker_len chars from end, i.e. "12345" -> "123"
-                    let mut start_map_pos = 0;
-                    let opener_token = state.node.children.last_mut().unwrap();
-                    if let Some(map) = opener_token.srcmap {
-                        let (start, end) = map.get_byte_offsets();
-                        opener_token.srcmap = Some(SourcePos::new(start, end - marker_len));
-                        start_map_pos = end - marker_len;
-                    }
-
-                    new_token.srcmap = state.get_map(start_map_pos, end_map_pos);
-
-                    // remove empty node as a small optimization so we can do less work later
-                    if opener.remaining == 0 { state.node.children.pop(); }
-
-                    new_min_opener_idx = 0;
-                    state.node.children.push(new_token);
-
                 }
-            }
 
-            if opener.remaining > 0 {
-                state.node.children[idx].replace(opener);
-            } // otherwise node was already deleted
+                // If matched_fn isn't found, it can only mean that function is defined for larger marker
+                // than we have (e.g. function defined for **, we have *).
+                // Treat this as "marker not found".
+                if matched_rule.is_none() { break; }
+
+                let (marker_len, marker_fn) = matched_rule.unwrap();
+
+                closer.remaining -= marker_len;
+                opener.remaining -= marker_len;
+
+                let mut new_token = marker_fn();
+                new_token.children = state.node.children.split_off(idx + 1);
+
+                // cut marker_len chars from start, i.e. "12345" -> "345"
+                let mut end_map_pos = 0;
+                if let Some(map) = closer_token.srcmap {
+                    let (start, end) = map.get_byte_offsets();
+                    closer_token.srcmap = Some(SourcePos::new(start + marker_len, end));
+                    end_map_pos = start + marker_len;
+                }
+
+                // cut marker_len chars from end, i.e. "12345" -> "123"
+                let mut start_map_pos = 0;
+                let opener_token = state.node.children.last_mut().unwrap();
+                if let Some(map) = opener_token.srcmap {
+                    let (start, end) = map.get_byte_offsets();
+                    opener_token.srcmap = Some(SourcePos::new(start, end - marker_len));
+                    start_map_pos = end - marker_len;
+                }
+
+                new_token.srcmap = state.get_map(start_map_pos, end_map_pos);
+
+                // remove empty node as a small optimization so we can do less work later
+                if opener.remaining == 0 { state.node.children.pop(); }
+
+                new_min_opener_idx = 0;
+                state.node.children.push(new_token);
+
+            }
         }
+
+        if opener.remaining > 0 {
+            state.node.children[idx].replace(opener);
+        } // otherwise node was already deleted
     }
 
     if new_min_opener_idx != 0 {
@@ -291,27 +291,26 @@ fn fragments_join(node: &mut Node) {
         let ( tokens1, tokens2 ) = node.children.split_at_mut(idx);
 
         let token1 = tokens1.last_mut().unwrap();
-        if let Some(t1_data) = token1.cast_mut::<Text>() {
+        let Some(t1_data) = token1.cast_mut::<Text>() else { continue; };
 
-            let token2 = tokens2.first_mut().unwrap();
-            if let Some(t2_data) = token2.cast_mut::<Text>() {
-                // concat contents
-                let t2_content = std::mem::take(&mut t2_data.content);
-                t1_data.content += &t2_content;
+        let token2 = tokens2.first_mut().unwrap();
+        let Some(t2_data) = token2.cast_mut::<Text>() else { continue; };
 
-                // adjust source maps
-                if let Some(map1) = token1.srcmap {
-                    if let Some(map2) = token2.srcmap {
-                        token1.srcmap = Some(SourcePos::new(
-                            map1.get_byte_offsets().0,
-                            map2.get_byte_offsets().1
-                        ));
-                    }
-                }
+        // concat contents
+        let t2_content = std::mem::take(&mut t2_data.content);
+        t1_data.content += &t2_content;
 
-                node.children.swap(idx - 1, idx);
+        // adjust source maps
+        if let Some(map1) = token1.srcmap {
+            if let Some(map2) = token2.srcmap {
+                token1.srcmap = Some(SourcePos::new(
+                    map1.get_byte_offsets().0,
+                    map2.get_byte_offsets().1
+                ));
             }
         }
+
+        node.children.swap(idx - 1, idx);
     }
 
     // remove all empty tokens

@@ -34,7 +34,7 @@ impl BlockRule for BlockquoteScanner {
         if state.line_indent(state.line) >= 4 { return None; }
 
         // check the block quote marker
-        if let Some('>') = state.get_line(state.line).chars().next() {} else { return None; }
+        let Some('>') = state.get_line(state.line).chars().next() else { return None; };
 
         Some(())
     }

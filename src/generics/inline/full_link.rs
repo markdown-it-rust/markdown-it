@@ -115,28 +115,25 @@ fn rule_run(
     f: fn (Option<String>, Option<String>) -> Node
 ) -> Option<(Node, usize)> {
     let start = state.pos;
+    let result = parse_link(state, state.pos + offset, enable_nested)?;
 
-    if let Some(result) = parse_link(state, state.pos + offset, enable_nested) {
-        //
-        // We found the end of the link, and know for a fact it's a valid link;
-        // so all that's left to do is to call tokenizer.
-        //
-        let old_node = std::mem::replace(&mut state.node, f(result.href, result.title));
-        let max = state.pos_max;
+    //
+    // We found the end of the link, and know for a fact it's a valid link;
+    // so all that's left to do is to call tokenizer.
+    //
+    let old_node = std::mem::replace(&mut state.node, f(result.href, result.title));
+    let max = state.pos_max;
 
-        state.link_level += 1;
-        state.pos = result.label_start;
-        state.pos_max = result.label_end;
-        state.md.inline.tokenize(state);
-        state.pos = start;
-        state.pos_max = max;
-        state.link_level -= 1;
+    state.link_level += 1;
+    state.pos = result.label_start;
+    state.pos_max = result.label_end;
+    state.md.inline.tokenize(state);
+    state.pos = start;
+    state.pos_max = max;
+    state.link_level -= 1;
 
-        let node = std::mem::replace(&mut state.node, old_node);
-        Some((node, result.end - state.pos))
-    } else {
-        None
-    }
+    let node = std::mem::replace(&mut state.node, old_node);
+    Some((node, result.end - state.pos))
 }
 
 #[derive(Debug, Default)]

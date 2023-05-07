@@ -98,8 +98,7 @@ impl HtmlBlockScanner {
         if state.line_indent(state.line) >= 4 { return None; }
 
         let line_text = state.get_line(state.line);
-
-        if let Some('<') = line_text.chars().next() {} else { return None; }
+        let Some('<') = line_text.chars().next() else { return None; };
 
         let mut sequence = None;
         for seq in HTML_SEQUENCES.iter() {

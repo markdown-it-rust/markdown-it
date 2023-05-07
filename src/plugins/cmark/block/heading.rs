@@ -37,8 +37,7 @@ impl BlockRule for HeadingScanner {
         if state.line_indent(state.line) >= 4 { return None; }
 
         let line = state.get_line(state.line);
-
-        if let Some('#') = line.chars().next() {} else { return None; }
+        let Some('#') = line.chars().next() else { return None; };
 
         let text_pos;
 

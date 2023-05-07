@@ -110,7 +110,7 @@ impl BlockRule for ReferenceScanner {
 
         let mut chars = state.get_line(state.line).chars();
 
-        if let Some('[') = chars.next() {} else { return None; }
+        let Some('[') = chars.next() else { return None; };
 
         // Simple check to quickly interrupt scan on [link](url) at the start of line.
         // Can be useful on practice: https://github.com/markdown-it/markdown-it/issues/54
@@ -180,7 +180,7 @@ impl BlockRule for ReferenceScanner {
             }
         }
 
-        if let Some((_, ':')) = chars.next() {} else { return None; }
+        let Some((_, ':')) = chars.next() else { return None; };
 
         // [label]:   destination   'title'
         //         ^^^ skip optional whitespace here

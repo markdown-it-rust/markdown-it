@@ -83,41 +83,41 @@ pub struct TypographerRule;
 impl CoreRule for TypographerRule {
     fn run(root: &mut Node, _: &MarkdownIt) {
         root.walk_mut(|node, _| {
-            if let Some(mut text_node) = node.cast_mut::<Text>() {
-                if SCOPED_RE.is_match(&text_node.content) {
-                    text_node.content = SCOPED_RE
-                        .replace_all(&text_node.content, |caps: &regex::Captures| {
-                            replace_abbreviation(caps.get(0).unwrap().as_str())
-                        })
-                        .to_string();
-                }
-                if RARE_RE.is_match(&text_node.content) {
-                    let mut result = Cow::Borrowed(text_node.content.as_str());
+            let Some(mut text_node) = node.cast_mut::<Text>() else { return; };
 
-                    for (pattern, replacement) in REPLACEMENTS.iter() {
+            if SCOPED_RE.is_match(&text_node.content) {
+                text_node.content = SCOPED_RE
+                    .replace_all(&text_node.content, |caps: &regex::Captures| {
+                        replace_abbreviation(caps.get(0).unwrap().as_str())
+                    })
+                    .to_string();
+            }
+            if RARE_RE.is_match(&text_node.content) {
+                let mut result = Cow::Borrowed(text_node.content.as_str());
+
+                for (pattern, replacement) in REPLACEMENTS.iter() {
+                    if let Cow::Owned(s) = pattern.replace_all(&result, *replacement) {
+                        result = Cow::Owned(s);
+
+                        // This is a bit unfortunate but since we can't use
+                        // look-ahead and look-behind patterns in the dash
+                        // replacements, the preceding and following
+                        // characters (pre and post in the patterns) become
+                        // part of the match. So a string like "bla-- --foo"
+                        // would create two *overlapping* matches, "a-- "
+                        // and " --f". But replace_all only replaces
+                        // non-overlapping matches. So we can't do this in
+                        // one single replacement. My only consolation here
+                        // is that this won't happen very often in practice,
+                        // and that it cost us "only" one extra call.
                         if let Cow::Owned(s) = pattern.replace_all(&result, *replacement) {
                             result = Cow::Owned(s);
-
-                            // This is a bit unfortunate but since we can't use
-                            // look-ahead and look-behind patterns in the dash
-                            // replacements, the preceding and following
-                            // characters (pre and post in the patterns) become
-                            // part of the match. So a string like "bla-- --foo"
-                            // would create two *overlapping* matches, "a-- "
-                            // and " --f". But replace_all only replaces
-                            // non-overlapping matches. So we can't do this in
-                            // one single replacement. My only consolation here
-                            // is that this won't happen very often in practice,
-                            // and that it cost us "only" one extra call.
-                            if let Cow::Owned(s) = pattern.replace_all(&result, *replacement) {
-                                result = Cow::Owned(s);
-                            }
                         }
                     }
+                }
 
-                    if let Cow::Owned(s) = result {
-                        text_node.content = s;
-                    }
+                if let Cow::Owned(s) = result {
+                    text_node.content = s;
                 }
             }
         });

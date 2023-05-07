@@ -31,7 +31,7 @@ impl InlineRule for HtmlInlineScanner {
         if chars.next().unwrap() != '<' { return None; }
 
         // Quick fail on second char
-        if let Some('!' | '?' | '/' | 'A'..='Z' | 'a'..='z') = chars.next() {} else { return None; }
+        let Some('!' | '?' | '/' | 'A'..='Z' | 'a'..='z') = chars.next() else { return None; };
 
         let capture = HTML_TAG_RE.captures(&state.src[state.pos..state.pos_max])?.get(0).unwrap().as_str();
         let capture_len = capture.len();

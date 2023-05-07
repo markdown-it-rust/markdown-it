@@ -66,15 +66,15 @@ impl<const XHTML: bool> HTMLRenderer<XHTML> {
         }
 
         for name in attr_order {
-            if let Some(value) = attr_hash.remove(name) {
-                if name == "class" {
-                    self.make_attr(name, &value.join(" "));
-                } else if name == "style" {
-                    self.make_attr(name, &value.join(";"));
-                } else {
-                    for v in value {
-                        self.make_attr(name, v);
-                    }
+            let Some(value) = attr_hash.remove(name) else { continue; };
+
+            if name == "class" {
+                self.make_attr(name, &value.join(" "));
+            } else if name == "style" {
+                self.make_attr(name, &value.join(";"));
+            } else {
+                for v in value {
+                    self.make_attr(name, v);
                 }
             }
         }
