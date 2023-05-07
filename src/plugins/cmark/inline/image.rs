@@ -4,7 +4,6 @@
 //!
 //! <https://spec.commonmark.org/0.30/#images>
 use crate::generics::inline::full_link;
-use crate::parser::inline::Text;
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
@@ -17,16 +16,7 @@ impl NodeValue for Image {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let mut attrs = node.attrs.clone();
         attrs.push(("src", self.url.clone()));
-
-        let mut alt = String::new();
-
-        node.walk(|node, _| {
-            if let Some(text) = node.cast::<Text>() {
-                alt.push_str(text.content.as_str());
-            }
-        });
-
-        attrs.push(("alt", alt));
+        attrs.push(("alt", node.collect_text()));
 
         if let Some(title) = &self.title {
             attrs.push(("title", title.clone()));
