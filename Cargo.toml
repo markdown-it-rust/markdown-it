@@ -31,6 +31,7 @@ default = ["linkify", "syntect"]
 argparse     = ">= 0.2.1, < 0.3"
 const_format = ">= 0.1.0, < 0.3"
 derivative   = ">= 1.0.2, < 3"
+derive_more  = ">= 0.99.0, < 1"
 downcast-rs  = ">= 1.0.2, < 2"
 entities     = ">= 0.1.0, < 2"
 html-escape  = ">= 0.1.0, < 0.3"

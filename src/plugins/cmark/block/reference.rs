@@ -8,7 +8,10 @@
 //! to see how you can use and/or extend it if you have external source for references.
 //!
 use derivative::Derivative;
+use derive_more::{Deref, DerefMut};
+use downcast_rs::{impl_downcast, Downcast};
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 use crate::common::utils::normalize_reference;
 use crate::generics::inline::full_link;
@@ -23,30 +26,41 @@ use crate::{MarkdownIt, Node};
 /// ```rust
 /// use markdown_it::parser::block::builtin::BlockParserRule;
 /// use markdown_it::parser::core::{CoreRule, Root};
-/// use markdown_it::plugins::cmark::block::reference::{
-///     ReferenceMap, ReferenceMapEntry, ReferenceMapKey
-/// };
+/// use markdown_it::plugins::cmark::block::reference::{ReferenceMap, DefaultReferenceMap, CustomReferenceMap};
 /// use markdown_it::{MarkdownIt, Node};
 ///
 /// let md = &mut MarkdownIt::new();
 /// markdown_it::plugins::cmark::add(md);
 ///
-/// struct ReferencePatcher;
-/// impl CoreRule for ReferencePatcher {
-///     fn run(root: &mut Node, _: &MarkdownIt) {
-///         let data = root.cast_mut::<Root>().unwrap();
-///         let references = data.ext.get_or_insert_default::<ReferenceMap>();
-///         references.insert(
-///             ReferenceMapKey::new("rust".into()),
-///             ReferenceMapEntry::new(
-///                 "https://www.rust-lang.org/".into(),
-///                 Some("The Rust Language".into())
-///             )
-///         );
+/// #[derive(Debug, Default)]
+/// struct RefMapOverride(DefaultReferenceMap);
+/// impl CustomReferenceMap for RefMapOverride {
+///     fn get(&self, label: &str) -> Option<(&str, Option<&str>)> {
+///         // override a specific link
+///         if label == "rust" {
+///             return Some((
+///                 "https://www.rust-lang.org/",
+///                 Some("The Rust Language"),
+///             ));
+///         }
+///
+///         self.0.get(label)
+///     }
+///
+///     fn insert(&mut self, label: String, destination: String, title: Option<String>) -> bool {
+///         self.0.insert(label, destination, title)
 ///     }
 /// }
 ///
-/// md.add_rule::<ReferencePatcher>()
+/// struct AddCustomReferences;
+/// impl CoreRule for AddCustomReferences {
+///     fn run(root: &mut Node, _: &MarkdownIt) {
+///         let data = root.cast_mut::<Root>().unwrap();
+///         data.ext.insert(ReferenceMap::new(RefMapOverride::default()));
+///     }
+/// }
+///
+/// md.add_rule::<AddCustomReferences>()
 ///     .before::<BlockParserRule>();
 ///
 /// let html = md.parse("[rust]").render();
@@ -56,16 +70,94 @@ use crate::{MarkdownIt, Node};
 /// );
 /// ```
 ///
-/// It is possible to support callback for external link references in the future,
-/// please tell us whether that's useful for you.
+/// You can also view all references that user created by adding the following rule:
 ///
-pub type ReferenceMap = HashMap<ReferenceMapKey, ReferenceMapEntry>;
+/// ```rust
+/// use markdown_it::parser::core::{CoreRule, Root};
+/// use markdown_it::plugins::cmark::block::reference::{ReferenceMap, DefaultReferenceMap};
+/// use markdown_it::{MarkdownIt, Node};
+///
+/// let md = &mut MarkdownIt::new();
+/// markdown_it::plugins::cmark::add(md);
+///
+/// let ast = md.parse("[hello]: world");
+/// let root = ast.node_value.downcast_ref::<Root>().unwrap();
+/// let refmap = root.ext.get::<ReferenceMap>()
+///     .map(|m| m.downcast_ref::<DefaultReferenceMap>().expect("expect references to be handled by default map"));
+///
+/// let mut labels = vec![];
+/// if let Some(refmap) = refmap {
+///     for (label, _dest, _title) in refmap.iter() {
+///         labels.push(label);
+///     }
+/// }
+///
+/// assert_eq!(labels, ["hello"]);
+/// ```
+///
+#[derive(Debug, Deref, DerefMut)]
+#[deref(forward)]
+#[deref_mut(forward)]
+pub struct ReferenceMap(Box<dyn CustomReferenceMap>);
+
+impl ReferenceMap {
+    pub fn new(custom_map: impl CustomReferenceMap + 'static) -> Self {
+        Self(Box::new(custom_map))
+    }
+}
+
+impl Default for ReferenceMap {
+    fn default() -> Self {
+        Self::new(DefaultReferenceMap::new())
+    }
+}
+
 impl RootExt for ReferenceMap {}
+
+pub trait CustomReferenceMap : Debug + Downcast + Send + Sync {
+    /// Insert new element to the reference map. You may return false if it's not a valid label to stop parsing.
+    fn insert(&mut self, label: String, destination: String, title: Option<String>) -> bool;
+
+    /// Get an element referenced by `label` from the map, returns destination and optional title.
+    fn get(&self, label: &str) -> Option<(&str, Option<&str>)>;
+}
+
+impl_downcast!(CustomReferenceMap);
+
+#[derive(Default, Debug)]
+pub struct DefaultReferenceMap(HashMap<ReferenceMapKey, ReferenceMapEntry>);
+
+impl DefaultReferenceMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &str, Option<&str>)> {
+        Box::new(self.0.iter().map(|(a, b)| {
+            (a.label.as_str(), b.destination.as_str(), b.title.as_deref())
+        }))
+    }
+}
+
+impl CustomReferenceMap for DefaultReferenceMap {
+    fn insert(&mut self, label: String, destination: String, title: Option<String>) -> bool {
+        let Some(key) = ReferenceMapKey::new(label) else { return false; };
+        self.0.entry(key)
+            .or_insert(ReferenceMapEntry::new(destination, title));
+        true
+    }
+
+    fn get(&self, label: &str) -> Option<(&str, Option<&str>)> {
+        let key = ReferenceMapKey::new(label.to_owned())?;
+        self.0.get(&key)
+            .map(|r| (r.destination.as_str(), r.title.as_deref()))
+    }
+}
 
 #[derive(Derivative)]
 #[derivative(Debug, Default, Hash, PartialEq, Eq)]
 /// Reference label
-pub struct ReferenceMapKey {
+struct ReferenceMapKey {
     #[derivative(PartialEq = "ignore")]
     #[derivative(Hash = "ignore")]
     pub label: String,
@@ -73,15 +165,21 @@ pub struct ReferenceMapKey {
 }
 
 impl ReferenceMapKey {
-    pub fn new(label: String) -> Self {
+    pub fn new(label: String) -> Option<Self> {
         let normalized = normalize_reference(&label);
-        Self { label, normalized }
+
+        if normalized.is_empty() {
+            // CommonMark 0.20 disallows empty labels
+            return None;
+        }
+
+        Some(Self { label, normalized })
     }
 }
 
 #[derive(Debug, Default)]
 /// Reference value
-pub struct ReferenceMapEntry {
+struct ReferenceMapEntry {
     pub destination: String,
     pub title: Option<String>,
 }
@@ -251,15 +349,8 @@ impl BlockRule for ReferenceScanner {
             }
         }
 
-        let label = normalize_reference(&str[1..label_end]);
-        if label.is_empty() {
-            // CommonMark 0.20 disallows empty labels
-            return None;
-        }
-
-        let references = &mut state.root_ext.get_or_insert_default::<ReferenceMap>();
-
-        references.entry(ReferenceMapKey::new(label)).or_insert_with(|| ReferenceMapEntry::new(href, title));
+        let references = state.root_ext.get_or_insert_default::<ReferenceMap>();
+        if !references.insert(str[1..label_end].to_owned(), href, title) { return None; }
 
         Some((Node::default(), lines + 1))
     }
