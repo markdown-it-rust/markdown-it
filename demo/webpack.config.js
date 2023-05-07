@@ -29,7 +29,7 @@ export default {
 
     plugins: [
         new PugPlugin({
-            extractCss: {
+            css: {
                 filename: '[name].[contenthash:8].css',
             },
         }),
@@ -67,5 +67,9 @@ export default {
 
     performance: {
         hints: false
+    },
+
+    stats: {
+        logging: 'verbose',
     },
 }
