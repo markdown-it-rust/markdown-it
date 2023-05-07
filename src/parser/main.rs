@@ -1,14 +1,14 @@
 use derivative::Derivative;
-use crate::Node;
-use crate::common::TypeKey;
+
 use crate::common::ruler::Ruler;
 use crate::common::sourcemap::SourcePos;
+use crate::common::TypeKey;
 use crate::parser::block::{self, BlockParser};
-use crate::parser::inline::{self, InlineParser};
+use crate::parser::core::{Root, *};
 use crate::parser::extset::MarkdownItExtSet;
-use crate::parser::core::Root;
-use crate::parser::core::*;
+use crate::parser::inline::{self, InlineParser};
 use crate::parser::linkfmt::{LinkFormatter, MDLinkFormatter};
+use crate::Node;
 
 type RuleFn = fn (&mut Node, &MarkdownIt);
 

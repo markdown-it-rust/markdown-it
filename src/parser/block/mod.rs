@@ -8,12 +8,12 @@ pub use rule::*;
 #[doc(hidden)]
 pub mod builtin;
 
-use crate::{MarkdownIt, Node};
-use crate::common::TypeKey;
 use crate::common::ruler::Ruler;
+use crate::common::TypeKey;
 use crate::parser::extset::RootExtSet;
 use crate::parser::inline::InlineRoot;
 use crate::parser::node::NodeEmpty;
+use crate::{MarkdownIt, Node};
 
 type RuleFns = (
     fn (&mut BlockState) -> Option<()>,

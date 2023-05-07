@@ -3,9 +3,9 @@
 //! `# h1`, `## h2`, etc.
 //!
 //! <https://spec.commonmark.org/0.30/#atx-heading>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::inline::InlineRoot;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct ATXHeading {

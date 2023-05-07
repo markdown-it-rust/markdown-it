@@ -30,14 +30,13 @@
 //! - Reserved: `(r)` to `®`
 //! - Trademark: `(tm)` to `™`
 
+use once_cell::sync::Lazy;
+use regex::Regex;
 use std::borrow::Cow;
 
 use crate::parser::core::CoreRule;
 use crate::parser::inline::Text;
 use crate::{MarkdownIt, Node};
-
-use once_cell::sync::Lazy;
-use regex::Regex;
 
 static REPLACEMENTS: Lazy<Box<[(Regex, &'static str)]>> = Lazy::new(|| {
     Box::new([

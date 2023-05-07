@@ -1,10 +1,10 @@
 // Inline parser state
 //
-use crate::{MarkdownIt, Node};
 use crate::common::sourcemap::SourcePos;
 use crate::common::utils::is_punct_char;
 use crate::parser::extset::{InlineRootExtSet, RootExtSet};
 use crate::parser::inline::Text;
+use crate::{MarkdownIt, Node};
 
 #[derive(Debug, Clone, Copy)]
 /// Information about emphasis delimiter run returned from [InlineState::scan_delims].

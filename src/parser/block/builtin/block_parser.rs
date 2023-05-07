@@ -1,5 +1,5 @@
-use crate::{MarkdownIt, Node};
 use crate::parser::core::{CoreRule, Root};
+use crate::{MarkdownIt, Node};
 
 pub fn add(md: &mut MarkdownIt) {
     md.add_rule::<BlockParserRule>()

@@ -17,8 +17,8 @@
 //! assert_eq!(html.trim(), r#"<p>hello<br>world</p>"#);
 //! ```
 
-pub mod html_inline;
 pub mod html_block;
+pub mod html_inline;
 mod utils;
 
 use crate::MarkdownIt;

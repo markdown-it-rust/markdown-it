@@ -3,10 +3,10 @@
 //! Paragraph underlined with `===` or `---`.
 //!
 //! <https://spec.commonmark.org/0.30/#setext-headings>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::inline::InlineRoot;
 use crate::plugins::cmark::block::paragraph::ParagraphScanner;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct SetextHeader {

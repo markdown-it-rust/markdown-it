@@ -47,12 +47,13 @@
 //! e.g. `` *foo`bar*baz` `` is parsed as `*foo<code>bar*baz</code>`.
 //!
 use std::cmp::min;
-use crate::{MarkdownIt, Node, NodeValue};
+
 use crate::common::sourcemap::SourcePos;
 use crate::parser::core::CoreRule;
 use crate::parser::extset::{MarkdownItExt, NodeExt};
-use crate::parser::inline::{InlineRule, InlineState, Text};
 use crate::parser::inline::builtin::InlineParserRule;
+use crate::parser::inline::{InlineRule, InlineState, Text};
+use crate::{MarkdownIt, Node, NodeValue};
 
 #[derive(Debug, Default)]
 struct PairConfig<const MARKER: char> {

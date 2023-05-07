@@ -5,8 +5,9 @@
 //! <https://spec.commonmark.org/0.30/#autolinks>
 use once_cell::sync::Lazy;
 use regex::Regex;
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
+
 use crate::parser::inline::{InlineRule, InlineState, TextSpecial};
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct Autolink {

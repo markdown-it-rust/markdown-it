@@ -5,9 +5,10 @@
 //! <https://spec.commonmark.org/0.30/#entity-and-numeric-character-references>
 use once_cell::sync::Lazy;
 use regex::Regex;
-use crate::{MarkdownIt, Node};
+
 use crate::common::utils::{get_entity_from_str, is_valid_entity_code};
 use crate::parser::inline::{InlineRule, InlineState, TextSpecial};
+use crate::{MarkdownIt, Node};
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.add_rule::<EntityScanner>();

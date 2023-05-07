@@ -1,9 +1,9 @@
 //! HTML inline syntax from CommonMark
 //!
 //! <https://spec.commonmark.org/0.30/#raw-html>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
-use crate::parser::inline::{InlineRule, InlineState};
 use super::utils::regexps::*;
+use crate::parser::inline::{InlineRule, InlineState};
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct HtmlInline {

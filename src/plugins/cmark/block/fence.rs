@@ -3,10 +3,10 @@
 //! ` ```lang ` or `~~~lang`
 //!
 //! <https://spec.commonmark.org/0.30/#code-fence>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
+use crate::common::utils::unescape_all;
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::extset::MarkdownItExt;
-use crate::common::utils::unescape_all;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct CodeFence {

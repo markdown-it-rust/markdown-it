@@ -7,11 +7,11 @@
 //! let html = md.parse("# hello").render();
 //! assert_eq!(html.trim(), r#"<h1 data-sourcepos="1:1-1:7">hello</h1>"#);
 //! ```
-use crate::{MarkdownIt, Node};
 use crate::common::sourcemap::SourceWithLineStarts;
 use crate::parser::block::builtin::BlockParserRule;
-use crate::parser::inline::builtin::InlineParserRule;
 use crate::parser::core::{CoreRule, Root};
+use crate::parser::inline::builtin::InlineParserRule;
+use crate::{MarkdownIt, Node};
 
 pub fn add(md: &mut MarkdownIt) {
     md.add_rule::<SyntaxPosRule>()

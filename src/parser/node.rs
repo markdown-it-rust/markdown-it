@@ -1,10 +1,12 @@
-use downcast_rs::{Downcast, impl_downcast};
-use std::{fmt::Debug, any::TypeId};
-use crate::Renderer;
-use crate::common::TypeKey;
+use downcast_rs::{impl_downcast, Downcast};
+use std::any::TypeId;
+use std::fmt::Debug;
+
 use crate::common::sourcemap::SourcePos;
+use crate::common::TypeKey;
 use crate::parser::extset::NodeExtSet;
 use crate::parser::renderer::HTMLRenderer;
+use crate::Renderer;
 
 /// Single node in the CommonMark AST.
 #[derive(Debug)]

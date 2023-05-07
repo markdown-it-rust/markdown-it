@@ -13,14 +13,14 @@
 //! let html = md.parse(r#"Markdown done "The Right Way(TM)""#).render();
 //! assert_eq!(html.trim(), r#"<p>Markdown done “The Right Way™”</p>"#);
 //! ```
-pub mod strikethrough;
-pub mod tables;
 pub mod beautify_links;
 #[cfg(feature = "linkify")]
 pub mod linkify;
 pub mod smartquotes;
+pub mod strikethrough;
 #[cfg(feature = "syntect")]
 pub mod syntect;
+pub mod tables;
 pub mod typographer;
 
 use crate::MarkdownIt;

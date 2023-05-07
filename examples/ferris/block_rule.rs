@@ -1,7 +1,7 @@
 // Replaces `(\/)-------(\/)` with a nice picture.
 
-use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
 use markdown_it::parser::block::{BlockRule, BlockState};
+use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
 
 const CRAB_CLAW : &str = r#"(\/)"#;
 const CRAB_URL  : &str = "https://upload.wikimedia.org/wikipedia/commons/0/0f/Original_Ferris.svg";

@@ -1,6 +1,6 @@
 //! Strikethrough syntax (like `~~this~~`)
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::generics::inline::emph_pair;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct Strikethrough {

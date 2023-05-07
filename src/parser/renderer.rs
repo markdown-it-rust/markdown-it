@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
-use crate::Node;
+
 use crate::common::utils::escape_html;
 use crate::parser::extset::RenderExtSet;
+use crate::Node;
 
 /// Each node outputs its HTML using this API.
 ///

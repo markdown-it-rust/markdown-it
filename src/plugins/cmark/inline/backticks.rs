@@ -3,8 +3,8 @@
 //! `` `looks like this` ``
 //!
 //! <https://spec.commonmark.org/0.30/#code-span>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::generics::inline::code_pair;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct CodeInline {

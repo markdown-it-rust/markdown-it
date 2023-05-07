@@ -1,11 +1,11 @@
 //! Plugin manager with dependency resolution.
 
+use derivative::Derivative;
+use once_cell::sync::OnceCell;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::slice::Iter;
-use once_cell::sync::OnceCell;
-use derivative::Derivative;
 
 ///
 /// Ruler allows you to implement a plugin system with dependency management and ensure that

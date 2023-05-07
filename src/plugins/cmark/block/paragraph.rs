@@ -3,9 +3,9 @@
 //! This is the default rule if nothing else matches.
 //!
 //! <https://spec.commonmark.org/0.30/#paragraph>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::inline::InlineRoot;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<ParagraphScanner>()

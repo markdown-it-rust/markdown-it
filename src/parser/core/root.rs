@@ -1,5 +1,5 @@
-use crate::{Node, NodeValue, Renderer};
 use crate::parser::extset::RootExtSet;
+use crate::{Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 /// Root node of the AST.

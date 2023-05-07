@@ -1,7 +1,7 @@
 //! Pretty-print all urls and fit them into N characters
 
+use crate::parser::linkfmt::{LinkFormatter, MDLinkFormatter};
 use crate::MarkdownIt;
-use crate::parser::linkfmt::{MDLinkFormatter, LinkFormatter};
 
 #[derive(Debug)]
 struct LinkBeautifier {

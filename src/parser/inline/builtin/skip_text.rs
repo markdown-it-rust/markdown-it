@@ -2,8 +2,9 @@
 // and increment current pos
 //
 use regex::{self, Regex};
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
+
 use crate::parser::inline::{InlineRule, InlineState};
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 /// Plain text AST node.

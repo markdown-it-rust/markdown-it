@@ -2,7 +2,7 @@
 //!
 //! These things allow you to put custom data inside internal markdown-it structures.
 //!
-use downcast_rs::{Downcast, impl_downcast};
+use downcast_rs::{impl_downcast, Downcast};
 use std::fmt::Debug;
 
 /// Extension set member for the entire parser (only writable at init).
@@ -91,7 +91,7 @@ macro_rules! extension_set {
 
             pub fn get_or_insert_default<T: $trait + Default>(&mut self) -> &mut T {
                 let key = crate::common::TypeKey::of::<T>();
-                let result = self.0.entry(key).or_insert_with(|| Box::new(T::default()));
+                let result = self.0.entry(key).or_insert_with(|| Box::<T>::default());
                 result.downcast_mut::<T>().unwrap()
             }
 

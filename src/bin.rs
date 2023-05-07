@@ -1,6 +1,5 @@
 use markdown_it::parser::inline::{Text, TextSpecial};
-use std::io::Read;
-use std::io::Write;
+use std::io::{Read, Write};
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
@@ -88,11 +87,11 @@ fn main() {
             print!("{}", "    ".repeat(depth as usize));
             let name = &node.name()[node.name().rfind("::").map(|x| x+2).unwrap_or_default()..];
             if let Some(data) = node.cast::<Text>() {
-                println!("{}: {:?}", name, data.content);
+                println!("{name}: {:?}", data.content);
             } else if let Some(data) = node.cast::<TextSpecial>() {
-                println!("{}: {:?}", name, data.content);
+                println!("{name}: {:?}", data.content);
             } else {
-                println!("{}", name);
+                println!("{name}");
             }
         });
         return;

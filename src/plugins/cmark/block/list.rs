@@ -6,11 +6,11 @@
 //!
 //!  - <https://spec.commonmark.org/0.30/#lists>
 //!  - <https://spec.commonmark.org/0.30/#list-items>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
-use crate::parser::block::{BlockRule, BlockState};
 use crate::common::utils::find_indent_of;
-use crate::plugins::cmark::block::paragraph::Paragraph;
+use crate::parser::block::{BlockRule, BlockState};
 use crate::plugins::cmark::block::hr::HrScanner;
+use crate::plugins::cmark::block::paragraph::Paragraph;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct OrderedList {

@@ -1,7 +1,7 @@
-use crate::{MarkdownIt, Node, NodeValue};
-use crate::parser::core::{CoreRule, Root};
 use crate::parser::block::builtin::BlockParserRule;
+use crate::parser::core::{CoreRule, Root};
 use crate::parser::extset::{InlineRootExtSet, RootExtSet};
+use crate::{MarkdownIt, Node, NodeValue};
 
 #[derive(Debug)]
 /// Temporary node which gets replaced with inline nodes when

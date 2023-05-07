@@ -36,10 +36,10 @@
 //!
 pub mod block;
 pub mod core;
-pub mod inline;
 pub mod extset;
+pub mod inline;
 pub mod linkfmt;
 
-pub(super) mod node;
 pub(super) mod main;
+pub(super) mod node;
 pub(super) mod renderer;

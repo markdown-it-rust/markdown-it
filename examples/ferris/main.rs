@@ -21,7 +21,7 @@ fn main() {
 (\/)-------------(\/)
     "#).render();
 
-    print!("{}", html);
+    print!("{html}");
 
     assert_eq!(html.trim(), r#"
 <p><span class="ferris-inline">🦀</span> hello world <span class="ferris-inline">🦀</span></p>

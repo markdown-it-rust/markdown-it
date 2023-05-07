@@ -24,6 +24,8 @@
 //! The solution proposed here is to first compute all the replacement
 //! operations on a read-only flat view of the document, and _then_ to perform
 //! all replacements in a single call to `root.walk_mut`.
+use std::collections::HashMap;
+
 use crate::common::utils::is_punct_char;
 use crate::parser::core::CoreRule;
 use crate::parser::inline::Text;
@@ -31,7 +33,6 @@ use crate::plugins::cmark::block::paragraph::Paragraph;
 use crate::plugins::cmark::inline::newline::{Hardbreak, Softbreak};
 use crate::plugins::html::html_inline::HtmlInline;
 use crate::{MarkdownIt, Node};
-use std::collections::HashMap;
 
 const APOSTROPHE: char = '\u{2019}';
 const SINGLE_QUOTE: char = '\'';

@@ -231,7 +231,7 @@ pub fn cut_right_whitespace_with_tabstops(source: &str, indent: i32) -> Cow<str>
     let (num_spaces, start) = calc_right_whitespace_with_tabstops(source, indent);
 
     if num_spaces > 0 {
-        let mut result = " ".repeat(num_spaces as usize);
+        let mut result = " ".repeat(num_spaces);
         result += &source[start..];
         Cow::Owned(result)
     } else {

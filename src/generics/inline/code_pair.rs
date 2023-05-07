@@ -42,9 +42,9 @@
 //!
 //! If you define two structures with the same marker, only the first one will work.
 //!
-use crate::{MarkdownIt, Node};
 use crate::parser::extset::{InlineRootExt, MarkdownItExt};
 use crate::parser::inline::{InlineRule, InlineState, Text};
+use crate::{MarkdownIt, Node};
 
 #[derive(Debug, Default)]
 struct CodePairCache<const MARKER: char> {

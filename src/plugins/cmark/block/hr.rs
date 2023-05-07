@@ -3,8 +3,8 @@
 //! `***`, `---`, `___`
 //!
 //! <https://spec.commonmark.org/0.30/#thematic-breaks>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::parser::block::{BlockRule, BlockState};
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct ThematicBreak {

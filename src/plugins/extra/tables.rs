@@ -1,13 +1,13 @@
 //! GFM tables
 //!
 //! <https://github.github.com/gfm/#tables-extension->
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::common::sourcemap::SourcePos;
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::extset::RenderExt;
 use crate::parser::inline::InlineRoot;
 use crate::plugins::cmark::block::heading::HeadingScanner;
 use crate::plugins::cmark::block::list::ListScanner;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct Table {

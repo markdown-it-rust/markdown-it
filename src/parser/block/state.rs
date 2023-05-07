@@ -1,9 +1,9 @@
 // Parser state class
 //
-use crate::{MarkdownIt, Node};
 use crate::common::sourcemap::SourcePos;
 use crate::common::utils::calc_right_whitespace_with_tabstops;
 use crate::parser::extset::RootExtSet;
+use crate::{MarkdownIt, Node};
 
 #[derive(Debug)]
 #[readonly::make]
@@ -242,7 +242,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
             );
 
             mapping.push(( result.len(), offsets.line_start+first ));
-            result += &" ".repeat(num_spaces as usize);
+            result += &" ".repeat(num_spaces);
             result += &self.src[offsets.line_start+first..last];
             if add_last_lf { result.push('\n'); }
             line += 1;

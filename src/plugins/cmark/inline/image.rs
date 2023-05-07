@@ -3,9 +3,9 @@
 //! `![image](<src> "title")`
 //!
 //! <https://spec.commonmark.org/0.30/#images>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::generics::inline::full_link;
 use crate::parser::inline::Text;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct Image {

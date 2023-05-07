@@ -15,11 +15,11 @@
 //!
 use std::collections::HashMap;
 
-use crate::{MarkdownIt, Node};
 use crate::common::utils::unescape_all;
-use crate::parser::extset::{MarkdownItExt, InlineRootExt};
+use crate::parser::extset::{InlineRootExt, MarkdownItExt};
 use crate::parser::inline::{InlineRule, InlineState};
 use crate::plugins::cmark::block::reference::{ReferenceMap, ReferenceMapKey};
+use crate::{MarkdownIt, Node};
 
 #[derive(Debug)]
 struct LinkCfg<const PREFIX: char>(fn (Option<String>, Option<String>) -> Node);

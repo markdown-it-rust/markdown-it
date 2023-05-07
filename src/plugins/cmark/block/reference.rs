@@ -7,14 +7,14 @@
 //! This plugin parses markdown link references. Check documentation on [ReferenceMap]
 //! to see how you can use and/or extend it if you have external source for references.
 //!
-use std::collections::HashMap;
 use derivative::Derivative;
+use std::collections::HashMap;
 
-use crate::{MarkdownIt, Node};
 use crate::common::utils::normalize_reference;
 use crate::generics::inline::full_link;
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::extset::RootExt;
+use crate::{MarkdownIt, Node};
 
 /// Storage for parsed references
 ///

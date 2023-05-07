@@ -7,8 +7,8 @@
 //! [cmark::add](self::add) function adds all features at once. If you only want
 //! to enable some of it (e.g. disable images), you can add each syntax one by one
 //! by invoking `add` function of the respective module.
-pub mod inline;
 pub mod block;
+pub mod inline;
 
 use crate::MarkdownIt;
 

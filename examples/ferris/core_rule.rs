@@ -1,9 +1,9 @@
 // Counts the number of crabs lurking around.
 
-use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
-use markdown_it::parser::core::CoreRule;
 use super::block_rule::BlockFerris;
 use super::inline_rule::InlineFerris;
+use markdown_it::parser::core::CoreRule;
+use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 // This is a structure that represents your custom Node in AST,

@@ -4,9 +4,9 @@
 //! of the line.
 //!
 //! <https://spec.commonmark.org/0.30/#backslash-escapes>
-use crate::{MarkdownIt, Node};
 use crate::parser::inline::{InlineRule, InlineState, TextSpecial};
 use crate::plugins::cmark::inline::newline::Hardbreak;
+use crate::{MarkdownIt, Node};
 
 pub fn add(md: &mut MarkdownIt) {
     md.inline.add_rule::<EscapeScanner>();

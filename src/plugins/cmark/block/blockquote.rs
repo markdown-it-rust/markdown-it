@@ -3,9 +3,9 @@
 //! `> looks like this`
 //!
 //! <https://spec.commonmark.org/0.30/#block-quotes>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
-use crate::parser::block::{BlockRule, BlockState};
 use crate::common::utils::find_indent_of;
+use crate::parser::block::{BlockRule, BlockState};
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct Blockquote;

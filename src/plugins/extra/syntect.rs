@@ -1,13 +1,13 @@
 //! Syntax highlighting for code blocks
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
-use crate::parser::extset::MarkdownItExt;
-use crate::parser::core::CoreRule;
-use crate::plugins::cmark::block::code::CodeBlock;
-use crate::plugins::cmark::block::fence::CodeFence;
-
 use syntect::highlighting::ThemeSet;
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::SyntaxSet;
+
+use crate::parser::core::CoreRule;
+use crate::parser::extset::MarkdownItExt;
+use crate::plugins::cmark::block::code::CodeBlock;
+use crate::plugins::cmark::block::fence::CodeFence;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct SyntectSnippet {

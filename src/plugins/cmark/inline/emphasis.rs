@@ -3,8 +3,8 @@
 //! looks like `*this*` or `__that__`
 //!
 //! <https://spec.commonmark.org/0.30/#emphasis-and-strong-emphasis>
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
 use crate::generics::inline::emph_pair;
+use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
 #[derive(Debug)]
 pub struct Em {
