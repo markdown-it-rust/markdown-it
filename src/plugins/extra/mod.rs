@@ -14,6 +14,7 @@
 //! assert_eq!(html.trim(), r#"<p>Markdown done “The Right Way™”</p>"#);
 //! ```
 pub mod beautify_links;
+pub mod heading_anchors;
 #[cfg(feature = "linkify")]
 pub mod linkify;
 pub mod smartquotes;

@@ -5,6 +5,7 @@ use std::fmt::Debug;
 use crate::common::sourcemap::SourcePos;
 use crate::common::TypeKey;
 use crate::parser::extset::NodeExtSet;
+use crate::parser::inline::Text;
 use crate::parser::renderer::HTMLRenderer;
 use crate::Renderer;
 
@@ -163,6 +164,20 @@ impl Node {
         }
 
         walk_recursive(self, 0, &mut f);
+    }
+
+    /// Walk recursively through child nodes and collect all text nodes
+    /// into a single string.
+    pub fn collect_text(&self) -> String {
+        let mut result = String::new();
+
+        self.walk(|node, _| {
+            if let Some(text) = node.cast::<Text>() {
+                result.push_str(text.content.as_str());
+            }
+        });
+
+        result
     }
 }
 
