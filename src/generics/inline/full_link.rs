@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use crate::common::utils::unescape_all;
 use crate::parser::extset::{InlineRootExt, MarkdownItExt};
 use crate::parser::inline::{InlineRule, InlineState};
-use crate::plugins::cmark::block::reference::{ReferenceMap, ReferenceMapKey};
+use crate::plugins::cmark::block::reference::ReferenceMap;
 use crate::{MarkdownIt, Node};
 
 #[derive(Debug)]
@@ -418,25 +418,23 @@ fn parse_link(state: &mut InlineState, pos: usize, enable_nested: bool) -> Optio
         _ => pos = label_end + 1,
     }
 
-    if let Some(references) = state.root_ext.get::<ReferenceMap>() {
-        // covers label === '' and label === undefined
-        // (collapsed reference link and shortcut reference link respectively)
-        let label = if matches!(maybe_label, None | Some("")) {
-            &state.src[label_start..label_end]
-        } else {
-            maybe_label.unwrap()
-        };
+    let references = state.root_ext.get::<ReferenceMap>()?;
 
-        let lref = references.get(&ReferenceMapKey::new(label.to_owned()));
-
-        lref.map(|r| ParseLinkResult {
-            label_start,
-            label_end,
-            href: Some(r.destination.clone()),
-            title: r.title.clone(),
-            end: pos,
-        })
+    // covers label === '' and label === undefined
+    // (collapsed reference link and shortcut reference link respectively)
+    let label = if matches!(maybe_label, None | Some("")) {
+        &state.src[label_start..label_end]
     } else {
-        None
-    }
+        maybe_label.unwrap()
+    };
+
+    let (destination, title) = references.get(label)?;
+
+    Some(ParseLinkResult {
+        label_start,
+        label_end,
+        href: Some(destination.to_owned()),
+        title: title.map(|s| s.to_owned()),
+        end: pos,
+    })
 }
