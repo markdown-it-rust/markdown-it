@@ -1,0 +1,21 @@
+[package]
+name = "markdown-it-benchmarks"
+version = "0.0.0"
+license = "MIT"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "test-file"
+path = "test-file.rs"
+
+[dependencies]
+comrak = "0.18.0"
+criterion = "0.5.0"
+markdown-it = { path = "../" }
+markdown-it-v5 = { package = "markdown-it", version = "0.5" }
+
+[[bench]]
+name = "test-file"
+path = "test-file.rs"
+harness = false
