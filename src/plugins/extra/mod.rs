@@ -1,7 +1,12 @@
 //! Frequently used markdown extensions and stuff from GFM.
 //!
-//! It currently includes `~~strikethrough~~` syntax, other things like
-//! tables may be included here in the future.
+//!  - strikethrough (~~xxx~~~)
+//!  - tables
+//!  - linkify (convert http://example.com to a link)
+//!  - beautify links (cut "http://" from links and shorten paths)
+//!  - smartquotes and typographer
+//!  - code block highlighting using `syntect`
+//!
 //! ```rust
 //! let md = &mut markdown_it::MarkdownIt::new();
 //! markdown_it::plugins::cmark::add(md);
