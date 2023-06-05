@@ -1,8 +1,20 @@
-use crate::{MarkdownIt, Node};
+use std::fmt::Display;
+
+use crate::common::TypeKey;
+use crate::{MarkdownIt, Node, Result};
 
 /// Each member of core rule chain must implement this trait
 pub trait CoreRule : 'static {
+    /// Perform arbitrary operations on the root Node.
     fn run(root: &mut Node, md: &MarkdownIt);
+
+    /// Same as `run()`, but used for functions that can fail. Use functions like
+    /// `try_parse()` instead of `parse()` to retrieve this error.
+    fn try_run(root: &mut Node, md: &MarkdownIt) -> Result<()> {
+        // NOTE: Send+Sync bound is required for compatibility with anyhow!()
+        Self::run(root, md);
+        Ok(())
+    }
 }
 
 macro_rules! rule_builder {
@@ -53,3 +65,14 @@ macro_rules! rule_builder {
 rule_builder!(CoreRule);
 
 pub(crate) use rule_builder;
+
+#[derive(Debug)]
+pub struct CoreRuleError {
+    pub name: TypeKey,
+}
+
+impl Display for CoreRuleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("core rule `{}` returned an error", self.name.short_name()))
+    }
+}

@@ -9,7 +9,8 @@ use crate::parser::core::{CoreRule, Root};
 use crate::parser::extset::RootExt;
 use crate::parser::inline::builtin::InlineParserRule;
 use crate::parser::inline::{InlineRule, InlineState, TextSpecial};
-use crate::{MarkdownIt, Node, NodeValue, Renderer};
+use crate::parser::main::RootNodeWrongType;
+use crate::{MarkdownIt, Node, NodeValue, Renderer, Result};
 
 static SCHEME_RE : Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(?i)(?:^|[^a-z0-9.+-])([a-z][a-z0-9.+-]*)$").unwrap()
@@ -51,8 +52,10 @@ struct LinkifyPosition {
 #[doc(hidden)]
 pub struct LinkifyPrescan;
 impl CoreRule for LinkifyPrescan {
-    fn run(root: &mut Node, _: &MarkdownIt) {
-        let root_data = root.cast_mut::<Root>().unwrap();
+    fn try_run(root: &mut Node, _: &MarkdownIt) -> Result<()> {
+        let Some(root_data) = root.cast_mut::<Root>() else {
+            return Err(RootNodeWrongType.into());
+        };
         let source = root_data.content.as_str();
         let finder = LinkFinder::new();
         let positions = finder.links(source).filter_map(|link| {
@@ -67,6 +70,11 @@ impl CoreRule for LinkifyPrescan {
             }
         }).collect::<Vec<_>>();
         root_data.ext.insert(positions);
+        Ok(())
+    }
+
+    fn run(root: &mut Node, md: &MarkdownIt) {
+        let _ = Self::try_run(root, md);
     }
 }
 

@@ -28,6 +28,7 @@ default = ["linkify", "syntect"]
 # Lower range limit of these dependencies was manually checked to work with
 # minimal versions possible, higher range limit is best guess based on semver.
 # So older versions will not work, but newer versions might.
+anyhow       = ">= 1.0.18, < 2"
 argparse     = ">= 0.2.1, < 0.3"
 const_format = ">= 0.1.0, < 0.3"
 derivative   = ">= 1.0.2, < 3"

@@ -18,6 +18,9 @@
 // just a style choice that clippy has no business complaining about
 #![allow(clippy::uninlined_format_args)]
 
+// reexport for using in try_parse apis
+pub use anyhow::Result;
+
 pub mod common;
 pub mod examples;
 pub mod generics;

@@ -111,10 +111,21 @@ r#"<blockquote>
 }
 
 mod examples {
-    include!("../examples/ferris/main.rs");
+    mod ferris {
+        include!("../examples/ferris/main.rs");
 
-    #[test]
-    fn test_examples() {
-        main();
+        #[test]
+        fn ferris() {
+            main();
+        }
+    }
+
+    mod error_handling {
+        include!("../examples/error_handling/main.rs");
+
+        #[test]
+        fn error_handling() {
+            main();
+        }
     }
 }

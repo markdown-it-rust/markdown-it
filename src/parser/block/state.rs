@@ -171,8 +171,9 @@ impl<'a, 'b> BlockState<'a, 'b> {
 
     #[must_use]
     pub fn test_rules_at_line(&mut self) -> bool {
-        for rule in self.md.block.ruler.iter() {
-            if rule.0(self).is_some() {
+        let rules = self.md.block.compiled_rules.get().expect("rules not compiled");
+        for rule in rules.check.iter() {
+            if rule(self).is_some() {
                 return true;
             }
         }
