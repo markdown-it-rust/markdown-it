@@ -13,6 +13,7 @@
 ### Changed
 
  - `Node::walk_*` methods now return `Result`, which allows you to terminate traversing early
+ - `syntext` rule now trims spaces in fence info string
 
 ### Migration
 
