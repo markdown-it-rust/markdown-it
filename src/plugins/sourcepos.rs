@@ -35,7 +35,8 @@ impl CoreRule for SyntaxPosRule {
                 let ((startline, startcol), (endline, endcol)) = map.get_positions(&mapping);
                 node.attrs.push(("data-sourcepos", format!("{}:{}-{}:{}", startline, startcol, endline, endcol)));
             }
-        });
+            Ok(())
+        }).unwrap();
         Ok(())
     }
 

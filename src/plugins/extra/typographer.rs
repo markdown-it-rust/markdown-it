@@ -82,7 +82,7 @@ pub struct TypographerRule;
 impl CoreRule for TypographerRule {
     fn run(root: &mut Node, _: &MarkdownIt) {
         root.walk_mut(|node, _| {
-            let Some(mut text_node) = node.cast_mut::<Text>() else { return; };
+            let Some(mut text_node) = node.cast_mut::<Text>() else { return Ok(()); };
 
             if SCOPED_RE.is_match(&text_node.content) {
                 text_node.content = SCOPED_RE
@@ -119,6 +119,7 @@ impl CoreRule for TypographerRule {
                     text_node.content = s;
                 }
             }
-        });
+            Ok(())
+        }).unwrap();
     }
 }

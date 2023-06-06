@@ -153,7 +153,8 @@ impl<
                 text_node.content = execute_replacements(current_replacements, &text_node.content);
             };
             current_index += 1;
-        });
+            Ok(())
+        }).unwrap();
     }
 }
 
@@ -318,7 +319,7 @@ impl<
 fn all_text_tokens(root: &Node) -> Vec<FlatToken> {
     let mut result = Vec::new();
     let mut walk_index = 0;
-    root.walk(|node, nesting_level| {
+    root.walk(|node: &Node, nesting_level| {
         if let Some(text_node) = node.cast::<Text>() {
             result.push(FlatToken::Text {
                 content: &text_node.content,
@@ -335,7 +336,8 @@ fn all_text_tokens(root: &Node) -> Vec<FlatToken> {
             result.push(FlatToken::Irrelevant);
         }
         walk_index += 1;
-    });
+        Ok(())
+    }).unwrap();
     result
 }
 

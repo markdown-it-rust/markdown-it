@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.6.0 - WIP
+
+### Added
+
+ - added `md.try_parse()` function which may return an error, as opposed to existing
+   `md.parse()` function which never does
+
+ - added optional `try_run()` trait function for rules which can fail and will
+   propagate errors when using `md.try_parse()`
+
+### Changed
+
+ - `Node::walk_*` methods now return `Result`, which allows you to terminate traversing early
+
+### Migration
+
+For all `Node::walk_*` methods change the following:
+
+```rust
+// replace this:
+node.walk(|node, _| {
+    dbg!(node);
+});
+
+// with this (unwrap is safe here because walk only
+// returns error when your function does):
+node.walk(|node, _| {
+    dbg!(node);
+    Ok(())
+}).unwrap();
+```
+
 ## 0.5.0 - 2023-05-13
 
 ### Added

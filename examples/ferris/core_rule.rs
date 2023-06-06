@@ -51,7 +51,8 @@ impl CoreRule for FerrisCounterRule {
             if node.is::<InlineFerris>() || node.is::<BlockFerris>() {
                 counter += 1;
             }
-        });
+            Ok(())
+        }).unwrap();
 
         // append a counter to the root as a custom node
         root.children.push(Node::new(FerrisCounter(counter)))

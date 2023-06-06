@@ -7,7 +7,7 @@ use crate::common::TypeKey;
 use crate::parser::extset::NodeExtSet;
 use crate::parser::inline::Text;
 use crate::parser::renderer::HTMLRenderer;
-use crate::Renderer;
+use crate::{Renderer, Result};
 
 /// Single node in the CommonMark AST.
 #[derive(Debug)]
@@ -106,64 +106,78 @@ impl Node {
 
     /// Execute function `f` recursively on every member of AST tree
     /// (using preorder deep-first search).
-    pub fn walk<'a>(&'a self, mut f: impl FnMut(&'a Node, u32)) {
+    ///
+    /// This function will stop early if closure returns any error.
+    pub fn walk<'a>(&'a self, mut f: impl FnMut(&'a Node, u32) -> Result<()>) -> Result<()> {
         // performance note: this is faster than emulating recursion using vec stack
-        fn walk_recursive<'b>(node: &'b Node, depth: u32, f: &mut impl FnMut(&'b Node, u32)) {
-            f(node, depth);
+        fn walk_recursive<'a>(node: &'a Node, depth: u32, f: &mut impl FnMut(&'a Node, u32) -> Result<()>) -> Result<()> {
+            f(node, depth)?;
             for n in node.children.iter() {
-                stacker::maybe_grow(64*1024, 1024*1024, || {
-                    walk_recursive(n, depth + 1, f);
-                });
+                stacker::maybe_grow(64*1024, 1024*1024, || -> Result<()> {
+                    walk_recursive(n, depth + 1, f)
+                })?;
             }
+            Ok(())
         }
 
-        walk_recursive(self, 0, &mut f);
+        walk_recursive(self, 0, &mut f)
     }
 
     /// Execute function `f` recursively on every member of AST tree
     /// (using preorder deep-first search).
-    pub fn walk_mut(&mut self, mut f: impl FnMut(&mut Node, u32)) {
+    ///
+    /// This function will stop early if closure returns any error.
+    pub fn walk_mut(&mut self, mut f: impl FnMut(&mut Node, u32) -> Result<()>) -> Result<()> {
+        // note: lifetime constrains are different from non-mut walk due to mutability
+        fn walk_recursive(node: &mut Node, depth: u32, f: &mut impl FnMut(&mut Node, u32) -> Result<()>) -> Result<()> {
+            f(node, depth)?;
+            for n in node.children.iter_mut() {
+                stacker::maybe_grow(64*1024, 1024*1024, || -> Result<()> {
+                    walk_recursive(n, depth + 1, f)
+                })?;
+            }
+            Ok(())
+        }
+
+        walk_recursive(self, 0, &mut f)
+    }
+
+    /// Execute function `f` recursively on every member of AST tree
+    /// (using postorder deep-first search).
+    ///
+    /// This function will stop early if closure returns any error.
+    pub fn walk_post<'a>(&'a self, mut f: impl FnMut(&'a Node, u32) -> Result<()>) -> Result<()> {
         // performance note: this is faster than emulating recursion using vec stack
-        fn walk_recursive(node: &mut Node, depth: u32, f: &mut impl FnMut(&mut Node, u32)) {
-            f(node, depth);
-            for n in node.children.iter_mut() {
-                stacker::maybe_grow(64*1024, 1024*1024, || {
-                    walk_recursive(n, depth + 1, f);
-                });
-            }
-        }
-
-        walk_recursive(self, 0, &mut f);
-    }
-
-    /// Execute function `f` recursively on every member of AST tree
-    /// (using postorder deep-first search).
-    pub fn walk_post(&self, mut f: impl FnMut(&Node, u32)) {
-        fn walk_recursive(node: &Node, depth: u32, f: &mut impl FnMut(&Node, u32)) {
+        fn walk_recursive<'a>(node: &'a Node, depth: u32, f: &mut impl FnMut(&'a Node, u32) -> Result<()>) -> Result<()> {
             for n in node.children.iter() {
-                stacker::maybe_grow(64*1024, 1024*1024, || {
-                    walk_recursive(n, depth + 1, f);
-                });
+                stacker::maybe_grow(64*1024, 1024*1024, || -> Result<()> {
+                    walk_recursive(n, depth + 1, f)
+                })?;
             }
-            f(node, depth);
+            f(node, depth)?;
+            Ok(())
         }
 
-        walk_recursive(self, 0, &mut f);
+        walk_recursive(self, 0, &mut f)
     }
 
     /// Execute function `f` recursively on every member of AST tree
     /// (using postorder deep-first search).
-    pub fn walk_post_mut(&mut self, mut f: impl FnMut(&mut Node, u32)) {
-        fn walk_recursive(node: &mut Node, depth: u32, f: &mut impl FnMut(&mut Node, u32)) {
+    ///
+    /// This function will stop early if closure returns any error.
+    pub fn walk_post_mut(&mut self, mut f: impl FnMut(&mut Node, u32) -> Result<()>) -> Result<()> {
+        // note: lifetime constrains are different from non-mut walk due to mutability
+        fn walk_recursive(node: &mut Node, depth: u32, f: &mut impl FnMut(&mut Node, u32) -> Result<()>) -> Result<()> {
             for n in node.children.iter_mut() {
-                stacker::maybe_grow(64*1024, 1024*1024, || {
-                    walk_recursive(n, depth + 1, f);
-                });
+                stacker::maybe_grow(64*1024, 1024*1024, || -> Result<()> {
+                    walk_recursive(n, depth + 1, f)
+                })?;
             }
-            f(node, depth);
+            f(node, depth)?;
+            Ok(())
         }
 
-        walk_recursive(self, 0, &mut f);
+        walk_recursive(self, 0, &mut f)
     }
 
     /// Walk recursively through child nodes and collect all text nodes
@@ -171,11 +185,12 @@ impl Node {
     pub fn collect_text(&self) -> String {
         let mut result = String::new();
 
-        self.walk(|node, _| {
+        self.walk(|node: &Node, _| {
             if let Some(text) = node.cast::<Text>() {
                 result.push_str(text.content.as_str());
             }
-        });
+            Ok(())
+        }).unwrap();
 
         result
     }
@@ -185,7 +200,8 @@ impl Drop for Node {
     fn drop(&mut self) {
         self.walk_post_mut(|node, _| {
             drop(std::mem::take(&mut node.children));
-        });
+            Ok(())
+        }).unwrap();
     }
 }
 

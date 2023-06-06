@@ -69,6 +69,7 @@ impl CoreRule for SyntectRule {
                     node.replace(SyntectSnippet { html });
                 }
             }
-        });
+            Ok(())
+        }).unwrap();
     }
 }

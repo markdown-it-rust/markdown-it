@@ -93,7 +93,8 @@ fn main() {
             } else {
                 println!("{name}");
             }
-        });
+            Ok(())
+        }).unwrap();
         return;
     }
 

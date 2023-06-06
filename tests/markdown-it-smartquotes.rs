@@ -13,7 +13,10 @@ fn run(input: &str, output: &str) {
     let node = md.parse(&(input.to_owned() + "\n"));
 
     // make sure we have sourcemaps for everything
-    node.walk(|node, _| assert!(node.srcmap.is_some()));
+    node.walk(|node, _| {
+        assert!(node.srcmap.is_some());
+        Ok(())
+    }).unwrap();
 
     let result = node.render();
     assert_eq!(result, output);

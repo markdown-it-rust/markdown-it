@@ -51,7 +51,10 @@ fn run(input: &str, output: &str) {
     markdown_it::plugins::html::add(md);
     markdown_it::plugins::extra::beautify_links::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
-    node.walk(|node, _| assert!(node.srcmap.is_some()));
+    node.walk(|node, _| {
+        assert!(node.srcmap.is_some());
+        Ok(())
+    }).unwrap();
     let result = node.render();
     assert_eq!(result, output);
 }
