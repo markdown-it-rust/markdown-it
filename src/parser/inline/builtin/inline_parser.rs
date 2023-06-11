@@ -40,11 +40,13 @@ impl CoreRule for InlineParserRule {
                     let mut inline_ext = std::mem::take(&mut data.ext);
 
                     let mut root = std::mem::take(child);
+                    root.ext = std::mem::take(&mut node.ext);
                     root.children = Vec::new();
                     root = md.inline.parse(content, mapping, root, md, root_ext, &mut inline_ext);
 
                     let len = root.children.len();
                     node.children.splice(idx..=idx, std::mem::take(&mut root.children));
+                    node.ext = std::mem::take(&mut root.ext);
                     idx += len;
                 } else {
                     stacker::maybe_grow(64*1024, 1024*1024, || {
