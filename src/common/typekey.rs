@@ -35,6 +35,11 @@ impl TypeKey {
     pub fn of<T: ?Sized + 'static>() -> Self {
         Self { id: TypeId::of::<T>(), name: any::type_name::<T>() }
     }
+
+    #[must_use]
+    pub fn short_name(&self) -> &str {
+        &self.name[self.name.rfind("::").map(|p| p + 2).unwrap_or(0)..]
+    }
 }
 
 impl Hash for TypeKey {

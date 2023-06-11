@@ -1,7 +1,8 @@
 use crate::parser::block::builtin::BlockParserRule;
 use crate::parser::core::{CoreRule, Root};
 use crate::parser::extset::{InlineRootExtSet, RootExtSet};
-use crate::{MarkdownIt, Node, NodeValue};
+use crate::parser::main::RootNodeWrongType;
+use crate::{MarkdownIt, Node, NodeValue, Result};
 
 #[derive(Debug)]
 /// Temporary node which gets replaced with inline nodes when
@@ -29,8 +30,26 @@ pub fn add(md: &mut MarkdownIt) {
 
 pub struct InlineParserRule;
 impl CoreRule for InlineParserRule {
+    fn try_run(root: &mut Node, md: &MarkdownIt) -> Result<()> {
+        Self::_run::<true>(root, md)?;
+        Ok(())
+    }
+
     fn run(root: &mut Node, md: &MarkdownIt) {
-        fn walk_recursive(node: &mut Node, md: &MarkdownIt, root_ext: &mut RootExtSet) {
+        let _ = Self::_run::<false>(root, md);
+    }
+}
+
+impl InlineParserRule {
+    fn _run<const CAN_FAIL: bool>(
+        root: &mut Node,
+        md: &MarkdownIt,
+    ) -> Result<()> {
+        fn walk_recursive<const CAN_FAIL: bool>(
+            node: &mut Node,
+            md: &MarkdownIt,
+            root_ext: &mut RootExtSet,
+        ) -> Result<()> {
             let mut idx = 0;
             while idx < node.children.len() {
                 let child = &mut node.children[idx];
@@ -42,22 +61,30 @@ impl CoreRule for InlineParserRule {
                     let mut root = std::mem::take(child);
                     root.ext = std::mem::take(&mut node.ext);
                     root.children = Vec::new();
-                    root = md.inline.parse(content, mapping, root, md, root_ext, &mut inline_ext);
+                    root = if CAN_FAIL {
+                        md.inline.try_parse(content, mapping, root, md, root_ext, &mut inline_ext)?
+                    } else {
+                        md.inline.parse(content, mapping, root, md, root_ext, &mut inline_ext)
+                    };
 
                     let len = root.children.len();
                     node.children.splice(idx..=idx, std::mem::take(&mut root.children));
                     node.ext = std::mem::take(&mut root.ext);
                     idx += len;
                 } else {
-                    stacker::maybe_grow(64*1024, 1024*1024, || {
-                        walk_recursive(child, md, root_ext);
-                    });
+                    stacker::maybe_grow(64*1024, 1024*1024, || -> Result<()> {
+                        walk_recursive::<CAN_FAIL>(child, md, root_ext)?;
+                        Ok(())
+                    })?;
                     idx += 1;
                 }
             }
+            Ok(())
         }
 
-        let data = root.cast_mut::<Root>().unwrap();
+        let Some(data) = root.cast_mut::<Root>() else {
+            return Err(RootNodeWrongType.into());
+        };
         let mut root_ext = std::mem::take(&mut data.ext);
 
         // this is invalid if input only contains reference;
@@ -72,9 +99,13 @@ impl CoreRule for InlineParserRule {
             root.children.push(node);
         }*/
 
-        walk_recursive(root, md, &mut root_ext);
+        md.inline.compile();
+        walk_recursive::<CAN_FAIL>(root, md, &mut root_ext)?;
 
-        let data = root.cast_mut::<Root>().unwrap();
+        let Some(data) = root.cast_mut::<Root>() else {
+            return Err(RootNodeWrongType.into());
+        };
         data.ext = root_ext;
+        Ok(())
     }
 }

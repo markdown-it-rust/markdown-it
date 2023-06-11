@@ -64,6 +64,7 @@ impl CoreRule for AddHeadingAnchors {
             if node.is::<ATXHeading>() || node.is::<SetextHeader>() {
                 node.attrs.push(("id", slugify(&node.collect_text())));
             }
-        });
+            Ok(())
+        }).unwrap();
     }
 }

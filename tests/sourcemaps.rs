@@ -6,7 +6,10 @@ fn run(input: &str, f: fn (&Node, SourceWithLineStarts)) {
     markdown_it::plugins::cmark::add(md);
     markdown_it::plugins::html::add(md);
     let node = md.parse(input);
-    node.walk(|node, _| assert!(node.srcmap.is_some()));
+    node.walk(|node, _| {
+        assert!(node.srcmap.is_some());
+        Ok(())
+    }).unwrap();
     f(&node, SourceWithLineStarts::new(input));
 }
 

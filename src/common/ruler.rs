@@ -1,11 +1,9 @@
 //! Plugin manager with dependency resolution.
 
 use derivative::Derivative;
-use once_cell::sync::OnceCell;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::slice::Iter;
 
 ///
 /// Ruler allows you to implement a plugin system with dependency management and ensure that
@@ -35,7 +33,7 @@ use std::slice::Iter;
 ///
 /// // now we run this chain
 /// let mut result = String::new();
-/// for f in chain.iter() { f(&mut result); }
+/// for f in chain.compile() { f(&mut result); }
 /// assert_eq!(result, "[ hello, world! ]");
 /// ```
 ///
@@ -50,7 +48,6 @@ use std::slice::Iter;
 ///
 pub struct Ruler<M, T> {
     deps: Vec<RuleItem<M, T>>,
-    compiled: OnceCell<(Vec<usize>, Vec<T>)>,
 }
 
 impl<M, T> Ruler<M, T> {
@@ -62,7 +59,6 @@ impl<M, T> Ruler<M, T> {
 impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
     /// Add a new rule identified by `mark` with payload `value`.
     pub fn add(&mut self, mark: M, value: T) -> &mut RuleItem<M, T> {
-        self.compiled = OnceCell::new();
         let dep = RuleItem::new(mark, value);
         self.deps.push(dep);
         self.deps.last_mut().unwrap()
@@ -74,17 +70,12 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
     }
 
     /// Check if there are any rules identified by `mark`.
-    pub fn contains(&mut self, mark: M) -> bool {
+    pub fn contains(&self, mark: M) -> bool {
         self.deps.iter().any(|dep| dep.marks.contains(&mark))
     }
 
-    /// Ordered iteration through rules.
-    #[inline]
-    pub fn iter(&self) -> Iter<T> {
-        self.compiled.get_or_init(|| self.compile()).1.iter()
-    }
-
-    fn compile(&self) -> (Vec<usize>, Vec<T>) {
+    /// Convert dependency tree into an ordered list.
+    pub fn compile(&self) -> Vec<T> {
         // ID -> [RuleItem index]
         let mut idhash = HashMap::<M, Vec<usize>>::new();
 
@@ -206,20 +197,15 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
             panic!("cyclic dependency: (use debug mode for more details)");
         }
 
-        (result_idx, result)
+        //(result_idx, result)
+        result
     }
 }
 
 impl<M: Eq + Hash + Copy + Debug, T: Clone> Debug for Ruler<M, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let vec: Vec<(usize, M)> = self.compiled.get_or_init(|| self.compile()).0
-                                    .iter()
-                                    .map(|idx| (*idx, *self.deps.get(*idx).unwrap().marks.get(0).unwrap()))
-                                    .collect();
-
         f.debug_struct("Ruler")
             .field("deps", &self.deps)
-            .field("compiled", &vec)
             .finish()
     }
 }
@@ -228,7 +214,6 @@ impl<M, T> Default for Ruler<M, T> {
     fn default() -> Self {
         Self {
             deps: Vec::new(),
-            compiled: OnceCell::new(),
         }
     }
 }
@@ -267,7 +252,7 @@ impl<M: Copy, T> RuleItem<M, T> {
     /// chain.add("b", |s| s.push_str("foo")).before("a");
     ///
     /// let mut result = String::new();
-    /// for f in chain.iter() { f(&mut result); }
+    /// for f in chain.compile() { f(&mut result); }
     /// assert_eq!(result, "foobar");
     /// ```
     pub fn before(&mut self, mark: M) -> &mut Self {
@@ -293,7 +278,7 @@ impl<M: Copy, T> RuleItem<M, T> {
     /// chain.add("b", |s| s.push_str("B")).after("a").before_all();
     ///
     /// let mut result = String::new();
-    /// for f in chain.iter() { f(&mut result); }
+    /// for f in chain.compile() { f(&mut result); }
     /// // without before_all order will be ACB
     /// assert_eq!(result, "ABC");
     /// ```
@@ -321,7 +306,7 @@ impl<M: Copy, T> RuleItem<M, T> {
     /// chain.add("a", |s| s.push_str("A")).before("BorC");
     ///
     /// let mut result = String::new();
-    /// for f in chain.iter() { f(&mut result); }
+    /// for f in chain.compile() { f(&mut result); }
     /// assert_eq!(result, "ABC");
     /// ```
     pub fn alias(&mut self, mark: M) -> &mut Self {

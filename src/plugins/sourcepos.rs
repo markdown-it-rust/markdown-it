@@ -11,7 +11,8 @@ use crate::common::sourcemap::SourceWithLineStarts;
 use crate::parser::block::builtin::BlockParserRule;
 use crate::parser::core::{CoreRule, Root};
 use crate::parser::inline::builtin::InlineParserRule;
-use crate::{MarkdownIt, Node};
+use crate::parser::main::RootNodeWrongType;
+use crate::{MarkdownIt, Node, Result};
 
 pub fn add(md: &mut MarkdownIt) {
     md.add_rule::<SyntaxPosRule>()
@@ -22,8 +23,11 @@ pub fn add(md: &mut MarkdownIt) {
 #[doc(hidden)]
 pub struct SyntaxPosRule;
 impl CoreRule for SyntaxPosRule {
-    fn run(root: &mut Node, _: &MarkdownIt) {
-        let source = root.cast::<Root>().unwrap().content.as_str();
+    fn try_run(root: &mut Node, _: &MarkdownIt) -> Result<()> {
+        let Some(data) = root.cast::<Root>() else {
+            return Err(RootNodeWrongType.into());
+        };
+        let source = data.content.as_str();
         let mapping = SourceWithLineStarts::new(source);
 
         root.walk_mut(|node, _| {
@@ -31,7 +35,13 @@ impl CoreRule for SyntaxPosRule {
                 let ((startline, startcol), (endline, endcol)) = map.get_positions(&mapping);
                 node.attrs.push(("data-sourcepos", format!("{}:{}-{}:{}", startline, startcol, endline, endcol)));
             }
-        });
+            Ok(())
+        }).unwrap();
+        Ok(())
+    }
+
+    fn run(root: &mut Node, md: &MarkdownIt) {
+        let _ = Self::try_run(root, md);
     }
 }
 

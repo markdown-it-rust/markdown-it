@@ -265,7 +265,10 @@ fn is_odd_match(opener: &EmphMarker, closer: &EmphMarker) -> bool {
 pub struct FragmentsJoin;
 impl CoreRule for FragmentsJoin {
     fn run(node: &mut Node, _: &MarkdownIt) {
-        node.walk_mut(|node, _| fragments_join(node));
+        node.walk_mut(|node, _| {
+            fragments_join(node);
+            Ok(())
+        }).unwrap();
     }
 }
 

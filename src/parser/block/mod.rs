@@ -1,4 +1,8 @@
 //! Block rule chain
+use anyhow::Context;
+use derivative::Derivative;
+use once_cell::sync::OnceCell;
+
 mod state;
 pub use state::*;
 
@@ -13,17 +17,49 @@ use crate::common::TypeKey;
 use crate::parser::extset::RootExtSet;
 use crate::parser::inline::InlineRoot;
 use crate::parser::node::NodeEmpty;
-use crate::{MarkdownIt, Node};
+use crate::{MarkdownIt, Node, Result};
 
-type RuleFns = (
-    fn (&mut BlockState) -> Option<()>,
-    fn (&mut BlockState) -> Option<(Node, usize)>,
-);
+#[derive(Clone)]
+#[doc(hidden)]
+pub struct RuleStruct {
+    marker: TypeKey,
+    check: fn (&mut BlockState) -> Option<()>,
+    run: fn (&mut BlockState) -> Option<(Node, usize)>,
+    try_run: fn (&mut BlockState) -> Result<Option<(Node, usize)>>,
+}
 
-#[derive(Debug, Default)]
+struct RuleStructVecs {
+    marker: Vec<TypeKey>,
+    check: Vec<fn (&mut BlockState) -> Option<()>>,
+    run: Vec<fn (&mut BlockState) -> Option<(Node, usize)>>,
+    try_run: Vec<fn (&mut BlockState) -> Result<Option<(Node, usize)>>>,
+}
+
+impl RuleStructVecs {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            marker: Vec::with_capacity(capacity),
+            check: Vec::with_capacity(capacity),
+            run: Vec::with_capacity(capacity),
+            try_run: Vec::with_capacity(capacity),
+        }
+    }
+
+    pub fn push(&mut self, rule: RuleStruct) {
+        self.marker.push(rule.marker);
+        self.check.push(rule.check);
+        self.run.push(rule.run);
+        self.try_run.push(rule.try_run);
+    }
+}
+
+#[derive(Derivative, Default)]
+#[derivative(Debug)]
 /// Block-level tokenizer.
 pub struct BlockParser {
-    ruler: Ruler<TypeKey, RuleFns>,
+    ruler: Ruler<TypeKey, RuleStruct>,
+    #[derivative(Debug = "ignore")]
+    compiled_rules: OnceCell<RuleStructVecs>,
 }
 
 impl BlockParser {
@@ -34,7 +70,20 @@ impl BlockParser {
     // Generate tokens for input range
     //
     pub fn tokenize(&self, state: &mut BlockState) {
+        // _tokenize with CAN_FAIL=false never returns errors
+        let _ = Self::_tokenize::<false>(self, state);
+    }
+
+    // Generate tokens for input range, but fail if any custom rule produces an error.
+    // Note: inline state will be unusable if you get an Error from this function.
+    //
+    pub fn try_tokenize(&self, state: &mut BlockState) -> Result<()> {
+        Self::_tokenize::<true>(self, state)
+    }
+
+    fn _tokenize<const CAN_FAIL: bool>(&self, state: &mut BlockState) -> Result<()> {
         stacker::maybe_grow(64*1024, 1024*1024, || {
+            let rules = self.compiled_rules.get().expect("rules not compiled");
             let mut has_empty_lines = false;
 
             while state.line < state.line_max {
@@ -60,11 +109,22 @@ impl BlockParser {
                 // - return true
                 let mut ok = None;
 
-                for rule in self.ruler.iter() {
-                    ok = rule.1(state);
-                    if ok.is_some() {
-                        break;
-                    }
+                if CAN_FAIL {
+                    for (idx, rule) in rules.try_run.iter().enumerate() {
+                        ok = rule(state).with_context(|| BlockRuleError {
+                            name: rules.marker[idx],
+                        })?;
+                        if ok.is_some() {
+                            break;
+                        }
+                    };
+                } else {
+                    for rule in rules.run.iter() {
+                        ok = rule(state);
+                        if ok.is_some() {
+                            break;
+                        }
+                    };
                 }
 
                 if let Some((mut node, len)) = ok {
@@ -101,7 +161,9 @@ impl BlockParser {
                     state.line += 1;
                 }
             }
-        });
+
+            Ok(())
+        })
     }
 
     // Process input string and push block tokens into `out_tokens`
@@ -112,16 +174,44 @@ impl BlockParser {
         state.node
     }
 
-    pub fn add_rule<T: BlockRule>(&mut self) -> RuleBuilder<RuleFns> {
-        let item = self.ruler.add(TypeKey::of::<T>(), (T::check, T::run));
+    // Process input string and push block tokens into `out_tokens`,
+    // fail if any custom rule produces an error.
+    //
+    pub fn try_parse(&self, src: &str, node: Node, md: &MarkdownIt, root_ext: &mut RootExtSet) -> Result<Node> {
+        let mut state = BlockState::new(src, md, root_ext, node);
+        self.try_tokenize(&mut state)?;
+        Ok(state.node)
+    }
+
+    pub fn add_rule<T: BlockRule>(&mut self) -> RuleBuilder<RuleStruct> {
+        self.compiled_rules = OnceCell::new();
+        let item = self.ruler.add(TypeKey::of::<T>(), RuleStruct {
+            marker: TypeKey::of::<T>(),
+            check: T::check,
+            run: T::run,
+            try_run: T::try_run,
+        });
         RuleBuilder::new(item)
     }
 
-    pub fn has_rule<T: BlockRule>(&mut self) -> bool {
+    pub fn has_rule<T: BlockRule>(&self) -> bool {
         self.ruler.contains(TypeKey::of::<T>())
     }
 
     pub fn remove_rule<T: BlockRule>(&mut self) {
+        self.compiled_rules = OnceCell::new();
         self.ruler.remove(TypeKey::of::<T>());
+    }
+
+    fn compile(&self) {
+        self.compiled_rules.get_or_init(|| {
+            let compiled_rules = self.ruler.compile();
+            let mut result = RuleStructVecs::with_capacity(compiled_rules.len());
+
+            for rule in compiled_rules {
+                result.push(rule);
+            }
+            result
+        });
     }
 }
