@@ -17,7 +17,7 @@ use crate::common::utils::normalize_reference;
 use crate::generics::inline::full_link;
 use crate::parser::block::{BlockRule, BlockState};
 use crate::parser::extset::RootExt;
-use crate::{MarkdownIt, Node};
+use crate::{MarkdownIt, Node, NodeValue};
 
 /// Storage for parsed references
 ///
@@ -195,6 +195,16 @@ pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<ReferenceScanner>();
 }
 
+#[derive(Debug)]
+pub struct Definition {
+    pub label: String,
+    pub destination: String,
+    pub title: Option<String>,
+}
+impl NodeValue for Definition {
+    fn render(&self, _: &Node, _: &mut dyn crate::Renderer) {}
+}
+
 #[doc(hidden)]
 pub struct ReferenceScanner;
 impl BlockRule for ReferenceScanner {
@@ -350,8 +360,15 @@ impl BlockRule for ReferenceScanner {
         }
 
         let references = state.root_ext.get_or_insert_default::<ReferenceMap>();
-        if !references.insert(str[1..label_end].to_owned(), href, title) { return None; }
+        if !references.insert(str[1..label_end].to_owned(), href.clone(), title.clone()) { return None; }
 
-        Some((Node::default(), lines + 1))
+        Some((Node::new(
+            Definition { 
+                label: str[1..label_end].to_owned(), 
+                destination: href, 
+                title
+            }), 
+            lines + 1
+        ))
     }
 }
