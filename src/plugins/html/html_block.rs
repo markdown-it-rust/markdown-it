@@ -95,8 +95,8 @@ pub struct HtmlBlockScanner;
 
 impl HtmlBlockScanner {
     fn get_sequence(state: &mut BlockState) -> Option<&'static HTMLSequence> {
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         let line_text = state.get_line(state.line);
         let Some('<') = line_text.chars().next() else { return None; };

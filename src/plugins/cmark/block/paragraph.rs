@@ -42,9 +42,9 @@ impl BlockRule for ParagraphScanner {
 
             if next_line >= state.line_max || state.is_empty(next_line) { break; }
 
-            // this would be a code block normally, but after paragraph
+            // this may be a code block normally, but after paragraph
             // it's considered a lazy continuation regardless of what's there
-            if state.line_indent(next_line) >= 4 { continue; }
+            if state.line_indent(next_line) >= state.md.max_indent { continue; }
 
             // quirk for blockquotes, this line should already be checked by that rule
             if state.line_offsets[next_line].indent_nonspace < 0 { continue; }

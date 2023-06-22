@@ -35,6 +35,10 @@ pub struct MarkdownIt {
     #[doc(hidden)]
     pub max_nesting: u32,
 
+    /// Maximum allowed indentation for syntax blocks
+    /// default i32::MAX, indented code blocks will set this to 4
+    pub max_indent: i32,
+
     ruler: Ruler<TypeKey, RuleFn>,
 }
 
@@ -77,6 +81,7 @@ impl Default for MarkdownIt {
             ext: MarkdownItExtSet::new(),
             max_nesting: 100,
             ruler: Ruler::new(),
+            max_indent: i32::MAX,
         };
         block::builtin::add(&mut md);
         inline::builtin::add(&mut md);

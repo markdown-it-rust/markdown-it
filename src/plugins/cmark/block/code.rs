@@ -25,6 +25,7 @@ impl NodeValue for CodeBlock {
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<CodeScanner>();
+    md.max_indent = 4;
 }
 
 #[doc(hidden)]

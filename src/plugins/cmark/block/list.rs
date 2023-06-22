@@ -131,8 +131,8 @@ impl ListScanner {
     }
 
     fn find_marker(state: &mut BlockState, silent: bool) -> Option<(usize, Option<u32>, char)> {
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         // Special case:
         //  - item 1
@@ -142,7 +142,7 @@ impl ListScanner {
         //      - this one is a paragraph continuation
         if let Some(list_indent) = state.list_indent {
             let indent_nonspace = state.line_offsets[state.line].indent_nonspace;
-            if indent_nonspace - list_indent as i32 >= 4 &&
+            if indent_nonspace - list_indent as i32 >= state.md.max_indent &&
             indent_nonspace < state.blk_indent as i32 {
                 return None;
             }
@@ -253,8 +253,8 @@ impl BlockRule for ListScanner {
             if reached_end_of_line {
                 // trimming space in "-    \n  3" case, indent is 1 here
                 indent_after_marker = 1;
-            } else if indent_after_marker > 4 {
-                // If we have more than 4 spaces, the indent is 1
+            } else if indent_after_marker as i32 > state.md.max_indent {
+                // If we have more than the max indent, the indent is 1
                 // (the rest is just indented code block)
                 indent_after_marker = 1;
             }
@@ -327,8 +327,7 @@ impl BlockRule for ListScanner {
             //
             if state.line_indent(next_line) < 0 { break; }
 
-            // if it's indented more than 3 spaces, it should be a code block
-            if state.line_indent(next_line) >= 4 { break; }
+            if state.line_indent(next_line) >= state.md.max_indent { break; }
 
             // fail if terminating block found
             if state.test_rules_at_line() { break; }
