@@ -246,7 +246,7 @@ impl BlockRule for ReferenceScanner {
             // Some tags can terminate paragraph without empty line.
             let old_state_line = state.line;
             state.line = next_line;
-            if state.test_rules_at_line() {
+            if state.test_rules_at_line("reference") {
                 state.line = old_state_line;
                 break 'outer;
             }
