@@ -203,8 +203,8 @@ impl BlockRule for ReferenceScanner {
     }
 
     fn run(state: &mut BlockState) -> Option<(Node, usize)> {
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         let mut chars = state.get_line(state.line).chars();
 
@@ -236,9 +236,9 @@ impl BlockRule for ReferenceScanner {
 
             if next_line >= state.line_max || state.is_empty(next_line) { break; }
 
-            // this would be a code block normally, but after paragraph
+            // this may be a code block normally, but after paragraph
             // it's considered a lazy continuation regardless of what's there
-            if state.line_indent(next_line) >= 4 { continue; }
+            if state.line_indent(next_line) >= state.md.max_indent { continue; }
 
             // quirk for blockquotes, this line should already be checked by that rule
             if state.line_offsets[next_line].indent_nonspace < 0 { continue; }

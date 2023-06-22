@@ -30,8 +30,8 @@ pub fn add(md: &mut MarkdownIt) {
 pub struct BlockquoteScanner;
 impl BlockRule for BlockquoteScanner {
     fn check(state: &mut BlockState) -> Option<()> {
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         // check the block quote marker
         let Some('>') = state.get_line(state.line).chars().next() else { return None; };

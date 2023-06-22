@@ -33,8 +33,8 @@ pub fn add(md: &mut MarkdownIt) {
 pub struct HeadingScanner;
 impl BlockRule for HeadingScanner {
     fn run(state: &mut BlockState) -> Option<(Node, usize)> {
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         let line = state.get_line(state.line);
         let Some('#') = line.chars().next() else { return None; };

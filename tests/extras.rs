@@ -34,6 +34,18 @@ fn no_plugins() {
     assert_eq!(result, "hello\nworld\n");
 }
 
+#[test]
+fn no_max_indent() {
+    let md = &mut markdown_it::MarkdownIt::new();
+    markdown_it::plugins::cmark::block::paragraph::add(md);
+    markdown_it::plugins::cmark::block::list::add(md);
+    md.max_indent = i32::MAX;
+    let node = md.parse("        paragraph\n      - item");
+    let result = node.render();
+    assert_eq!(result, "<p>paragraph</p>\n<ul>\n<li>item</li>\n</ul>\n");
+}
+
+
 /*#[test]
 fn no_block_parser() {
     let md = &mut markdown_it::MarkdownIt::new();

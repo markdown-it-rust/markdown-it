@@ -63,8 +63,8 @@ pub struct FenceScanner;
 
 impl FenceScanner {
     fn get_header<'a>(state: &'a mut BlockState) -> Option<(char, usize, &'a str)> {
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         let line = state.get_line(state.line);
         let mut chars = line.chars();
@@ -120,8 +120,7 @@ impl BlockRule for FenceScanner {
 
             if Some(marker) != chars.next() { continue; }
 
-            if state.line_indent(next_line) >= 4 {
-                // closing fence should be indented less than 4 spaces
+            if state.line_indent(next_line) >= state.md.max_indent {
                 continue;
             }
 

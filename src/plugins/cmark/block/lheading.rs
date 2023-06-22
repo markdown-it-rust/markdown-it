@@ -41,8 +41,8 @@ impl BlockRule for LHeadingScanner {
     }
 
     fn run(state: &mut BlockState) -> Option<(Node, usize)> {
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         let start_line = state.line;
         let mut next_line = start_line;
@@ -53,9 +53,9 @@ impl BlockRule for LHeadingScanner {
 
             if next_line >= state.line_max || state.is_empty(next_line) { break; }
 
-            // this would be a code block normally, but after paragraph
+            // this may be a code block normally, but after paragraph
             // it's considered a lazy continuation regardless of what's there
-            if state.line_indent(next_line) >= 4 { continue; }
+            if state.line_indent(next_line) >= state.md.max_indent { continue; }
 
             //
             // Check for underline in setext header

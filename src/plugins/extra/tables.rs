@@ -264,14 +264,12 @@ impl TableScanner {
         // should have at least two lines
         if state.line + 2 > state.line_max { return None; }
 
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(state.line) >= 4 { return None; }
+        if state.line_indent(state.line) >= state.md.max_indent { return None; }
 
         let next_line = state.line + 1;
         if state.line_indent(next_line) < 0 { return None; }
 
-        // if it's indented more than 3 spaces, it should be a code block
-        if state.line_indent(next_line) >= 4 { return None; }
+        if state.line_indent(next_line) >= state.md.max_indent { return None; }
 
         let alignments = Self::scan_alignment_row(state.get_line(next_line))?;
         let header_row = Self::scan_row(state.get_line(state.line));
@@ -345,8 +343,7 @@ impl BlockRule for TableScanner {
             //
             if state.line_indent(state.line) < 0 { break; }
 
-            // if it's indented more than 3 spaces, it should be a code block
-            if state.line_indent(state.line) >= 4 { break; }
+            if state.line_indent(state.line) >= state.md.max_indent { break; }
 
             // stop if the line is empty
             if state.is_empty(state.line) { break; }
