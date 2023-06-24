@@ -73,6 +73,9 @@ enum FlatToken<'a> {
         content: &'a str,
         nesting_level: u32,
     },
+    HtmlInline {
+        content: &'a str,
+    },
     Irrelevant,
 }
 
@@ -147,6 +150,7 @@ impl<
 
         // now that we know what we want to replace where, we go over the nodes a _third_ time to do all the actual replacements.
         let mut current_index: usize = 0;
+
         root.walk_mut(|node, _| {
             if let Some(current_replacements) = replacement_ops.get(&current_index) {
                 let mut text_node = node.cast_mut::<Text>().expect("Expected to find a text node at this index because we constructed our replacements HashMap accordingly.");
@@ -325,9 +329,8 @@ fn all_text_tokens(root: &Node) -> Vec<FlatToken> {
                 nesting_level,
             });
         } else if let Some(html_node) = node.cast::<HtmlInline>() {
-            result.push(FlatToken::Text {
+            result.push(FlatToken::HtmlInline {
                 content: &html_node.content,
-                nesting_level,
             });
         } else if node.is::<Paragraph>() || node.is::<Hardbreak>() || node.is::<Softbreak>() {
             result.push(FlatToken::LineBreak);
@@ -458,6 +461,9 @@ fn find_first_char_after(
                 content,
                 nesting_level: _,
             } => content,
+            FlatToken::HtmlInline {
+                content,
+            } => content,
             FlatToken::Irrelevant => continue,
         };
         let start_index = if idx_t == token_index {
@@ -495,6 +501,9 @@ fn find_last_char_before(
                 content,
                 nesting_level: _,
             } => content,
+            FlatToken::HtmlInline {
+                content,
+            } => content,
             FlatToken::Irrelevant => continue,
         };
 
@@ -519,4 +528,27 @@ fn find_last_char_before(
     }
     // this will be hit if we find a quote in the first position of the first token
     SPACE
+}
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn smartquotes_basics() {
+        let md = &mut crate::MarkdownIt::new();
+        crate::plugins::cmark::add(md);
+        crate::plugins::extra::smartquotes::add(md);
+        let html = md.parse(r#"'hello' "world""#).render();
+        assert_eq!(html.trim(), r#"<p>‘hello’ “world”</p>"#);
+    }
+
+    #[test]
+    fn smartquotes_shouldnt_affect_html() {
+        let md = &mut crate::MarkdownIt::new();
+        crate::plugins::cmark::add(md);
+        crate::plugins::html::html_inline::add(md);
+        crate::plugins::extra::smartquotes::add(md);
+        let html = md.parse(r#"<a href="hello"></a>"#).render();
+        assert_eq!(html.trim(), r#"<p><a href="hello"></a></p>"#);
+    }
 }
