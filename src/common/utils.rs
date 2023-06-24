@@ -10,7 +10,7 @@ const UNESCAPE_MD_RE : &str = r##"\\([!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])"##;
 const ENTITY_RE      : &str = r##"&([A-Za-z#][A-Za-z0-9]{1,31});"##;
 
 static DIGITAL_ENTITY_TEST_RE : Lazy<Regex> = Lazy::new(||
-    Regex::new(r#"(?i)^&#(x[a-f0-9]{1,8}|[0-9]{1,8})$"#).unwrap()
+    Regex::new(r#"(?i)^&#(x[a-f0-9]{1,8}|[0-9]{1,8});$"#).unwrap()
 );
 static UNESCAPE_ALL_RE        : Lazy<Regex> = Lazy::new(||
     Regex::new(&format!("{UNESCAPE_MD_RE}|{ENTITY_RE}")).unwrap()
@@ -67,7 +67,8 @@ pub fn get_entity_from_str(str: &str) -> Option<&'static str> {
 fn replace_entity_pattern(str: &str) -> Option<String> {
     if let Some(entity) = get_entity_from_str(str) {
         Some((*entity).to_owned())
-    } else if DIGITAL_ENTITY_TEST_RE.is_match(str) {
+    } else if let Some(captures) = DIGITAL_ENTITY_TEST_RE.captures(str) {
+        let str = captures.get(1).unwrap().as_str();
         let code = if str.starts_with('x') || str.starts_with('X') {
             u32::from_str_radix(&str[1..], 16).unwrap()
         } else {
@@ -317,6 +318,8 @@ mod tests {
     use super::cut_right_whitespace_with_tabstops as cut_ws;
     use super::rfind_and_count;
     use super::find_indent_of;
+    use super::replace_entity_pattern;
+    use super::unescape_all;
 
     #[test]
     fn rfind_and_count_test() {
@@ -418,5 +421,47 @@ mod tests {
         assert_eq!(cut_ws("abc\tde\tf\tg", 7), "\tf\tg");
         assert_eq!(cut_ws("abc\tde\tf\tg", 9), "de\tf\tg");
         assert_eq!(cut_ws("abc\tde\tf\tg", 10), "\tde\tf\tg");
+    }
+
+    #[test]
+    fn test_replace_entity_pattern() {
+        assert_eq!(replace_entity_pattern("&amp;"), Some("&".into()));
+        assert_eq!(replace_entity_pattern("&euro;"), Some("€".into()));
+        assert_eq!(replace_entity_pattern("&#8212;"), Some("—".into()));
+        assert_eq!(replace_entity_pattern("&#x2014;"), Some("—".into()));
+        assert_eq!(replace_entity_pattern("&#X20;"), Some(" ".into()));
+        assert_eq!(replace_entity_pattern("&#x3F;"), Some("?".into()));
+        assert_eq!(replace_entity_pattern("&ffff;"), None);
+        assert_eq!(replace_entity_pattern("&#3F;"), None);
+        assert_eq!(replace_entity_pattern("&#xGG;"), None);
+    }
+
+    #[test]
+    fn test_unescape_all_simple() {
+        assert_eq!(unescape_all("&amp;"), "&");
+        assert_eq!(unescape_all("\\&"), "&");
+    }
+
+    #[test]
+    fn test_unescape_all_xss() {
+        assert_eq!(
+            unescape_all(r#"javascript&#x3A;alert(1)"#),
+            r#"javascript:alert(1)"#);
+
+        assert_eq!(
+            unescape_all(r#"&#74;avascript:alert(1)"#),
+            r#"Javascript:alert(1)"#);
+
+        assert_eq!(
+            unescape_all(r#"&#x26;#74;avascript:alert(1)"#),
+            r#"&#74;avascript:alert(1)"#);
+
+        assert_eq!(
+            unescape_all(r#"\&#74;avascript:alert(1)"#),
+            r#"&#74;avascript:alert(1)"#);
+
+        assert_eq!(
+            unescape_all(r#"&#34;&#62;&#60;script&#62;alert&#40;&#34;xss&#34;&#41;&#60;/script&#62;"#),
+            r#""><script>alert("xss")</script>"#);
     }
 }
