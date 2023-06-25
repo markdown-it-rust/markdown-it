@@ -35,6 +35,13 @@ pub struct NewlineScanner;
 impl InlineRule for NewlineScanner {
     const MARKER: char = '\n';
 
+    fn check(state: &mut InlineState) -> Option<usize> {
+        // check rule is required because run() modifies trailing text
+        let mut chars = state.src[state.pos..state.pos_max].chars();
+        if chars.next().unwrap() != '\n' { return None; }
+        Some(1)
+    }
+
     fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         let mut chars = state.src[state.pos..state.pos_max].chars();
 

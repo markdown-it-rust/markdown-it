@@ -7,6 +7,7 @@ use crate::common::TypeKey;
 use crate::parser::extset::NodeExtSet;
 use crate::parser::inline::Text;
 use crate::parser::renderer::HTMLRenderer;
+use crate::plugins::cmark::inline::newline::Softbreak;
 use crate::Renderer;
 
 /// Single node in the CommonMark AST.
@@ -174,6 +175,8 @@ impl Node {
         self.walk(|node, _| {
             if let Some(text) = node.cast::<Text>() {
                 result.push_str(text.content.as_str());
+            } else if node.is::<Softbreak>() {
+                result.push('\n');
             }
         });
 

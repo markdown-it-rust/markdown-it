@@ -110,6 +110,12 @@ r#"<blockquote>
     }
 
     #[test]
+    fn regression_test_newlines_with_images() {
+        run("There is a newline in this image  ![here\nit is](https://github.com/executablebooks/)",
+            "<p>There is a newline in this image  <img src=\"https://github.com/executablebooks/\" alt=\"here\nit is\"></p>");
+    }
+
+    #[test]
     fn test_node_ext_propagation() {
         use markdown_it::parser::block::{BlockRule, BlockState};
         use markdown_it::parser::core::CoreRule;
