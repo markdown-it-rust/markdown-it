@@ -31,8 +31,8 @@ impl BlockParser {
         Self::default()
     }
 
-    // Generate tokens for input range
-    //
+    /// Generate tokens for input range
+    ///
     pub fn tokenize(&self, state: &mut BlockState) {
         stacker::maybe_grow(64*1024, 1024*1024, || {
             let mut has_empty_lines = false;
@@ -104,8 +104,8 @@ impl BlockParser {
         });
     }
 
-    // Process input string and push block tokens into `out_tokens`
-    //
+    /// Process input string and push block tokens into `out_tokens`
+    ///
     pub fn parse(&self, src: &str, node: Node, md: &MarkdownIt, root_ext: &mut RootExtSet) -> Node {
         let mut state = BlockState::new(src, md, root_ext, node);
         self.tokenize(&mut state);

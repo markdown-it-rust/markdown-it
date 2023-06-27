@@ -1,5 +1,5 @@
-// Regexps to match html elements
-//
+//! Regexps to match html elements
+//!
 #![allow(non_upper_case_globals)]
 use const_format::formatcp;
 use once_cell::sync::Lazy;

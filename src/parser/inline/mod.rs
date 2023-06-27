@@ -40,9 +40,9 @@ impl InlineParser {
         Self::default()
     }
 
-    // Skip single token by running all rules in validation mode;
-    // returns `true` if any rule reported success
-    //
+    /// Skip single token by running all rules in validation mode;
+    /// returns `true` if any rule reported success
+    ///
     pub fn skip_token(&self, state: &mut InlineState) {
         stacker::maybe_grow(64*1024, 1024*1024, || {
             let mut ok = None;
@@ -78,8 +78,8 @@ impl InlineParser {
         });
     }
 
-    // Generate tokens for input range
-    //
+    /// Generate tokens for input range
+    ///
     pub fn tokenize(&self, state: &mut InlineState) {
         stacker::maybe_grow(64*1024, 1024*1024, || {
             let end = state.pos_max;
@@ -120,8 +120,8 @@ impl InlineParser {
         });
     }
 
-    // Process input string and push inline tokens into `out_tokens`
-    //
+    /// Process input string and push inline tokens into `out_tokens`
+    ///
     pub fn parse(
         &self,
         src: String,

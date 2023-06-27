@@ -140,12 +140,12 @@ impl<'a, 'b> InlineState<'a, 'b> {
         }
     }
 
-    // Scan a sequence of emphasis-like markers, and determine whether
-    // it can start an emphasis sequence or end an emphasis sequence.
-    //
-    //  - start - position to scan from (it should point at a valid marker);
-    //  - can_split_word - determine if these markers can be found inside a word
-    //
+    /// Scan a sequence of emphasis-like markers, and determine whether
+    /// it can start an emphasis sequence or end an emphasis sequence.
+    ///
+    ///  - start - position to scan from (it should point at a valid marker);
+    ///  - can_split_word - determine if these markers can be found inside a word
+    ///
     #[must_use]
     pub fn scan_delims(&self, start: usize, can_split_word: bool) -> DelimiterRun {
         let mut left_flanking = true;

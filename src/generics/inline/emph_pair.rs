@@ -135,8 +135,8 @@ impl<const MARKER: char, const CAN_SPLIT_WORD: bool> InlineRule for EmphPairScan
     }
 }
 
-// Assuming last token is a closing delimiter we just inserted,
-// try to find opener(s). If any are found, move stuff to nested emph node.
+/// Assuming last token is a closing delimiter we just inserted,
+/// try to find opener(s). If any are found, move stuff to nested emph node.
 fn scan_and_match_delimiters<const MARKER: char>(state: &mut InlineState, mut closer_token: Node) -> Node {
     if state.node.children.is_empty() { return closer_token; } // must have at least opener and closer
 
@@ -270,14 +270,14 @@ impl CoreRule for FragmentsJoin {
 }
 
 
-// Clean up tokens after emphasis and strikethrough postprocessing:
-// merge adjacent text nodes into one and re-calculate all token levels
-//
-// This is necessary because initially emphasis delimiter markers (*, _, ~)
-// are treated as their own separate text tokens. Then emphasis rule either
-// leaves them as text (needed to merge with adjacent text) or turns them
-// into opening/closing tags (which messes up levels inside).
-//
+/// Clean up tokens after emphasis and strikethrough postprocessing:
+/// merge adjacent text nodes into one and re-calculate all token levels
+///
+/// This is necessary because initially emphasis delimiter markers (*, _, ~)
+/// are treated as their own separate text tokens. Then emphasis rule either
+/// leaves them as text (needed to merge with adjacent text) or turns them
+/// into opening/closing tags (which messes up levels inside).
+///
 fn fragments_join(node: &mut Node) {
     // replace all emph markers with text tokens
     for token in node.children.iter_mut() {

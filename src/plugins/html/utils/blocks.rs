@@ -1,6 +1,6 @@
-// List of valid html blocks names, accorting to commonmark spec
-// http://jgm.github.io/CommonMark/spec.html#html-blocks
-//
+//! List of valid html blocks names, accorting to commonmark spec
+//! http://jgm.github.io/CommonMark/spec.html#html-blocks
+//!
 
 pub const HTML_BLOCKS: [&str; 62] = [
     "address",
