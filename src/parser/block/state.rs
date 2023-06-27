@@ -197,8 +197,8 @@ impl<'a, 'b> BlockState<'a, 'b> {
         line
     }
 
-    // return line indent of specific line, taking into account blockquotes and lists;
-    // it may be negative if a text has less indentation than current list item
+    /// return line indent of specific line, taking into account blockquotes and lists;
+    /// it may be negative if a text has less indentation than current list item
     #[must_use]
     #[inline]
     pub fn line_indent(&self, line: usize) -> i32 {
@@ -209,7 +209,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
         }
     }
 
-    // return a single line, trimming initial spaces
+    /// return a single line, trimming initial spaces
     #[must_use]
     #[inline]
     pub fn get_line(&self, line: usize) -> &str {
@@ -222,8 +222,8 @@ impl<'a, 'b> BlockState<'a, 'b> {
         }
     }
 
-    // Cut a range of lines begin..end (not including end) from the source without preceding indent.
-    // Returns a string (lines) plus a mapping (start of each line in result -> start of each line in source).
+    /// Cut a range of lines begin..end (not including end) from the source without preceding indent.
+    /// Returns a string (lines) plus a mapping (start of each line in result -> start of each line in source).
     pub fn get_lines(&self, begin: usize, end: usize, indent: usize, keep_last_lf: bool) -> (String, Vec<(usize, usize)>) {
         debug_assert!(begin <= end);
 

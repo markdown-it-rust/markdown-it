@@ -90,8 +90,8 @@ impl<const PREFIX: char, const ENABLE_NESTED: bool> InlineRule for LinkPrefixSca
 }
 
 #[doc(hidden)]
-// this rule makes sure that parser is stopped on "]" character,
-// but it actually doesn't do anything
+/// this rule makes sure that parser is stopped on "]" character,
+/// but it actually doesn't do anything
 pub struct LinkScannerEnd;
 impl InlineRule for LinkScannerEnd {
     const MARKER: char = ']';

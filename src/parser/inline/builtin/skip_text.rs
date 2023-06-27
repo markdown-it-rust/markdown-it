@@ -1,6 +1,6 @@
-// Skip text characters for text token, place those to pending buffer
-// and increment current pos
-//
+//! Skip text characters for text token, place those to pending buffer
+//! and increment current pos
+//!
 use regex::{self, Regex};
 
 use crate::parser::inline::{InlineRule, InlineState};
@@ -43,14 +43,14 @@ pub(crate) enum TextScannerImpl {
     SkipRegex(Regex),
 }
 
-// Rule to skip pure text
-// '{}$%@~+=:' reserved for extentions
-//
-// !, ", #, $, %, &, ', (, ), *, +, ,, -, ., /, :, ;, <, =, >, ?, @, [, \, ], ^, _, `, {, |, }, or ~
-//
-// !!!! Don't confuse with "Markdown ASCII Punctuation" chars
-// http://spec.commonmark.org/0.15/#ascii-punctuation-character
-//
+/// Rule to skip pure text
+/// '{}$%@~+=:' reserved for extensions
+///
+/// !, ", #, $, %, &, ', (, ), *, +, ,, -, ., /, :, ;, <, =, >, ?, @, [, \, ], ^, _, `, {, |, }, or ~
+///
+/// !!!! Don't confuse with "Markdown ASCII Punctuation" chars
+/// http://spec.commonmark.org/0.15/#ascii-punctuation-character
+///
 pub struct TextScanner;
 
 impl TextScanner {
