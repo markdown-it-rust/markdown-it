@@ -514,7 +514,7 @@ fn find_last_char_before(
         let start_index: usize = if idx_t == token_index {
             quote_position
         } else {
-            token.len()
+            token.chars().count()
         };
         // means we can't go any further left -> try the next token (i.e. the
         // one preceding this one)
@@ -550,5 +550,17 @@ mod tests {
         crate::plugins::extra::smartquotes::add(md);
         let html = md.parse(r#"<a href="hello"></a>"#).render();
         assert_eq!(html.trim(), r#"<p><a href="hello"></a></p>"#);
+    }
+
+    #[test]
+    fn smartquotes_should_work_with_typographer() {
+        // regression test for https://github.com/rlidwka/markdown-it.rs/issues/26
+        let md = &mut crate::MarkdownIt::new();
+        crate::plugins::cmark::add(md);
+        crate::plugins::html::html_inline::add(md);
+        crate::plugins::extra::typographer::add(md);
+        crate::plugins::extra::smartquotes::add(md);
+        let html = md.parse("\"**...**\"").render();
+        assert_eq!(html.trim(), "<p>“<strong>…</strong>”</p>");
     }
 }
