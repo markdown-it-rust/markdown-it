@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 - 2023-07-05
+
+### Fixed
+
+ - fixed panics in smartquotes (https://github.com/rlidwka/markdown-it.rs/issues/26)
+ - fixed entity code unescaping (https://github.com/rlidwka/markdown-it.rs/issues/23)
+ - multiple other minor bugfixes
+
 ## 0.5.0 - 2023-05-13
 
 ### Added
