@@ -214,14 +214,21 @@ impl TableScanner {
     }
 
     fn scan_alignment_row(line: &str) -> Option<Vec<ColumnAlignment>> {
+        let mut has_pipe = false;
+
         // quick check second line, only allow :-| and spaces
         // (this is for performance only)
         for ch in line.chars() {
             match ch {
-                '|'| ':' | '-' | ' ' | '\t' => (),
+                '|' => { has_pipe = true; },
+                ':' | '-' | ' ' | '\t' => (),
                 _ => return None,
             }
         }
+
+        // alignment row must contain at least one pipe to resolve ambiguities
+        // with horizontal rule and setext heading
+        if !has_pipe { return None; }
 
         // if first character is '-', then second character must not be a space
         // (due to parsing ambiguity with list)
@@ -435,5 +442,17 @@ mod tests {
         let row = TableScanner::scan_row(r#"|  foo\\|bar\\\|baz\  |"#);
         assert_eq!(row[0].str, r#"foo\|bar\\|baz\"#);
         assert_eq!(row[0].srcmap, vec![(0, 3), (4, 8), (10, 15)]);
+    }
+
+    #[test]
+    fn require_pipe_in_alignment_row() {
+        let md = &mut crate::MarkdownIt::new();
+        crate::plugins::extra::tables::add(md);
+        let html = md.parse("foo\n---\nbar").render();
+        assert_eq!(html.trim(), "foo\n---\nbar");
+        let html = md.parse("foo\n|---\nbar").render();
+        html.trim().starts_with("<table");
+        let html = md.parse("foo\n---|\nbar").render();
+        html.trim().starts_with("<table");
     }
 }
