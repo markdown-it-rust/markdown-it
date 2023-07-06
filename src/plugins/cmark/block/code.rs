@@ -6,6 +6,8 @@
 use crate::parser::block::{BlockRule, BlockState};
 use crate::{MarkdownIt, Node, NodeValue, Renderer};
 
+const CODE_INDENT: i32 = 4;
+
 #[derive(Debug)]
 pub struct CodeBlock {
     pub content: String,
@@ -25,7 +27,7 @@ impl NodeValue for CodeBlock {
 
 pub fn add(md: &mut MarkdownIt) {
     md.block.add_rule::<CodeScanner>();
-    md.max_indent = 4;
+    md.max_indent = CODE_INDENT;
 }
 
 #[doc(hidden)]
@@ -36,7 +38,7 @@ impl BlockRule for CodeScanner {
     }
 
     fn run(state: &mut BlockState) -> Option<(Node, usize)> {
-        if state.line_indent(state.line) < 4 { return None; }
+        if state.line_indent(state.line) < CODE_INDENT { return None; }
 
         let mut next_line = state.line + 1;
         let mut last = next_line;
@@ -47,7 +49,7 @@ impl BlockRule for CodeScanner {
                 continue;
             }
 
-            if state.line_indent(next_line) >= 4 {
+            if state.line_indent(next_line) >= CODE_INDENT {
                 next_line += 1;
                 last = next_line;
                 continue;
@@ -56,7 +58,7 @@ impl BlockRule for CodeScanner {
             break;
         }
 
-        let (mut content, _mapping) = state.get_lines(state.line, last, 4 + state.blk_indent, false);
+        let (mut content, _mapping) = state.get_lines(state.line, last, CODE_INDENT as usize + state.blk_indent, false);
         content += "\n";
 
         let node = Node::new(CodeBlock { content });
