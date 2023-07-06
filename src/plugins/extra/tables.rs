@@ -271,6 +271,9 @@ impl TableScanner {
 
         if state.line_indent(next_line) >= state.md.max_indent { return None; }
 
+        // head row must contain a pipe
+        if !state.get_line(state.line).contains('|') { return None; }
+
         let alignments = Self::scan_alignment_row(state.get_line(next_line))?;
         let header_row = Self::scan_row(state.get_line(state.line));
 
@@ -435,5 +438,15 @@ mod tests {
         let row = TableScanner::scan_row(r#"|  foo\\|bar\\\|baz\  |"#);
         assert_eq!(row[0].str, r#"foo\|bar\\|baz\"#);
         assert_eq!(row[0].srcmap, vec![(0, 3), (4, 8), (10, 15)]);
+    }
+
+    #[test]
+    fn require_pipe_in_header_row() {
+        let md = &mut crate::MarkdownIt::new();
+        crate::plugins::extra::tables::add(md);
+        let html = md.parse("foo\n---\nbar").render();
+        assert_eq!(html.trim(), "foo\n---\nbar");
+        let html = md.parse("|foo\n---\nbar").render();
+        html.trim().starts_with("<table");
     }
 }
