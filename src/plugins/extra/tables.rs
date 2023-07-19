@@ -216,12 +216,15 @@ impl TableScanner {
     fn scan_alignment_row(line: &str) -> Option<Vec<ColumnAlignment>> {
         // quick check second line, only allow :-| and spaces
         // (this is for performance only)
+        let mut has_delimiter = false;
         for ch in line.chars() {
             match ch {
-                '|'| ':' | '-' | ' ' | '\t' => (),
+                '|'| ':' => { has_delimiter = true },      
+                '-' | ' ' | '\t' => (),
                 _ => return None,
             }
         }
+        if !has_delimiter { return None; }
 
         // if first character is '-', then second character must not be a space
         // (due to parsing ambiguity with list)
@@ -270,9 +273,6 @@ impl TableScanner {
         if state.line_indent(next_line) < 0 { return None; }
 
         if state.line_indent(next_line) >= state.md.max_indent { return None; }
-
-        // head row must contain a pipe
-        if !state.get_line(state.line).contains('|') { return None; }
 
         let alignments = Self::scan_alignment_row(state.get_line(next_line))?;
         let header_row = Self::scan_row(state.get_line(state.line));
@@ -441,12 +441,16 @@ mod tests {
     }
 
     #[test]
-    fn require_pipe_in_header_row() {
+    fn require_pipe_or_colon_in_align_row() {
         let md = &mut crate::MarkdownIt::new();
         crate::plugins::extra::tables::add(md);
         let html = md.parse("foo\n---\nbar").render();
         assert_eq!(html.trim(), "foo\n---\nbar");
         let html = md.parse("|foo\n---\nbar").render();
-        html.trim().starts_with("<table");
+        assert_eq!(html.trim(), "|foo\n---\nbar");
+        let html = md.parse("foo\n|---\nbar").render();
+        assert!(html.trim().starts_with("<table"));
+        let html = md.parse("foo\n:---\nbar").render();
+        assert!(html.trim().starts_with("<table"));
     }
 }
