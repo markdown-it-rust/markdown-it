@@ -90,7 +90,7 @@ enum QuoteType {
 ///
 /// These quotes may or may not be used to close a pair further down the line.
 /// The different fields thus hold all the information we need to a) decide
-/// whether or not to match them up with anoter quote we encounter, and b) to
+/// whether or not to match them up with another quote we encounter, and b) to
 /// perform the correct replacement, should be indeed use this quote to close a
 /// pair.
 struct QuoteMarker {

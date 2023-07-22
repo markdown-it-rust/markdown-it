@@ -22,7 +22,7 @@ pub struct MarkdownIt {
     /// Inline-level tokenizer.
     pub inline: InlineParser,
 
-    /// Link valiator and formatter.
+    /// Link validator and formatter.
     pub link_formatter: Box<dyn LinkFormatter>,
 
     /// Storage for custom data used in plugins.

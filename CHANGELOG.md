@@ -23,4 +23,4 @@
 
 ## 0.0.0 - 0.4.0 (2022-05-21 - 2022-10-03)
 
-Initial commits. Software was not stabilized yet, so changes weren't documented that point.
+Initial commits. Software was not stabilized yet, so changes weren't documented at that point.
