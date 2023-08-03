@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.0 - 2023-08-03
+
+### Added
+
+ - added link reference definition as AST node (renders as empty) for roundtripping
+   (https://github.com/rlidwka/markdown-it.rs/pull/22)
+
+### Changed
+
+ - only set max indent=4 if `code` blocks plugin is enabled
+   (https://github.com/rlidwka/markdown-it.rs/pull/20)
+
+### Fixed
+
+ - fixed ambiguity between tables and setext headings
+   (https://github.com/rlidwka/markdown-it.rs/pull/27)
+
 ## 0.5.1 - 2023-07-05
 
 ### Fixed
