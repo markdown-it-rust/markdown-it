@@ -30,7 +30,7 @@ pub struct MDLinkFormatter;
 
 impl MDLinkFormatter {
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 }
 

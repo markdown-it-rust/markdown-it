@@ -134,7 +134,7 @@ impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
         }
 
         // Scanned through the end, didn't find anything
-        let mut backticks = state.inline_ext.get_mut::<CodePairCache<MARKER>>().unwrap();
+        let backticks = state.inline_ext.get_mut::<CodePairCache<MARKER>>().unwrap();
         backticks.scanned = true;
 
         None

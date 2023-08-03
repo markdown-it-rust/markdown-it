@@ -153,7 +153,8 @@ impl<
 
         root.walk_mut(|node, _| {
             if let Some(current_replacements) = replacement_ops.get(&current_index) {
-                let mut text_node = node.cast_mut::<Text>().expect("Expected to find a text node at this index because we constructed our replacements HashMap accordingly.");
+                let text_node = node.cast_mut::<Text>()
+                    .expect("Expected to find a text node at this index because we constructed our replacements HashMap accordingly.");
                 text_node.content = execute_replacements(current_replacements, &text_node.content);
             };
             current_index += 1;
