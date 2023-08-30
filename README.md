@@ -1,10 +1,10 @@
 # markdown-it
 
-[<img alt="web demo" src="https://img.shields.io/badge/demo-8da0cb?style=for-the-badge&labelColor=555555&logo=webpack&logoColor=white" height="20">](https://rlidwka.github.io/markdown-it.rs/)
-[<img alt="github" src="https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/rlidwka/markdown-it.rs)
+[<img alt="web demo" src="https://img.shields.io/badge/demo-8da0cb?style=for-the-badge&labelColor=555555&logo=webpack&logoColor=white" height="20">](https://markdown-it-rust.github.io/markdown-it/)
+[<img alt="github" src="https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/markdown-it-rust/markdown-it)
 [<img alt="docs.rs" src="https://img.shields.io/badge/docs-8da0cb?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/markdown-it)
 [<img alt="crates.io" src="https://img.shields.io/crates/v/markdown-it.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/markdown-it)
-[<img alt="coverage" src="https://img.shields.io/codecov/c/github/rlidwka/markdown-it.rs?style=for-the-badge" height="20">](https://app.codecov.io/gh/rlidwka/markdown-it.rs)
+[<img alt="coverage" src="https://img.shields.io/codecov/c/github/markdown-it-rust/markdown-it?style=for-the-badge" height="20">](https://app.codecov.io/gh/markdown-it-rust/markdown-it)
 
 Rust port of popular [markdown-it.js](https://github.com/markdown-it/markdown-it) library.
 
