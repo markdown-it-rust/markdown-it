@@ -10,7 +10,7 @@ export default {
 
     output: {
         path: path.join(__dirname, 'build'),
-        publicPath: '/markdown-it.rs/',
+        publicPath: '/markdown-it/',
         filename: '[name].[contenthash:8].js'
     },
 
