@@ -352,7 +352,7 @@ impl BlockRule for TableScanner {
             if state.is_empty(state.line) { break; }
 
             // fail if terminating block found
-            if state.test_rules_at_line() { break; }
+            if state.test_rules_at_line("table") { break; }
 
             let mut row_node = Node::new(TableRow);
             row_node.srcmap = state.get_map(state.line, state.line);

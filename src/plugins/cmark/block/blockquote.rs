@@ -117,7 +117,7 @@ impl BlockRule for BlockquoteScanner {
             // Case 3: another tag found.
             state.line = next_line;
 
-            if state.test_rules_at_line() {
+            if state.test_rules_at_line("blockquote") {
                 // Quirk to enforce "hard termination mode" for paragraphs;
                 // normally if you call `nodeize(state, startLine, nextLine)`,
                 // paragraphs will look below nextLine for paragraph continuation,

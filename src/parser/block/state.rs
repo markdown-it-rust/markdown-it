@@ -42,6 +42,8 @@ pub struct BlockState<'a, 'b> where 'b: 'a {
     pub list_indent: Option<u32>,
 
     pub level: u32,
+
+    pub current_rule: Option<String>,
 }
 
 /// Holds start/end/etc. positions for a specific source text line.
@@ -112,6 +114,7 @@ impl<'a, 'b> BlockState<'a, 'b> {
             tight: false,
             list_indent: None,
             level: 0,
+            current_rule: None,
         };
 
         result.generate_caches();
@@ -170,12 +173,14 @@ impl<'a, 'b> BlockState<'a, 'b> {
     }
 
     #[must_use]
-    pub fn test_rules_at_line(&mut self) -> bool {
+    pub fn test_rules_at_line(&mut self, name: &str) -> bool {
         for rule in self.md.block.ruler.iter() {
+            self.current_rule = Some(name.to_owned());
             if rule.0(self).is_some() {
                 return true;
             }
         }
+        self.current_rule = None;
         false
     }
 
