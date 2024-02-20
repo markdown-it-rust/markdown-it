@@ -14,10 +14,10 @@ impl NodeValue for BlockFerris {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         // build attributes for `div`
         let mut attrs_div = node.attrs.clone();
-        attrs_div.push(("class", "ferris-block".into()));
+        attrs_div.push(("class".into(), "ferris-block".into()));
 
         // build attributes for `img`
-        let attrs_img = vec![("src", CRAB_URL.into())];
+        let attrs_img = vec![("src".into(), CRAB_URL.into())];
 
         fmt.cr(); // linebreak, multiples get merged
         fmt.open("div", &attrs_div); // opening tag, `<div>`

@@ -24,7 +24,7 @@ impl NodeValue for OrderedList {
         let start;
         if self.start != 1 {
             start = self.start.to_string();
-            attrs.push(("start", start));
+            attrs.push(("start".into(), start));
         }
         fmt.cr();
         fmt.open("ol", &attrs);

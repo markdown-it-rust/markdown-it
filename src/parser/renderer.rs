@@ -11,11 +11,11 @@ use crate::Node;
 /// into internal buffer.
 pub trait Renderer {
     /// Write opening html tag with attributes, e.g. `<a href="url">`.
-    fn open(&mut self, tag: &str, attrs: &[(&str, String)]);
+    fn open(&mut self, tag: &str, attrs: &[(String, String)]);
     /// Write closing html tag, e.g. `</a>`.
     fn close(&mut self, tag: &str);
     /// Write self-closing html tag with attributes, e.g. `<img src="url"/>`.
-    fn self_close(&mut self, tag: &str, attrs: &[(&str, String)]);
+    fn self_close(&mut self, tag: &str, attrs: &[(String, String)]);
     /// Loop through child nodes and render each one.
     fn contents(&mut self, nodes: &[Node]);
     /// Write line break (`\n`). Default renderer ignores it if last char in the buffer is `\n` already.
@@ -56,14 +56,14 @@ impl<const XHTML: bool> HTMLRenderer<XHTML> {
         self.result.push('"');
     }
 
-    fn make_attrs(&mut self, attrs: &[(&str, String)]) {
+    fn make_attrs(&mut self, attrs: &[(String, String)]) {
         let mut attr_hash = HashMap::new();
         let mut attr_order = Vec::with_capacity(attrs.len());
 
         for (name, value) in attrs {
-            let entry = attr_hash.entry(*name).or_insert(Vec::new());
+            let entry = attr_hash.entry(name).or_insert(Vec::new());
             entry.push(value.as_str());
-            attr_order.push(*name);
+            attr_order.push(name);
         }
 
         for name in attr_order {
@@ -101,7 +101,7 @@ impl<const XHTML: bool> From<HTMLRenderer<XHTML>> for String {
 }
 
 impl<const XHTML: bool> Renderer for HTMLRenderer<XHTML> {
-    fn open(&mut self, tag: &str, attrs: &[(&str, String)]) {
+    fn open(&mut self, tag: &str, attrs: &[(String, String)]) {
         self.result.push('<');
         self.result.push_str(tag);
         self.make_attrs(attrs);
@@ -115,7 +115,7 @@ impl<const XHTML: bool> Renderer for HTMLRenderer<XHTML> {
         self.result.push('>');
     }
 
-    fn self_close(&mut self, tag: &str, attrs: &[(&str, String)]) {
+    fn self_close(&mut self, tag: &str, attrs: &[(String, String)]) {
         self.result.push('<');
         self.result.push_str(tag);
         self.make_attrs(attrs);
