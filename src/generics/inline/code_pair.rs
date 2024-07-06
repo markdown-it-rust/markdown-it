@@ -112,7 +112,7 @@ impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
                 // Found matching closer length.
                 let mut content = state.src[pos..match_start].to_owned().replace('\n', " ");
                 if content.starts_with(' ') && content.ends_with(' ') && content.len() > 2 {
-                    content = content[1..content.len() - 1].to_owned();
+                    content[1..content.len() - 1].to_owned().clone_into(&mut content);
                     pos += 1;
                     match_start -= 1;
                 }

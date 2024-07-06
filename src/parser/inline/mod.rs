@@ -138,7 +138,7 @@ impl InlineParser {
 
     pub fn add_rule<T: InlineRule>(&mut self) -> RuleBuilder<RuleFns> {
         if T::MARKER != '\0' {
-            let charvec = self.text_charmap.entry(T::MARKER).or_insert(vec![]);
+            let charvec = self.text_charmap.entry(T::MARKER).or_default();
             charvec.push(TypeKey::of::<T>());
         }
 

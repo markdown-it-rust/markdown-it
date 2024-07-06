@@ -142,7 +142,7 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
                     RuleItemConstraint::Require(v) => {
                         assert!(
                             idhash.contains_key(v),
-                            "missing dependency: {:?} requires {:?}", dep.marks.get(0).unwrap(), v
+                            "missing dependency: {:?} requires {:?}", dep.marks.first().unwrap(), v
                         );
                     }
                 }
@@ -179,7 +179,7 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
                     while let Some(didx) = vec.pop() {
                         let dlist = deps_graph.get(didx).unwrap();
                         for x in dlist.iter() {
-                            if seen.get(x).is_some() { continue; }
+                            if seen.contains_key(x) { continue; }
                             vec.push(*x);
                             seen.insert(*x, didx);
                             if *x == idx {
@@ -192,7 +192,7 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Ruler<M, T> {
                                 backtrack.push(curr);
                                 let path = backtrack.iter()
                                     .rev()
-                                    .map(|x| format!("{:?}", self.deps.get(*x).unwrap().marks.get(0).unwrap()))
+                                    .map(|x| format!("{:?}", self.deps.get(*x).unwrap().marks.first().unwrap()))
                                     .collect::<Vec<String>>()
                                     .join(" < ");
                                 panic!("cyclic dependency: {}", path);
@@ -214,7 +214,7 @@ impl<M: Eq + Hash + Copy + Debug, T: Clone> Debug for Ruler<M, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let vec: Vec<(usize, M)> = self.compiled.get_or_init(|| self.compile()).0
                                     .iter()
-                                    .map(|idx| (*idx, *self.deps.get(*idx).unwrap().marks.get(0).unwrap()))
+                                    .map(|idx| (*idx, *self.deps.get(*idx).unwrap().marks.first().unwrap()))
                                     .collect();
 
         f.debug_struct("Ruler")
