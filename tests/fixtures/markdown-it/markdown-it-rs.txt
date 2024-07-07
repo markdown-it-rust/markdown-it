@@ -1,0 +1,6 @@
+regression test for panic in #40
+.
+![hello'"`world](x)\
+.
+<p><img src="x" alt="hello'&quot;`world">\</p>
+.

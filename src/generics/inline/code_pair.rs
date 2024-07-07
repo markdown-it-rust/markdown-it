@@ -84,7 +84,7 @@ impl<const MARKER: char> InlineRule for CodePairScanner<MARKER> {
         let backticks = state.inline_ext.get_or_insert_default::<CodePairCache<MARKER>>();
         let opener_len = pos - state.pos;
 
-        if backticks.scanned && backticks.max[opener_len] <= state.pos {
+        if backticks.scanned && backticks.max.get(opener_len).copied().unwrap_or(0) <= state.pos {
             // performance note: adding entire sequence into pending is 5x faster,
             // but it will interfere with other rules working on the same char;
             // and it is extremely rare that user would put a thousand "`" in text

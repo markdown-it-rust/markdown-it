@@ -811,3 +811,18 @@ fn a_list_takes_precedence_in_case_of_ambiguity() {
 }
 // end of auto-generated module
 }
+///////////////////////////////////////////////////////////////////////////
+// TESTGEN: fixtures/markdown-it/markdown-it-rs.txt
+#[rustfmt::skip]
+mod fixtures_markdown_it_markdown_it_rs_txt {
+use super::run;
+// this part of the file is auto-generated
+// don't edit it, otherwise your changes might be lost
+#[test]
+fn regression_test_for_panic_in_40() {
+    let input = r#"![hello'"`world](x)\"#;
+    let output = r#"<p><img src="x" alt="hello'&quot;`world">\</p>"#;
+    run(input, output);
+}
+// end of auto-generated module
+}
