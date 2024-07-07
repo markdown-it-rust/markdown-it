@@ -4,6 +4,7 @@ fn run(input: &str, output: &str) {
     let md = &mut markdown_it::MarkdownIt::new();
     markdown_it::plugins::cmark::add(md);
     markdown_it::plugins::html::add(md);
+    markdown_it::plugins::extra::typographer::add(md);
     markdown_it::plugins::extra::tables::add(md);
     let node = md.parse(&(input.to_owned() + "\n"));
 
@@ -19,6 +20,7 @@ fn run(input: &str, output: &str) {
 
 ///////////////////////////////////////////////////////////////////////////
 // TESTGEN: fixtures/markdown-it/tables.txt
+#[rustfmt::skip]
 mod fixtures_markdown_it_tables_txt {
 use super::run;
 // this part of the file is auto-generated
@@ -748,7 +750,7 @@ fn gfm_4_10_tables_extension_example_203() {
 | --- |
 | bar |"#;
     let output = r#"<p>| abc | def |
-| --- |
+| — |
 | bar |</p>"#;
     run(input, output);
 }

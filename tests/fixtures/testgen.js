@@ -1,15 +1,13 @@
-#!/usr/bin/env node
+// use `deno run --allow-read --allow-write ./fixtures/testgen.js ./commonmark.rs` to run this script
 
-if (process.argv.length !== 3) {
+if (Deno.args.length !== 1) {
     console.error(`
-Usage: ${process.argv[1]} ./tests/commonmark.rs
+Usage: deno run --allow-read --allow-write ./fixtures/testgen.js ./commonmark.rs
 `)
-    process.exit(1)
+    Deno.exit(1)
 }
 
-import fs from 'fs/promises'
-import testgen from 'markdown-it-testgen'
-
+import testgen from 'npm:markdown-it-testgen@^0.1.6'
 
 function rust_escape(s) {
     if (s.match(/( $|\t)/m)) {
@@ -49,12 +47,13 @@ fn ${ident(fixture.header)}() {
 `.trim()
 }
 
-let input = await fs.readFile(process.argv[2], 'utf8')
+let input_raw = await Deno.readFile(Deno.args[0])
+let input = new TextDecoder().decode(input_raw)
 let lines = []
 let state = 'passthrough'
 
 for (let line of input.split('\n')) {
-    switch(state) {
+    switch (state) {
         case 'passthrough':
             lines.push(line)
             if (line.match(/^\/{4,}$/)) {
@@ -96,5 +95,5 @@ for (let line of input.split('\n')) {
     }
 }
 
-await fs.rename(process.argv[2], process.argv[2] + '.old')
-await fs.writeFile(process.argv[2], lines.join('\n') + '\n')
+await Deno.rename(Deno.args[0], Deno.args[0] + '.old')
+await Deno.writeFile(Deno.args[0], new TextEncoder().encode(lines.join('\n') + '\n'))

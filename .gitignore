@@ -2,5 +2,6 @@
 /target
 /benchmarks/target
 /tests/fixtures/node_modules
+/tests/*.rs.old
 /Cargo.lock
 /benchmarks/Cargo.lock
