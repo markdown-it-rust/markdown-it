@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1 - 2024-07-07
+
+### Fixed
+
+ - fixed panic on malformed input found by fuzzing
+   (https://github.com/markdown-it-rust/markdown-it/issues/40)
+
 ## 0.6.0 - 2023-08-03
 
 ### Added
