@@ -17,7 +17,7 @@ impl NodeValue for InlineFerris {
         let mut attrs = node.attrs.clone();
 
         // add a custom class attribute
-        attrs.push(("class", "ferris-inline".into()));
+        attrs.push(("class".into(), "ferris-inline".into()));
 
         fmt.open("span", &attrs);
         fmt.text("🦀");

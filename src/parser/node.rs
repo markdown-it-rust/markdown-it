@@ -24,7 +24,7 @@ pub struct Node {
     pub ext: NodeExtSet,
 
     /// Additional attributes to be added to resulting html.
-    pub attrs: Vec<(&'static str, String)>,
+    pub attrs: Vec<(String, String)>,
 
     /// Type name, used for debugging.
     #[readonly]

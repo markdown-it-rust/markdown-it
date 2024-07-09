@@ -15,10 +15,10 @@ pub struct Link {
 impl NodeValue for Link {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let mut attrs = node.attrs.clone();
-        attrs.push(("href", self.url.clone()));
+        attrs.push(("href".into(), self.url.clone()));
 
         if let Some(title) = &self.title {
-            attrs.push(("title", title.clone()));
+            attrs.push(("title".into(), title.clone()));
         }
 
         fmt.open("a", &attrs);

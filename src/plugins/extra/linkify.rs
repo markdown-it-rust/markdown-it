@@ -23,7 +23,7 @@ pub struct Linkified {
 impl NodeValue for Linkified {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
         let mut attrs = node.attrs.clone();
-        attrs.push(("href", self.url.clone()));
+        attrs.push(("href".into(), self.url.clone()));
 
         fmt.open("a", &attrs);
         fmt.contents(&node.children);

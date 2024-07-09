@@ -27,7 +27,7 @@ impl NodeValue for CodeFence {
 
         if !lang_name.is_empty() {
             class = format!("{}{}", self.lang_prefix, lang_name);
-            attrs.push(("class", class));
+            attrs.push(("class".into(), class));
         }
 
         fmt.cr();

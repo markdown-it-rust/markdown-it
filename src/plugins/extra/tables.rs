@@ -106,9 +106,9 @@ impl NodeValue for TableCell {
 
         match ctx.alignments.get(ctx.index).copied().unwrap_or_default() {
             ColumnAlignment::None => (),
-            ColumnAlignment::Left => attrs.push(("style", "text-align:left".to_owned())),
-            ColumnAlignment::Right => attrs.push(("style", "text-align:right".to_owned())),
-            ColumnAlignment::Center => attrs.push(("style", "text-align:center".to_owned())),
+            ColumnAlignment::Left => attrs.push(("style".into(), "text-align:left".to_owned())),
+            ColumnAlignment::Right => attrs.push(("style".into(), "text-align:right".to_owned())),
+            ColumnAlignment::Center => attrs.push(("style".into(), "text-align:center".to_owned())),
         }
 
         ctx.index += 1;

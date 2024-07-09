@@ -18,7 +18,7 @@ impl NodeValue for FerrisCounter {
         let mut attrs = node.attrs.clone();
 
         // add a custom class attribute
-        attrs.push(("class", "ferris-counter".into()));
+        attrs.push(("class".into(), "ferris-counter".into()));
 
         fmt.cr(); // linebreak, multiples get merged
         fmt.open("footer", &attrs);

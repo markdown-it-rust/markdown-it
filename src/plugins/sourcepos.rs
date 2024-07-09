@@ -29,7 +29,7 @@ impl CoreRule for SyntaxPosRule {
         root.walk_mut(|node, _| {
             if let Some(map) = node.srcmap {
                 let ((startline, startcol), (endline, endcol)) = map.get_positions(&mapping);
-                node.attrs.push(("data-sourcepos", format!("{}:{}-{}:{}", startline, startcol, endline, endcol)));
+                node.attrs.push(("data-sourcepos".into(), format!("{}:{}-{}:{}", startline, startcol, endline, endcol)));
             }
         });
     }

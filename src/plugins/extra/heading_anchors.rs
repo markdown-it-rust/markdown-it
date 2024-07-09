@@ -62,7 +62,7 @@ impl CoreRule for AddHeadingAnchors {
 
         root.walk_mut(|node, _| {
             if node.is::<ATXHeading>() || node.is::<SetextHeader>() {
-                node.attrs.push(("id", slugify(&node.collect_text())));
+                node.attrs.push(("id".into(), slugify(&node.collect_text())));
             }
         });
     }
