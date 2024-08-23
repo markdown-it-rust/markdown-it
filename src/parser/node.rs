@@ -206,7 +206,7 @@ impl Default for Node {
 }
 
 /// Contents of the specific AST node.
-pub trait NodeValue : Debug + Downcast {
+pub trait NodeValue : Debug + Downcast + Send {
     /// Output HTML corresponding to this node using Renderer API.
     ///
     /// Example implementation looks like this:
