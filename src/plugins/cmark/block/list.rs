@@ -330,7 +330,7 @@ impl BlockRule for ListScanner {
             if state.line_indent(next_line) >= state.md.max_indent { break; }
 
             // fail if terminating block found
-            if state.test_rules_at_line() { break; }
+            if state.test_rules_at_line("list") { break; }
 
             current_line = state.get_line(state.line).to_owned();
 

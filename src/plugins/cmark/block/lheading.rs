@@ -78,7 +78,7 @@ impl BlockRule for LHeadingScanner {
             // Some tags can terminate paragraph without empty line.
             let old_state_line = state.line;
             state.line = next_line;
-            if state.test_rules_at_line() {
+            if state.test_rules_at_line("lheading") {
                 state.line = old_state_line;
                 break 'outer;
             }
